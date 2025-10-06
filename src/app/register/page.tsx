@@ -379,6 +379,7 @@ export default function PrivateInstitutionsForm() {
                   value={formData.A.tin}
                   onChange={(e) => handleChange("A", "tin", e.target.value)}
                   className="w-full p-2 border border-gray-400 rounded"
+                  required
                 />
               </div>
               <div className="flex flex-col gap-2">
