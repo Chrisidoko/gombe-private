@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { CircleX } from "lucide-react";
+import { CircleX, Loader2 } from "lucide-react";
 
 export default function LoginPage() {
   const [formData, setFormData] = useState({
@@ -26,7 +26,7 @@ export default function LoginPage() {
     e.preventDefault();
 
     if (!showOtp) {
-      // Step 1: Send OTP to email or TIN
+      // Step 1: Send OTP to email
       console.log("Sending OTP to:", formData);
       setLoading(true);
       setTimeout(() => {
@@ -113,7 +113,7 @@ export default function LoginPage() {
 
                 <button
                   type="button"
-                  className="text-blue-600 text-xs underline mt-2"
+                  className="text-blue-600 text-xs underline mt-2 cursor-pointer"
                   onClick={() => alert("Resend OTP clicked")}
                 >
                   Resend OTP
@@ -121,7 +121,7 @@ export default function LoginPage() {
 
                 <button
                   type="button"
-                  className="text-gray-500 text-xs mt-2"
+                  className="text-gray-500 text-xs mt-2 cursor-pointer"
                   onClick={() => setShowOtp(false)}
                 >
                   ← Go Back
@@ -130,12 +130,19 @@ export default function LoginPage() {
             )}
 
             {/* Submit Button */}
+
             <button
               type="submit"
               disabled={loading}
-              className="w-full mt-6 py-3 bg-[#28a745] text-white font-semibold rounded hover:bg-[#23913b] transition-colors"
+              className={`w-full mt-6 py-3 flex items-center justify-center gap-2 rounded font-semibold text-white transition-colors cursor-pointer
+    ${
+      loading
+        ? "bg-[#23913b] cursor-not-allowed opacity-80"
+        : "bg-[#28a745] hover:bg-[#23913b]"
+    }`}
             >
-              {loading ? "Processing..." : showOtp ? "Verify OTP" : "Proceed"}
+              {loading && <Loader2 className="w-5 h-5 animate-spin" />}
+              {loading ? "Processing" : showOtp ? "Verify OTP" : "Proceed"}
             </button>
           </form>
         </div>

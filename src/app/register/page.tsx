@@ -672,16 +672,27 @@ export default function PrivateInstitutionsForm() {
                     <label className="text-sm font-medium">
                       Academic Session
                     </label>
-                    <input
-                      type="text"
-                      placeholder="Academic Session"
+                    <select
                       value={formData.B.academicSession}
                       onChange={(e) =>
                         handleChange("B", "academicSession", e.target.value)
                       }
-                      className="p-2 border rounded"
-                    />
+                      className="p-2 border rounded bg-white"
+                    >
+                      <option value="">Select Session</option>
+                      {Array.from({ length: 5 }).map((_, i) => {
+                        const startYear = new Date().getFullYear() - i;
+                        const endYear = startYear + 1;
+                        const session = `${startYear}/${endYear}`;
+                        return (
+                          <option key={session} value={session}>
+                            {session}
+                          </option>
+                        );
+                      })}
+                    </select>
                   </div>
+
                   <div className="flex flex-col gap-2">
                     <label className="text-sm font-medium">
                       Weeks Per Semester
@@ -989,7 +1000,7 @@ export default function PrivateInstitutionsForm() {
           {currentStep === 5 && (
             <div className="flex flex-col items-center justify-center text-center space-y-6 py-6">
               <Image
-                src="/success.svg" // optional: replace with your own success icon
+                src="/success.svg"
                 alt="Success"
                 width={80}
                 height={80}
