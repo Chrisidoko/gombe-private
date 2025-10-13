@@ -145,7 +145,7 @@ export default function CheckoutForm({
                         </label>
                         <input
                           type="text"
-                          className="w-full p-2 border rounded"
+                          className="w-full p-2 border border-[#e6e7eb] text-gray-600 bg-gray-100 font-base rounded-md"
                           value={firstName}
                           onChange={(e) => setFirstName(e.target.value)}
                           required
@@ -160,7 +160,7 @@ export default function CheckoutForm({
                         </label>
                         <input
                           type="email"
-                          className="w-full p-2 border rounded"
+                          className="w-full p-2 border border-[#e6e7eb] text-gray-600 bg-gray-100 font-base rounded-md"
                           value={emailState}
                           onChange={(e) => setEmailState(e.target.value)}
                           required
@@ -172,7 +172,7 @@ export default function CheckoutForm({
                         </label>
                         <input
                           type="text"
-                          className="w-full p-2 border rounded"
+                          className="w-full p-2 border border-[#e6e7eb] text-gray-600 bg-gray-100 font-base rounded-md"
                           value={tinState}
                           onChange={(e) => setTinState(e.target.value)}
                           required
@@ -194,7 +194,7 @@ export default function CheckoutForm({
                       </label>
                       <input
                         type="text"
-                        className="w-full p-2 border rounded"
+                        className="w-full p-2 border border-[#e6e7eb] text-gray-600 bg-gray-100 font-base rounded-md"
                         value={narration}
                         onChange={(e) => setNarration(e.target.value)}
                         required
@@ -208,7 +208,7 @@ export default function CheckoutForm({
                         </label>
                         <input
                           type="number"
-                          className="w-full p-2 border rounded"
+                          className="w-full p-2 border border-[#e6e7eb] text-gray-600 bg-gray-100 font-base rounded-md"
                           value={amount ?? ""}
                           onChange={(e) => setAmount(Number(e.target.value))}
                           required
@@ -221,7 +221,7 @@ export default function CheckoutForm({
                         </label>
                         <input
                           type="text"
-                          className="w-full p-2 border rounded bg-gray-100"
+                          className="w-full p-2 border border-[#e6e7eb] text-gray-600 bg-gray-100 font-base rounded-md"
                           value={date}
                           readOnly
                         />
