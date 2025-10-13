@@ -2,7 +2,9 @@
 
 import { useState } from "react";
 import Image from "next/image";
-import { CircleX } from "lucide-react";
+import { CircleX, Loader2, CircleCheck } from "lucide-react";
+import toast from "react-hot-toast";
+import { useRouter } from "next/navigation";
 
 import Link from "next/link";
 
@@ -24,6 +26,7 @@ type FormData = {
     email: string;
     confirmemail: string;
     phone: string;
+    website: string;
   };
 
   B: {
@@ -58,18 +61,18 @@ type FormData = {
 
   C: {
     methodOfCollection: string[];
-    paymentGateway: string[];
+    paymentGateway: string;
     currentGateway: string;
     partnerBanks: string;
-    paymentReports: string[];
+    paymentReports: string;
   };
 
   D: {
-    licenceStatus: string[];
-    prevLicence: string[];
+    licenceStatus: string;
+    prevLicence: string;
     prevAmount: string;
     prevDate: string;
-    outstandingPenalties: string[];
+    outstandingPenalties: string;
     penalty: string;
   };
   E: {
@@ -110,6 +113,7 @@ export default function PrivateInstitutionsForm() {
       email: "",
       confirmemail: "",
       phone: "",
+      website: "",
     },
     B: {
       faculties: "",
@@ -142,18 +146,18 @@ export default function PrivateInstitutionsForm() {
     },
     C: {
       methodOfCollection: [],
-      paymentGateway: [],
+      paymentGateway: "",
       currentGateway: "",
       partnerBanks: "",
-      paymentReports: [],
+      paymentReports: "",
     },
 
     D: {
-      licenceStatus: [],
-      prevLicence: [],
+      licenceStatus: "",
+      prevLicence: "",
       prevAmount: "",
       prevDate: "",
-      outstandingPenalties: [],
+      outstandingPenalties: "",
       penalty: "",
     },
     E: {
@@ -161,6 +165,10 @@ export default function PrivateInstitutionsForm() {
       comments: "",
     },
   });
+
+  const [emailError, setEmailError] = useState(""); // to catch email validation error's
+  const [loading, setLoading] = useState(false); //loadind state for moving steps to steps
+  const router = useRouter(); // to redirect user when done.
 
   const handleChange = <T extends keyof FormData>(
     section: T,
@@ -222,9 +230,122 @@ export default function PrivateInstitutionsForm() {
     if (currentStep > 0) setCurrentStep(currentStep - 1);
   };
 
-  const handleSubmit = () => {
-    console.log("Form submitted:", formData);
-    alert("Form submitted! Check console.");
+  const handleSubmit = async () => {
+    try {
+      // ✅ Retrieve the stored TIN (from Section A)
+      const tin = localStorage.getItem("tin");
+
+      if (!tin) {
+        toast.error("Missing TIN. Please complete Section A first.");
+        return;
+      }
+
+      const res = await fetch("/api/schools/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          tin,
+          formStatus: "completed",
+        }),
+      });
+
+      const data = await res.json();
+
+      if (res.ok && data.success) {
+        toast.success("Form submitted successfully!");
+        console.log("Saved record:", data);
+        // Wait a moment, then redirect
+        setTimeout(() => {
+          router.push("/");
+        }, 4500);
+      } else {
+        toast.error(` Submission failed: ${data.error || "Unknown error"}`);
+      }
+    } catch (err) {
+      console.error("Error during submission:", err);
+      toast.error("⚠️ An error occurred while submitting the form.");
+    }
+  };
+
+  const saveCurrentSection = async (): Promise<boolean> => {
+    setLoading(true);
+
+    try {
+      const sectionKey = Object.keys(formData)[currentStep];
+      const sectionData = formData[sectionKey] || {};
+
+      setEmailError("");
+
+      // ✅ Validate email only for Section A
+      if (sectionKey === "A") {
+        const email = (sectionData.email ?? "").toString().trim();
+        const confirmEmail = (sectionData.confirmemail ?? "").toString().trim();
+
+        if (!email || !confirmEmail) {
+          setEmailError("Please enter and confirm your email address.");
+          setLoading(false);
+          return false;
+        }
+
+        if (email !== confirmEmail) {
+          setEmailError("Email addresses do not match. Please recheck.");
+          setLoading(false);
+          return false;
+        }
+      }
+
+      // ✅ Remove confirmemail before sending
+      const { confirmemail, ...sanitizedData } = sectionData;
+
+      // ✅ Always include TIN — either from current section or stored value
+      const tinFromStorage = localStorage.getItem("tin");
+      const tinToUse =
+        sanitizedData.tin || tinFromStorage || sectionData.tin || "";
+
+      const res = await fetch("/api/schools/temp", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          section: sectionKey,
+          tin: tinToUse,
+          ...sanitizedData,
+        }),
+      });
+
+      const result = await res.json();
+
+      if (!result.success) {
+        console.error("Failed to save section:", result.error);
+
+        setLoading(false);
+        return false;
+      }
+
+      console.log(`✅ Section  saved successfully`);
+      toast.success(` Section ${sectionKey} saved successfully!`);
+
+      // ✅ Save TIN from Section A into localStorage (so later sections can reuse it)
+      if (sectionKey === "A" && sanitizedData.tin) {
+        localStorage.setItem("tin", String(sanitizedData.tin)); // Please keep in mid that local storage is not good for SSR components
+        console.log("📦 Saved TIN:", sanitizedData.tin);
+      }
+
+      setLoading(false);
+      return true;
+    } catch (err) {
+      console.error("Save error:", err);
+      setEmailError("An unexpected error occurred.");
+      toast.error("Something went wrong.");
+      setLoading(false);
+      return false;
+    }
+  };
+
+  const handleProceed = async () => {
+    const success = await saveCurrentSection();
+    if (!success) return; // ❌ Stop here if validation or save fails
+
+    nextStep(); // ✅ Move only when successful
   };
 
   return (
@@ -284,7 +405,7 @@ export default function PrivateInstitutionsForm() {
                   Year of Establishment
                 </label>
                 <input
-                  type="number"
+                  type="date"
                   placeholder="Year of Establishment"
                   value={formData.A.yearEstablished}
                   onChange={(e) =>
@@ -446,17 +567,34 @@ export default function PrivateInstitutionsForm() {
                   type="email"
                   placeholder="Re-enter Official Email Address"
                   value={formData.A.confirmemail}
-                  onChange={(e) => handleChange("A", "email", e.target.value)}
-                  className="w-full p-2 border border-gray-400 rounded"
+                  onChange={(e) =>
+                    handleChange("A", "confirmemail", e.target.value)
+                  }
+                  className={`w-full p-2 border rounded ${
+                    emailError ? "border-red-500" : "border-gray-400"
+                  }`}
                 />
+                {emailError && (
+                  <p className="text-red-600 text-sm mt-1">{emailError}</p>
+                )}
               </div>
               <div className="flex flex-col gap-2">
                 <label className="text-sm font-medium">Phone</label>
                 <input
-                  type="text"
-                  placeholder="Telephone Number(s)"
+                  type="number"
+                  placeholder="Telephone Number"
                   value={formData.A.phone}
                   onChange={(e) => handleChange("A", "phone", e.target.value)}
+                  className="w-full p-2 border  border-gray-400 rounded"
+                />
+              </div>
+              <div className="flex flex-col gap-2">
+                <label className="text-sm font-medium">Website</label>
+                <input
+                  type="text"
+                  placeholder="www.yourwebsite.com"
+                  value={formData.A.website}
+                  onChange={(e) => handleChange("A", "website", e.target.value)}
                   className="w-full p-2 border  border-gray-400 rounded"
                 />
               </div>
@@ -546,16 +684,16 @@ export default function PrivateInstitutionsForm() {
                     </label>
                     <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
                       {[
-                        "100",
-                        "200",
-                        "300",
-                        "400",
-                        "500",
-                        "Above 500 / PG",
+                        "100 Level",
+                        "200 Level",
+                        "300 Level",
+                        "400 Level",
+                        "500 Level",
+                        "Postgraduate",
                       ].map((level) => (
                         <div key={level} className="flex flex-col">
-                          <label className="text-xs font-medium text-gray-600">
-                            {level} Level
+                          <label className="text-xs mb-1 font-medium text-gray-600">
+                            {level}
                           </label>
                           <input
                             type="number"
@@ -570,8 +708,8 @@ export default function PrivateInstitutionsForm() {
                                 ...prev,
                                 B: {
                                   ...prev.B,
-                                  avgFeeByLevel: {
-                                    ...prev.B.avgFeeByLevel,
+                                  populationByLevel: {
+                                    ...prev.B.populationByLevel,
                                     [level]: e.target.value,
                                   },
                                 },
@@ -625,16 +763,16 @@ export default function PrivateInstitutionsForm() {
                     </label>
                     <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
                       {[
-                        "100",
-                        "200",
-                        "300",
-                        "400",
-                        "500",
-                        "Above 500 / PG",
+                        "100 Level",
+                        "200 Level",
+                        "300 Level",
+                        "400 Level",
+                        "500 Level",
+                        "Postgraduate",
                       ].map((level) => (
                         <div key={level} className="flex flex-col">
-                          <label className="text-xs font-medium text-gray-600">
-                            {level} Level
+                          <label className="text-xs mb-1 font-medium text-gray-600">
+                            {level}
                           </label>
                           <input
                             type="number"
@@ -743,6 +881,7 @@ export default function PrivateInstitutionsForm() {
                 <h3 className="font-semibold mb-2">
                   5. Programmes Offered (Tick all that apply)
                 </h3>
+
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
                   {[
                     "Bachelor’s Degree",
@@ -751,7 +890,6 @@ export default function PrivateInstitutionsForm() {
                     "Master’s Degree",
                     "Doctorate Degree (Ph.D.)",
                     "Professional Certifications",
-                    "Other",
                   ].map((prog) => (
                     <label key={prog} className="flex items-center gap-2">
                       <input
@@ -762,6 +900,65 @@ export default function PrivateInstitutionsForm() {
                       {prog}
                     </label>
                   ))}
+
+                  {/* ✅ Add “Other” option */}
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      checked={formData.B.programmes.some((p: string) =>
+                        p.startsWith("Other:")
+                      )}
+                      onChange={(e) => {
+                        if (!e.target.checked) {
+                          // remove any "Other:" entry if unchecked
+                          setFormData((prev) => ({
+                            ...prev,
+                            B: {
+                              ...prev.B,
+                              programmes: prev.B.programmes.filter(
+                                (p: string) => !p.startsWith("Other:")
+                              ),
+                            },
+                          }));
+                        } else {
+                          // add placeholder entry for Other
+                          setFormData((prev) => ({
+                            ...prev,
+                            B: {
+                              ...prev.B,
+                              programmes: [...prev.B.programmes, "Other:"],
+                            },
+                          }));
+                        }
+                      }}
+                    />
+                    <span>Other:</span>
+                    <input
+                      type="text"
+                      placeholder="Specify"
+                      value={
+                        formData.B.programmes
+                          .find((p: string) => p.startsWith("Other:"))
+                          ?.split("Other:")[1] || ""
+                      }
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        setFormData((prev) => ({
+                          ...prev,
+                          B: {
+                            ...prev.B,
+                            programmes: [
+                              ...prev.B.programmes.filter(
+                                (p: string) => !p.startsWith("Other:")
+                              ),
+                              val ? `Other:${val}` : "", // keep empty string if cleared
+                            ].filter(Boolean),
+                          },
+                        }));
+                      }}
+                      className="border rounded p-1 w-full md:w-auto"
+                    />
+                  </div>
                 </div>
               </div>
             </div>
@@ -782,7 +979,6 @@ export default function PrivateInstitutionsForm() {
                     "Transfer",
                     "Online Portal",
                     "Cash",
-                    "Other",
                   ].map((method) => (
                     <label key={method} className="flex items-center gap-2">
                       <input
@@ -803,20 +999,29 @@ export default function PrivateInstitutionsForm() {
                   Do you use a payment gateway?
                 </h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                  {["Yes", "No"].map((pay) => (
-                    <label key={pay} className="flex items-center gap-2">
+                  {["Yes", "No"].map((option) => (
+                    <label key={option} className="flex items-center gap-2">
                       <input
-                        type="checkbox"
-                        checked={formData.C.paymentGateway.includes(pay)}
-                        onChange={() =>
-                          toggleCheckbox("C", "paymentGateway", pay)
-                        }
+                        type="radio"
+                        name="paymentGateway" // 👈 ensures only one is selectable
+                        value={option}
+                        checked={formData.C.paymentGateway === option}
+                        onChange={() => {
+                          setFormData((prev) => ({
+                            ...prev,
+                            C: {
+                              ...prev.C,
+                              paymentGateway: option, // 👈 store just a single string value
+                            },
+                          }));
+                        }}
                       />
-                      {pay}
+                      {option}
                     </label>
                   ))}
                 </div>
               </div>
+
               <div className="flex flex-col gap-2 md:col-span-2">
                 <label className="text-sm font-medium">
                   If yes, which one?
@@ -828,7 +1033,12 @@ export default function PrivateInstitutionsForm() {
                   onChange={(e) =>
                     handleChange("C", "currentGateway", e.target.value)
                   }
-                  className="p-2 border rounded"
+                  className={`p-2 border rounded ${
+                    formData.C.paymentGateway === "No"
+                      ? "bg-gray-100 cursor-not-allowed"
+                      : ""
+                  }`}
+                  disabled={formData.C.paymentGateway === "No"}
                 />
               </div>
               <div className="flex flex-col gap-2 md:col-span-2">
@@ -849,16 +1059,24 @@ export default function PrivateInstitutionsForm() {
                   Do you generate real-time payment reports?:
                 </h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                  {["Yes", "No"].map((yn) => (
-                    <label key={yn} className="flex items-center gap-2">
+                  {["Yes", "No"].map((option) => (
+                    <label key={option} className="flex items-center gap-2">
                       <input
-                        type="checkbox"
-                        checked={formData.C.paymentReports.includes(yn)}
-                        onChange={() =>
-                          toggleCheckbox("C", "paymentReports", yn)
-                        }
+                        type="radio"
+                        name="paymentReports" // 👈 ensures only one is selectable
+                        value={option}
+                        checked={formData.C.paymentReports === option}
+                        onChange={() => {
+                          setFormData((prev) => ({
+                            ...prev,
+                            C: {
+                              ...prev.C,
+                              paymentReports: option, // 👈 store just a single string value
+                            },
+                          }));
+                        }}
                       />
-                      {yn}
+                      {option}
                     </label>
                   ))}
                 </div>
@@ -877,16 +1095,23 @@ export default function PrivateInstitutionsForm() {
                     "Active Licence (Valid)",
                     "Renewal Due",
                     "Expired Licence",
-                  ].map((status) => (
-                    <label key={status} className="flex items-center gap-2">
+                  ].map((option) => (
+                    <label key={option} className="flex items-center gap-2">
                       <input
-                        type="checkbox"
-                        checked={formData.D.licenceStatus.includes(status)}
-                        onChange={() =>
-                          toggleCheckbox("D", "licenceStatus", status)
-                        }
+                        type="radio"
+                        value={option}
+                        checked={formData.D.licenceStatus === option}
+                        onChange={() => {
+                          setFormData((prev) => ({
+                            ...prev,
+                            D: {
+                              ...prev.D,
+                              licenceStatus: option, // 👈 store just a single string value
+                            },
+                          }));
+                        }}
                       />
-                      {status}
+                      {option}
                     </label>
                   ))}
                 </div>
@@ -899,28 +1124,52 @@ export default function PrivateInstitutionsForm() {
                   {["Yes", "No"].map((yn) => (
                     <label key={yn} className="flex items-center gap-2">
                       <input
-                        type="checkbox"
-                        checked={formData.D.prevLicence.includes(yn)}
-                        onChange={() => toggleCheckbox("D", "prevLicence", yn)}
+                        type="radio"
+                        name="prevLicence" // ✅ make it a radio group
+                        value={yn}
+                        checked={formData.D.prevLicence === yn}
+                        onChange={() =>
+                          setFormData((prev) => ({
+                            ...prev,
+                            D: {
+                              ...prev.D,
+                              prevLicence: yn, // ✅ store single string ("Yes" or "No")
+                            },
+                          }))
+                        }
                       />
                       {yn}
                     </label>
                   ))}
                 </div>
               </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+
+              {/* Amount and Date Fields */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-3">
                 <div className="flex flex-col gap-2">
                   <label className="text-sm font-medium">Amount</label>
                   <input
                     type="number"
-                    placeholder="Previous Amount Paid "
+                    placeholder="Previous Amount Paid"
                     value={formData.D.prevAmount}
                     onChange={(e) =>
-                      handleChange("D", "prevAmount", e.target.value)
+                      setFormData((prev) => ({
+                        ...prev,
+                        D: {
+                          ...prev.D,
+                          prevAmount: e.target.value,
+                        },
+                      }))
                     }
-                    className="p-2 border rounded"
+                    className={`p-2 border rounded ${
+                      formData.D.prevLicence === "No"
+                        ? "bg-gray-100 cursor-not-allowed"
+                        : ""
+                    }`}
+                    disabled={formData.D.prevLicence === "No"} // ✅ disable when No
                   />
                 </div>
+
                 <div className="flex flex-col gap-2">
                   <label className="text-sm font-medium">Date</label>
                   <input
@@ -928,27 +1177,47 @@ export default function PrivateInstitutionsForm() {
                     placeholder="Payment Date"
                     value={formData.D.prevDate}
                     onChange={(e) =>
-                      handleChange("D", "prevDate", e.target.value)
+                      setFormData((prev) => ({
+                        ...prev,
+                        D: {
+                          ...prev.D,
+                          prevDate: e.target.value,
+                        },
+                      }))
                     }
-                    className="p-2 border rounded"
+                    className={`p-2 border rounded ${
+                      formData.D.prevLicence === "No"
+                        ? "bg-gray-100 cursor-not-allowed"
+                        : ""
+                    }`}
+                    disabled={formData.D.prevLicence === "No"} // ✅ disable when No
                   />
                 </div>
               </div>
+
               <div>
                 <h3 className="font-semibold mb-2">
                   Are there any outstanding penalties/fines?
                 </h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                  {["Yes", "No"].map((yn) => (
-                    <label key={yn} className="flex items-center gap-2">
+                  {["Yes", "No"].map((option) => (
+                    <label key={option} className="flex items-center gap-2">
                       <input
-                        type="checkbox"
-                        checked={formData.D.outstandingPenalties.includes(yn)}
-                        onChange={() =>
-                          toggleCheckbox("D", "outstandingPenalties", yn)
+                        type="radio"
+                        name="outstandingPenalties" // ✅ group name
+                        value={option}
+                        checked={formData.D.outstandingPenalties === option}
+                        onChange={(e) =>
+                          setFormData((prev) => ({
+                            ...prev,
+                            D: {
+                              ...prev.D,
+                              outstandingPenalties: e.target.value, // ✅ correct field
+                            },
+                          }))
                         }
                       />
-                      {yn}
+                      {option}
                     </label>
                   ))}
                 </div>
@@ -958,11 +1227,14 @@ export default function PrivateInstitutionsForm() {
                 <input
                   type="text"
                   placeholder="Name of Penalty or Fine"
-                  value={formData.C.currentGateway}
-                  onChange={(e) =>
-                    handleChange("C", "currentGateway", e.target.value)
-                  }
-                  className="p-2 border rounded"
+                  value={formData.D.penalty}
+                  onChange={(e) => handleChange("D", "penalty", e.target.value)}
+                  className={`p-2 border rounded ${
+                    formData.D.outstandingPenalties === "No"
+                      ? "bg-gray-100 cursor-not-allowed"
+                      : ""
+                  }`}
+                  disabled={formData.D.outstandingPenalties === "No"} // ✅ disable when No
                 />
               </div>
             </div>
@@ -998,22 +1270,15 @@ export default function PrivateInstitutionsForm() {
 
           {/* Section F - Congratulations */}
           {currentStep === 5 && (
-            <div className="flex flex-col items-center justify-center text-center space-y-6 py-6">
-              <Image
-                src="/success.svg"
-                alt="Success"
-                width={80}
-                height={80}
-                className="mx-auto"
-              />
+            <div className="flex flex-col bg-green-600 text-white items-center justify-center text-center space-y-5 py-6 rounded-2xl shadow-sm">
+              <CircleCheck size={100} />
 
-              <h2 className="text-2xl font-semibold text-green-600">
-                🎉 Congratulations!
-              </h2>
-              <p className="text-gray-700 max-w-md">
-                You’ve successfully completed all sections of the Private
-                Institution Registration Form. Please review your information
-                and click the button below to submit your data.
+              <h2 className="text-2xl font-semibold ">🎉 Congratulations!</h2>
+              <p className="max-w-lg ">
+                You&apos;re all set! Please review the details of your Private
+                Institution Registration. Click Submit to send your data.
+                We&apos;ll notify you by email immediately there&apos;s an
+                approval of your school&apos;s information.
               </p>
             </div>
           )}
@@ -1023,7 +1288,7 @@ export default function PrivateInstitutionsForm() {
             {currentStep > 0 ? (
               <button
                 onClick={prevStep}
-                className="px-6 py-2 bg-gray-400 text-white rounded"
+                className="px-6 py-2 bg-gray-400 text-white font-semibold  rounded"
               >
                 Back
               </button>
@@ -1032,10 +1297,22 @@ export default function PrivateInstitutionsForm() {
             )}
             {currentStep < sections.length - 1 ? (
               <button
-                onClick={nextStep}
-                className="px-6 py-2 bg-[#28a745] text-white rounded"
+                onClick={handleProceed}
+                disabled={loading}
+                className={`px-6 py-2 flex items-center justify-center gap-2 rounded bg-[#28a745] text-white font-semibold transition ${
+                  loading
+                    ? "opacity-70 cursor-not-allowed"
+                    : "hover:bg-[#218838]"
+                }`}
               >
-                Next
+                {loading ? (
+                  <>
+                    <Loader2 className="w-5 h-5 animate-spin" />
+                    <span>Saving..</span>
+                  </>
+                ) : (
+                  "Proceed"
+                )}
               </button>
             ) : (
               <button
