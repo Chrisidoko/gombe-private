@@ -1,20 +1,13 @@
 "use client";
+
 /* eslint-disable */
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, Suspense } from "react";
 import Image from "next/image";
-// import Link from "next/link";
-// import { v4 as uuidv4 } from "uuid"; // To generate unique references
-import {
-  LucideCircleCheckBig,
-  LucideCircleX,
-  //   CircleX,
-  //   Loader2,
-  //   LucideClockArrowUp,
-} from "lucide-react";
+import { LucideCircleCheckBig, LucideCircleX } from "lucide-react";
 import { useSearchParams } from "next/navigation";
 import { formatDate } from "@/lib/formatDate";
 
-// import { PaymentModal } from "../mycomponents/bankbranchModal";
+export const dynamic = "force-dynamic"; //disable SSR for this page entirely
 
 interface interswitchResponse {
   amount: number;
@@ -29,6 +22,8 @@ declare global {
     webpayCheckout?: (request: any) => void;
   }
 }
+
+// Separate component that uses useSearchParams
 
 export default function CheckoutPage() {
   const searchParams = useSearchParams();
