@@ -1,7 +1,5 @@
-/* eslint-disable */
-
 "use client";
-
+/* eslint-disable */
 import React, { useState, useEffect } from "react";
 import Image from "next/image";
 // import Link from "next/link";
@@ -32,7 +30,7 @@ declare global {
   }
 }
 
-export default function Home() {
+export default function CheckoutPage() {
   const searchParams = useSearchParams();
 
   const [selectedMethod, setSelectedMethod] = useState<
@@ -47,21 +45,24 @@ export default function Home() {
     useState<interswitchResponse | null>(null);
 
   //interswitch response
-  const [firstName, setfirstName] = useState("");
+  const [firstName, setFirstName] = useState("");
   const [email, setEmail] = useState("");
-  const [amount, setAmount] = useState<any | null>(null);
   const [tin, setTIN] = useState("");
   const [narration, setNarration] = useState("");
+  const [amount, setAmount] = useState<number | null>(null);
   const [date, setDate] = useState("");
 
+  // Populate state from search params after mount
   useEffect(() => {
+    if (!searchParams) return;
+
     const schoolName = searchParams.get("name");
     const schoolEmail = searchParams.get("email");
     const schoolTIN = searchParams.get("tin");
     const paymentItem = searchParams.get("item");
     const paymentAmount = searchParams.get("amount");
 
-    if (schoolName) setfirstName(schoolName);
+    if (schoolName) setFirstName(schoolName);
     if (schoolEmail) setEmail(schoolEmail);
     if (schoolTIN) setTIN(schoolTIN);
     if (paymentItem) setNarration(paymentItem);
@@ -98,7 +99,7 @@ export default function Home() {
   };
 
   const makePayment3 = () => {
-    if (window.webpayCheckout) {
+    if (window.webpayCheckout && amount) {
       const paymentRequest = {
         merchant_code: "MX146867",
         pay_item_id: "Default_Payable_MX146867",
@@ -165,7 +166,7 @@ export default function Home() {
                           name="name"
                           className="w-full p-2 border border-[#e6e7eb] text-gray-600 bg-gray-100 font-base rounded-md"
                           value={firstName} // Display the combined name
-                          onChange={(e) => setfirstName(e.target.value)}
+                          onChange={(e) => setFirstName(e.target.value)}
                           required
                         />
                       </div>
