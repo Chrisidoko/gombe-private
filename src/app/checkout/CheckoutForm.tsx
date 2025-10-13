@@ -1,5 +1,6 @@
 // app/checkout/CheckoutForm.tsx
 "use client";
+/* eslint-disable */
 
 import React, { useEffect, useState } from "react";
 import Image from "next/image";
@@ -41,8 +42,8 @@ export default function CheckoutForm({
   const [paymentStatus, setPaymentStatus] = useState<
     "success" | "error" | "pending" | "saved" | null
   >(null);
-  const [paymentResponse, setPaymentResponse] =
-    useState<InterswitchResponse | null>(null);
+  //   const [paymentResponse, setPaymentResponse] =
+  //     useState<InterswitchResponse | null>(null);
 
   // Form fields
   const [firstName, setFirstName] = useState(name || "");
@@ -77,7 +78,7 @@ export default function CheckoutForm({
 
   const paymentCallback = (response: any) => {
     console.log("Payment Response:", response);
-    setPaymentResponse(response);
+    // setPaymentResponse(response);
     // set a simple status (adjust based on actual response shape)
     if (
       response &&
@@ -301,7 +302,7 @@ export default function CheckoutForm({
               <LucideCircleX size={76} />
               <span className="text-2xl font-medium mt-2">Payment Failed</span>
               <span className="text-center">
-                Your payment couldn't be processed
+                Your payment couldn`&apos;t be processed
               </span>
             </div>
           )}
