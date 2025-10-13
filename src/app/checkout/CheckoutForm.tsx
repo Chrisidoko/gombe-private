@@ -78,16 +78,7 @@ export default function CheckoutForm({
 
   const paymentCallback = (response: any) => {
     console.log("Payment Response:", response);
-    // setPaymentResponse(response);
-    // set a simple status (adjust based on actual response shape)
-    if (
-      response &&
-      (response.status === "success" || response.responseCode === "00")
-    ) {
-      setPaymentStatus("success");
-    } else {
-      setPaymentStatus("error");
-    }
+    // Handle success or failure based on response
   };
 
   const makePaymentWeb = () => {
@@ -107,16 +98,9 @@ export default function CheckoutForm({
         onComplete: paymentCallback,
       };
 
-      try {
-        window.webpayCheckout(paymentRequest);
-        setPaymentStatus("pending");
-      } catch (err) {
-        console.error("webpayCheckout error:", err);
-        setPaymentStatus("error");
-      }
+      window.webpayCheckout(paymentRequest);
     } else {
       console.error("Webpay script not loaded");
-      setPaymentStatus("error");
     }
   };
 
