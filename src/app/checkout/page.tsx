@@ -1,5 +1,5 @@
 "use client";
-
+/* eslint-disable */
 import React, { useState, useEffect } from "react";
 import Image from "next/image";
 import { useSearchParams } from "next/navigation";
@@ -185,6 +185,18 @@ export default function CheckoutPage() {
           </span>
         </div>
       )}
+
+      <div className="w-full flex items-center justify-center gap-2 mt-10 p-6">
+        <span className=" text-sm text-[#81859C]">Powered by</span>
+
+        <Image
+          src="/paypro.png"
+          alt="paypro"
+          width={52}
+          height={12}
+          className=" md:block object-cover"
+        />
+      </div>
     </div>
   );
 }
