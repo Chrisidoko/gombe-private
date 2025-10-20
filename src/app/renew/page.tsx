@@ -90,7 +90,7 @@ export default function LoginPage() {
             width={76}
             height={76}
           />
-          <h2 className="text-2xl sm:text-4xl text-center font-extrabold text-[#28a745] mb-4">
+          <h2 className="mt-[1%] text-2xl sm:text-3xl text-center font-bold text-[#28a745] mb-4">
             Renew License
           </h2>
 

@@ -82,10 +82,7 @@ const Page = () => {
 
           <p className="text-xs text-gray-500">
             New on our platform?{" "}
-            <Link
-              href="/signup"
-              className="text-sm text-blue-700 font-semibold"
-            >
+            <Link href="/#" className="text-sm text-blue-700 font-semibold">
               Create an account
             </Link>
           </p>
@@ -129,9 +126,11 @@ const Page = () => {
                 <ClipboardPen /> Register School
               </div>
             </Link>
-            <div className="flex items-center gap-5 bg-white/20 rounded-xl border border-white py-4 px-4 cursor-pointer hover:bg-white/30">
-              <CircleCheckBig /> Verify License
-            </div>
+            <Link href="/verify">
+              <div className="flex items-center gap-5 bg-white/20 rounded-xl border border-white py-4 px-4 cursor-pointer hover:bg-white/30">
+                <CircleCheckBig /> Verify License
+              </div>
+            </Link>
           </div>
         </div>
       </div>
