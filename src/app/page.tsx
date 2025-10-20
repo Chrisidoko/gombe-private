@@ -33,11 +33,11 @@ const Page = () => {
           <Image
             src="/kirs.png"
             alt="kano state"
-            width={56}
-            height={56}
-            className="md:block object-cover"
+            width={66}
+            height={66}
+            className="md:block object-cover mx-auto"
           />
-          <h2 className="text-xl font-bold">Sign-In</h2>
+          <h2 className="text-xl font-bold mx-auto">Sign-In</h2>
           <p className="text-gray-500 text-xs">
             Access the Dashboard using your email and password.
           </p>
