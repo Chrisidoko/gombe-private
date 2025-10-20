@@ -8,6 +8,7 @@ import {
   ClipboardPen,
   ReceiptText,
   CircleCheckBig,
+  Building,
 } from "lucide-react";
 
 import Link from "next/link";
@@ -138,9 +139,9 @@ const Page = () => {
                   <ClipboardPen /> New School Registration
                 </div>
               </Link>
-              <Link href="/register">
+              <Link href="/onboard">
                 <div className="flex items-center gap-5 bg-white/20 rounded-xl border border-white py-4 px-4 cursor-pointer hover:bg-white/30 ">
-                  <ClipboardPen /> Existing School Onboarding
+                  <Building /> Existing School Onboarding
                 </div>
               </Link>
             </div>

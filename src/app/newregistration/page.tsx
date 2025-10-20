@@ -4,7 +4,7 @@
 import { useState } from "react";
 import Image from "next/image";
 import { CircleX, Loader2, CircleCheck } from "lucide-react";
-import toast from "react-hot-toast";
+// import toast from "react-hot-toast";
 import { useRouter } from "next/navigation";
 
 import Link from "next/link";
@@ -220,42 +220,42 @@ export default function PrivateInstitutionsForm() {
     if (currentStep > 0) setCurrentStep(currentStep - 1);
   };
 
-  const handleSubmit = async () => {
-    try {
-      // ✅ Retrieve the stored TIN (from Section A)
-      const tin = localStorage.getItem("tin");
+  //   const handleSubmit = async () => {
+  //     try {
+  //       // ✅ Retrieve the stored TIN (from Section A)
+  //       const tin = localStorage.getItem("tin");
 
-      if (!tin) {
-        toast.error("Missing TIN. Please complete Section A first.");
-        return;
-      }
+  //       if (!tin) {
+  //         toast.error("Missing TIN. Please complete Section A first.");
+  //         return;
+  //       }
 
-      const res = await fetch("/api/schools/register", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          tin,
-          formStatus: "completed",
-        }),
-      });
+  //       const res = await fetch("/api/schools/register", {
+  //         method: "POST",
+  //         headers: { "Content-Type": "application/json" },
+  //         body: JSON.stringify({
+  //           tin,
+  //           formStatus: "completed",
+  //         }),
+  //       });
 
-      const data = await res.json();
+  //       const data = await res.json();
 
-      if (res.ok && data.success) {
-        toast.success("Form submitted successfully!");
-        console.log("Saved record:", data);
-        // Wait a moment, then redirect
-        setTimeout(() => {
-          router.push("/");
-        }, 4500);
-      } else {
-        toast.error(` Submission failed: ${data.error || "Unknown error"}`);
-      }
-    } catch (err) {
-      console.error("Error during submission:", err);
-      toast.error("⚠️ An error occurred while submitting the form.");
-    }
-  };
+  //       if (res.ok && data.success) {
+  //         toast.success("Form submitted successfully!");
+  //         console.log("Saved record:", data);
+  //         // Wait a moment, then redirect
+  //         setTimeout(() => {
+  //           router.push("/");
+  //         }, 4500);
+  //       } else {
+  //         toast.error(` Submission failed: ${data.error || "Unknown error"}`);
+  //       }
+  //     } catch (err) {
+  //       console.error("Error during submission:", err);
+  //       toast.error("⚠️ An error occurred while submitting the form.");
+  //     }
+  //   };
 
   //   const saveCurrentSection = async (): Promise<boolean> => {
   //     setLoading(true);
@@ -778,7 +778,7 @@ export default function PrivateInstitutionsForm() {
               </button>
             ) : (
               <button
-                onClick={handleSubmit}
+                // onClick={handleSubmit}
                 className="px-6 py-2 bg-green-600 text-white rounded"
               >
                 Submit
