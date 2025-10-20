@@ -121,16 +121,29 @@ const Page = () => {
                 <ReceiptText /> Renew License
               </div>
             </Link>
-            <Link href="/register">
-              <div className="flex items-center gap-5 bg-white/20 rounded-xl border border-white py-4 px-4 cursor-pointer hover:bg-white/30 ">
-                <ClipboardPen /> Register School
-              </div>
-            </Link>
             <Link href="/verify">
               <div className="flex items-center gap-5 bg-white/20 rounded-xl border border-white py-4 px-4 cursor-pointer hover:bg-white/30">
                 <CircleCheckBig /> Verify License
               </div>
             </Link>
+          </div>
+
+          <div className="flex flex-col gap-5 py-7">
+            <div className="w-full font-semibold text-sm sm:text-lg bg-white py-4 px-4 rounded-xl">
+              Register School
+            </div>
+            <div className="flex flex-col gap-5 text-white font-semibold text-sm sm:text-lg">
+              <Link href="/newregistration">
+                <div className="flex items-center gap-5 bg-white/20 rounded-xl border border-white py-4 px-4 cursor-pointer hover:bg-white/30 ">
+                  <ClipboardPen /> New School Registration
+                </div>
+              </Link>
+              <Link href="/register">
+                <div className="flex items-center gap-5 bg-white/20 rounded-xl border border-white py-4 px-4 cursor-pointer hover:bg-white/30 ">
+                  <ClipboardPen /> Existing School Onboarding
+                </div>
+              </Link>
+            </div>
           </div>
         </div>
       </div>
