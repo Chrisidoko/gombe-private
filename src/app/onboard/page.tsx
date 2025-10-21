@@ -19,7 +19,6 @@ type FormData = {
     licenseNumber: string;
     lastLicenseRenewal: string;
     ownershipType: string;
-
     lastTaxFiling: string;
     address: string;
     lga: string;
@@ -27,31 +26,15 @@ type FormData = {
     email: string;
     confirmemail: string;
     phone: string;
-    website: string;
+    category: string[];
   };
 
   B: {
     faculties: string;
     modeOfOperation: string[];
     studentPopulation: string;
-    populationByLevel: {
-      "100": string;
-      "200": string;
-      "300": string;
-      "400": string;
-      "500": string;
-      PG: string;
-    };
     intlStudents: string;
     avgFee: string;
-    avgFeeByLevel: {
-      "100": string;
-      "200": string;
-      "300": string;
-      "400": string;
-      "500": string;
-      PG: string;
-    };
     totalRevenue: string;
     academicSession: string;
     weeksPerSemester: string;
@@ -66,6 +49,8 @@ type FormData = {
     currentGateway: string;
     partnerBanks: string;
     paymentReports: string;
+    schoolportal: string;
+    methodOfIntegration: string[];
   };
 
   D: {
@@ -75,10 +60,6 @@ type FormData = {
     prevDate: string;
     outstandingPenalties: string;
     penalty: string;
-  };
-  E: {
-    eName: string;
-    comments: string;
   };
 
   // ✅ Safely allow dynamic string keys for toggleCheckbox
@@ -103,7 +84,6 @@ export default function PrivateInstitutionsForm() {
       licenseNumber: "",
       lastLicenseRenewal: "",
       ownershipType: "",
-
       lastTaxFiling: "",
       address: "",
       lga: "",
@@ -111,30 +91,14 @@ export default function PrivateInstitutionsForm() {
       email: "",
       confirmemail: "",
       phone: "",
-      website: "",
+      category: [],
     },
     B: {
       faculties: "",
       modeOfOperation: [],
       studentPopulation: "",
-      populationByLevel: {
-        "100": "",
-        "200": "",
-        "300": "",
-        "400": "",
-        "500": "",
-        PG: "",
-      },
       intlStudents: "",
       avgFee: "",
-      avgFeeByLevel: {
-        "100": "",
-        "200": "",
-        "300": "",
-        "400": "",
-        "500": "",
-        PG: "",
-      },
       totalRevenue: "",
       academicSession: "",
       weeksPerSemester: "",
@@ -143,11 +107,13 @@ export default function PrivateInstitutionsForm() {
       programmes: [],
     },
     C: {
-      methodOfCollection: [],
+      methodOfIntegration: [],
       paymentGateway: "",
       currentGateway: "",
       partnerBanks: "",
       paymentReports: "",
+      schoolportal: "",
+      methodOfCollection: [],
     },
 
     D: {
@@ -157,10 +123,6 @@ export default function PrivateInstitutionsForm() {
       prevDate: "",
       outstandingPenalties: "",
       penalty: "",
-    },
-    E: {
-      eName: "",
-      comments: "",
     },
   });
 
@@ -375,7 +337,7 @@ export default function PrivateInstitutionsForm() {
           {/* Section A */}
           {currentStep === 0 && (
             <div className="grid grid-cols-1 text-sm md:grid-cols-3 gap-6">
-              <div className="flex flex-col gap-2 md:col-span-2">
+              <div className="flex flex-col gap-2 md:col-span-3">
                 <label className="text-sm font-medium">Institution Name</label>
                 <input
                   type="text"
@@ -486,10 +448,8 @@ export default function PrivateInstitutionsForm() {
                       <label key={prog} className="flex items-center gap-2">
                         <input
                           type="checkbox"
-                          checked={formData.B.programmes.includes(prog)}
-                          onChange={() =>
-                            toggleCheckbox("B", "programmes", prog)
-                          }
+                          checked={formData.A.category.includes(prog)}
+                          onChange={() => toggleCheckbox("A", "category", prog)}
                         />
                         {prog}
                       </label>
@@ -500,7 +460,7 @@ export default function PrivateInstitutionsForm() {
                   <div className="flex items-center gap-2">
                     <input
                       type="checkbox"
-                      checked={formData.B.programmes.some((p: string) =>
+                      checked={formData.A.category.some((p: string) =>
                         p.startsWith("Other:")
                       )}
                       onChange={(e) => {
@@ -508,9 +468,9 @@ export default function PrivateInstitutionsForm() {
                           // remove any "Other:" entry if unchecked
                           setFormData((prev) => ({
                             ...prev,
-                            B: {
-                              ...prev.B,
-                              programmes: prev.B.programmes.filter(
+                            A: {
+                              ...prev.A,
+                              programmes: prev.A.category.filter(
                                 (p: string) => !p.startsWith("Other:")
                               ),
                             },
@@ -519,9 +479,9 @@ export default function PrivateInstitutionsForm() {
                           // add placeholder entry for Other
                           setFormData((prev) => ({
                             ...prev,
-                            B: {
-                              ...prev.B,
-                              programmes: [...prev.B.programmes, "Other:"],
+                            A: {
+                              ...prev.A,
+                              category: [...prev.A.category, "Other:"],
                             },
                           }));
                         }
@@ -532,7 +492,7 @@ export default function PrivateInstitutionsForm() {
                       type="text"
                       placeholder="Specify"
                       value={
-                        formData.B.programmes
+                        formData.A.category
                           .find((p: string) => p.startsWith("Other:"))
                           ?.split("Other:")[1] || ""
                       }
@@ -540,10 +500,10 @@ export default function PrivateInstitutionsForm() {
                         const val = e.target.value;
                         setFormData((prev) => ({
                           ...prev,
-                          B: {
-                            ...prev.B,
-                            programmes: [
-                              ...prev.B.programmes.filter(
+                          A: {
+                            ...prev.A,
+                            category: [
+                              ...prev.A.category.filter(
                                 (p: string) => !p.startsWith("Other:")
                               ),
                               val ? `Other:${val}` : "", // keep empty string if cleared
@@ -773,6 +733,33 @@ export default function PrivateInstitutionsForm() {
           {/* Section C */}
           {currentStep === 2 && (
             <div className="space-y-4 text-sm">
+              <div>
+                <h3 className="font-semibold mb-2">
+                  Do you have a school portal?
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                  {["Yes", "No"].map((option) => (
+                    <label key={option} className="flex items-center gap-2">
+                      <input
+                        type="radio"
+                        name="school portal" // 👈 ensures only one is selectable
+                        value={option}
+                        checked={formData.C.schoolportal === option}
+                        onChange={() => {
+                          setFormData((prev) => ({
+                            ...prev,
+                            C: {
+                              ...prev.C,
+                              schoolportal: option, // 👈 store just a single string value
+                            },
+                          }));
+                        }}
+                      />
+                      {option}
+                    </label>
+                  ))}
+                </div>
+              </div>
               <div className="flex flex-col gap-2 md:col-span-2">
                 <label className="text-sm font-medium">
                   Current School Portal Vendor
@@ -784,13 +771,18 @@ export default function PrivateInstitutionsForm() {
                   onChange={(e) =>
                     handleChange("C", "partnerBanks", e.target.value)
                   }
-                  className="w-full p-2 border rounded"
+                  disabled={formData.C.schoolportal === "No"}
+                  className={`p-2 border rounded ${
+                    formData.C.schoolportal === "No"
+                      ? "bg-gray-100 cursor-not-allowed"
+                      : ""
+                  }`}
                 />
               </div>
               <div>
                 <h3 className="font-semibold mb-2">
-                  Does your school portal support government integration via
-                  api's
+                  Will you want integration to the government tax management via
+                  API for Tax Auto assessment
                 </h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
                   {["Yes", "No"].map((option) => (
@@ -826,9 +818,11 @@ export default function PrivateInstitutionsForm() {
                     <label key={method} className="flex items-center gap-2">
                       <input
                         type="checkbox"
-                        checked={formData.C.methodOfCollection.includes(method)}
+                        checked={formData.C.methodOfIntegration.includes(
+                          method
+                        )}
                         onChange={() =>
-                          toggleCheckbox("C", "methodOfCollection", method)
+                          toggleCheckbox("C", "methodOfIntegration", method)
                         }
                       />
                       {method}
@@ -838,28 +832,32 @@ export default function PrivateInstitutionsForm() {
                   <div className="flex items-center gap-2">
                     <input
                       type="checkbox"
-                      checked={formData.B.programmes.some((p: string) =>
-                        p.startsWith("Other:")
+                      checked={formData.C.methodOfIntegration.some(
+                        (p: string) => p.startsWith("Other:")
                       )}
                       onChange={(e) => {
                         if (!e.target.checked) {
                           // remove any "Other:" entry if unchecked
                           setFormData((prev) => ({
                             ...prev,
-                            B: {
-                              ...prev.B,
-                              programmes: prev.B.programmes.filter(
-                                (p: string) => !p.startsWith("Other:")
-                              ),
+                            C: {
+                              ...prev.C,
+                              methodOfIntegration:
+                                prev.C.methodOfIntegration.filter(
+                                  (p: string) => !p.startsWith("Other:")
+                                ),
                             },
                           }));
                         } else {
                           // add placeholder entry for Other
                           setFormData((prev) => ({
                             ...prev,
-                            B: {
-                              ...prev.B,
-                              programmes: [...prev.B.programmes, "Other:"],
+                            C: {
+                              ...prev.C,
+                              methodOfIntegration: [
+                                ...prev.C.methodOfIntegration,
+                                "Other:",
+                              ],
                             },
                           }));
                         }
@@ -870,7 +868,7 @@ export default function PrivateInstitutionsForm() {
                       type="text"
                       placeholder="Specify"
                       value={
-                        formData.B.programmes
+                        formData.C.methodOfIntegration
                           .find((p: string) => p.startsWith("Other:"))
                           ?.split("Other:")[1] || ""
                       }
@@ -878,10 +876,10 @@ export default function PrivateInstitutionsForm() {
                         const val = e.target.value;
                         setFormData((prev) => ({
                           ...prev,
-                          B: {
-                            ...prev.B,
-                            programmes: [
-                              ...prev.B.programmes.filter(
+                          C: {
+                            ...prev.C,
+                            methodOfIntegration: [
+                              ...prev.C.methodOfIntegration.filter(
                                 (p: string) => !p.startsWith("Other:")
                               ),
                               val ? `Other:${val}` : "", // keep empty string if cleared
@@ -893,32 +891,6 @@ export default function PrivateInstitutionsForm() {
                     />
                   </div>
                 </div>
-              </div>
-
-              <div className="flex flex-col gap-2">
-                <label className="text-sm font-medium">
-                  Readiness Timeline
-                </label>
-                <input
-                  type="text"
-                  placeholder="Readiness Timeline (e.g 2025-10-12 to 2025-12-12)"
-                  value={formData.D.prevDate}
-                  onChange={(e) =>
-                    setFormData((prev) => ({
-                      ...prev,
-                      D: {
-                        ...prev.D,
-                        prevDate: e.target.value,
-                      },
-                    }))
-                  }
-                  className={`p-2 border rounded ${
-                    formData.D.prevLicence === "No"
-                      ? "bg-gray-100 cursor-not-allowed"
-                      : ""
-                  }`}
-                  disabled={formData.D.prevLicence === "No"} // ✅ disable when No
-                />
               </div>
             </div>
           )}
@@ -982,7 +954,7 @@ export default function PrivateInstitutionsForm() {
             {currentStep > 0 ? (
               <button
                 onClick={prevStep}
-                className="px-6 py-2 bg-gray-400 text-white font-semibold  rounded"
+                className="px-6 py-2 bg-gray-600 text-white font-semibold  rounded"
               >
                 Back
               </button>

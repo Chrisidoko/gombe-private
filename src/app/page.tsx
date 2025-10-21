@@ -18,19 +18,8 @@ const Page = () => {
   return (
     <div className="w-full flex flex-col sm:flex-row ">
       {/* Left Section */}
-      <div className="w-[100%] sm:w-[45%] h-[100vh] bg-[#ffffff] relative top-0 left-0 flex flex-col justify-between sm:order-1 order-2">
-        <div className="w-4/5 sm:w-3/5 mx-auto px-6 sm:px-0">
-          <div className="relative mt-12 flex gap-1 items-center">
-            {" "}
-            <div className="flex flex-col text-[#28a745]">
-              {/* <span className="font-semibold text-xl ">
-                Public Tertiary Institutions
-              </span> */}
-            </div>
-          </div>
-        </div>
-
-        <div className="w-4/5 sm:w-3/5 mx-auto flex flex-col gap-4 px-6 sm:px-0">
+      <div className="w-[100%] sm:w-[45%] h-[100vh] bg-[#ffffff] relative top-0 left-0 flex flex-col justify-between sm:order-1 order-1">
+        <div className="w-4/5 sm:w-3/5 mx-auto my-auto flex flex-col gap-4 px-6 sm:px-0">
           <Image
             src="/kirs.png"
             alt="kano state"
@@ -92,11 +81,11 @@ const Page = () => {
             <a href="#">Support</a>
           </div>
           <span className="flex items-center text-xs mt-3 mb-6">
-            © {new Date().getFullYear()} Powered by{" "}
+            © {new Date().getFullYear()} Powered by
             <span className="ml-1">
               <Image src="/paypro.png" alt="Logo" width={46} height={46} />
             </span>
-            . All Rights Reserved.
+            <p className="hidden sm:block"> . All Rights Reserved. </p>
           </span>
         </div>
       </div>
@@ -129,11 +118,11 @@ const Page = () => {
             </Link>
           </div>
 
-          <div className="flex flex-col gap-5 py-7">
-            <div className="w-full font-semibold text-sm sm:text-lg bg-white py-4 px-4 rounded-xl">
-              Register School
+          <div className="sm:mt-[14vh] flex flex-col gap-5 py-7">
+            <div className="w-full font-semibold text-sm sm:text-lg text-white py-4 px-4 rounded-xl">
+              Click here to
             </div>
-            <div className="flex flex-col gap-5 text-white font-semibold text-sm sm:text-lg">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 text-white font-semibold text-sm sm:text-lg">
               <Link href="/newregistration">
                 <div className="flex items-center gap-5 bg-white/20 rounded-xl border border-white py-4 px-4 cursor-pointer hover:bg-white/30 ">
                   <ClipboardPen /> New School Registration

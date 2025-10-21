@@ -3,9 +3,9 @@
 
 import { useState } from "react";
 import Image from "next/image";
-import { CircleX, Loader2, CircleCheck } from "lucide-react";
+import { CircleX, Loader2, CircleCheck, FileUp } from "lucide-react";
 // import toast from "react-hot-toast";
-import { useRouter } from "next/navigation";
+//import { useRouter } from "next/navigation";
 
 import Link from "next/link";
 
@@ -19,7 +19,6 @@ type FormData = {
     licenseNumber: string;
     lastLicenseRenewal: string;
     ownershipType: string;
-
     lastTaxFiling: string;
     address: string;
     lga: string;
@@ -34,24 +33,9 @@ type FormData = {
     faculties: string;
     modeOfOperation: string[];
     studentPopulation: string;
-    populationByLevel: {
-      "100": string;
-      "200": string;
-      "300": string;
-      "400": string;
-      "500": string;
-      PG: string;
-    };
     intlStudents: string;
     avgFee: string;
-    avgFeeByLevel: {
-      "100": string;
-      "200": string;
-      "300": string;
-      "400": string;
-      "500": string;
-      PG: string;
-    };
+    directors: string[]; // starting with one empty director and new array field
     totalRevenue: string;
     academicSession: string;
     weeksPerSemester: string;
@@ -75,6 +59,7 @@ type FormData = {
     prevDate: string;
     outstandingPenalties: string;
     penalty: string;
+    documents: [];
   };
   E: {
     eName: string;
@@ -84,6 +69,53 @@ type FormData = {
   // ✅ Safely allow dynamic string keys for toggleCheckbox
   [key: string]: Record<string, unknown>;
 };
+
+const lgas = [
+  "Ajingi",
+  "Albasu",
+  "Bagwai",
+  "Bebeji",
+  "Bichi",
+  "Bunkure",
+  "Dala",
+  "Dambatta",
+  "Dawakin Kudu",
+  "Dawakin Tofa",
+  "Doguwa",
+  "Fagge",
+  "Gabasawa",
+  "Garko",
+  "Garun Mallam",
+  "Gaya",
+  "Gezawa",
+  "Gwale",
+  "Gwarzo",
+  "Kabo",
+  "Kano Municipal",
+  "Karaye",
+  "Kibiya",
+  "Kiru",
+  "Kumbotso",
+  "Kunchi",
+  "Kura",
+  "Madobi",
+  "Makoda",
+  "Minjibir",
+  "Nasarawa",
+  "Rano",
+  "Rimin Gado",
+  "Rogo",
+  "Shanono",
+  "Sumaila",
+  "Takai",
+  "Tarauni",
+  "Tofa",
+  "Tsanyawa",
+  "Tudun Wada",
+  "Ungogo",
+  "Warawa",
+  "Wudil",
+];
 
 const sections = [
   { id: "A", title: "Section A - Registration Details" },
@@ -104,7 +136,6 @@ export default function PrivateInstitutionsForm() {
       licenseNumber: "",
       lastLicenseRenewal: "",
       ownershipType: "",
-
       lastTaxFiling: "",
       address: "",
       lga: "",
@@ -118,24 +149,9 @@ export default function PrivateInstitutionsForm() {
       faculties: "",
       modeOfOperation: [],
       studentPopulation: "",
-      populationByLevel: {
-        "100": "",
-        "200": "",
-        "300": "",
-        "400": "",
-        "500": "",
-        PG: "",
-      },
       intlStudents: "",
       avgFee: "",
-      avgFeeByLevel: {
-        "100": "",
-        "200": "",
-        "300": "",
-        "400": "",
-        "500": "",
-        PG: "",
-      },
+      directors: [""], // starting with one empty director
       totalRevenue: "",
       academicSession: "",
       weeksPerSemester: "",
@@ -158,16 +174,27 @@ export default function PrivateInstitutionsForm() {
       prevDate: "",
       outstandingPenalties: "",
       penalty: "",
+      documents: [], // each item will look like { type: string, file: File | null }
     },
     E: {
       eName: "",
       comments: "",
     },
   });
-
+  const [selectedType, setSelectedType] = useState("");
   const [emailError, setEmailError] = useState(""); // to catch email validation error's
   const [loading, setLoading] = useState(false); //loadind state for moving steps to steps
-  const router = useRouter(); // to redirect user when done.
+  // const router = useRouter(); // to redirect user when done.
+
+  const handleAddDocument = (type: string, file: File) => {
+    setFormData((prev: any) => ({
+      ...prev,
+      D: {
+        ...prev.D,
+        documents: [...prev.D.documents, { type, file }],
+      },
+    }));
+  };
 
   const handleChange = <T extends keyof FormData>(
     section: T,
@@ -430,26 +457,23 @@ export default function PrivateInstitutionsForm() {
                   className="w-full p-2 border rounded border-gray-400 "
                 />
               </div>
+
               <div className="flex flex-col gap-2">
                 <label className="text-sm font-medium">LGA</label>
-                <input
-                  type="text"
-                  placeholder="LGA"
+                <select
                   value={formData.A.lga}
                   onChange={(e) => handleChange("A", "lga", e.target.value)}
                   className="w-full p-2 border border-gray-400 rounded"
-                />
+                >
+                  <option value="">Select LGA</option>
+                  {lgas.sort().map((lga) => (
+                    <option key={lga} value={lga}>
+                      {lga}
+                    </option>
+                  ))}
+                </select>
               </div>
-              <div className="flex flex-col gap-2">
-                <label className="text-sm font-medium">State</label>
-                <input
-                  type="text"
-                  placeholder="State"
-                  value={formData.A.state}
-                  onChange={(e) => handleChange("A", "state", e.target.value)}
-                  className="w-full p-2 border border-gray-400 rounded"
-                />
-              </div>
+
               <div className="flex flex-col gap-2">
                 <label className="text-sm font-medium">
                   Institutions Email Address
@@ -491,16 +515,6 @@ export default function PrivateInstitutionsForm() {
                   className="w-full p-2 border  border-gray-400 rounded"
                 />
               </div>
-              <div className="flex flex-col gap-2">
-                <label className="text-sm font-medium">Contact Person</label>
-                <input
-                  type="text"
-                  placeholder="Name"
-                  value={formData.A.website}
-                  onChange={(e) => handleChange("A", "website", e.target.value)}
-                  className="w-full p-2 border  border-gray-400 rounded"
-                />
-              </div>
             </div>
           )}
 
@@ -510,45 +524,105 @@ export default function PrivateInstitutionsForm() {
               {/* Trustees */}
               <div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className=" flex flex-col gap-2 md:col-span-2">
+                  <div className="flex flex-col gap-2 md:col-span-2">
                     <label className="text-sm font-medium">
-                      Board of Trustees/Directors (Enter all names that apply)
+                      Board of Trustees / Director(s)
                     </label>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                      {[
-                        "Director 1",
-                        "Director 2",
-                        "Director 3",
-                        "Director 4",
-                        "Director 5",
-                        "Director 6",
-                      ].map((level) => (
-                        <div key={level} className="flex flex-col">
-                          <input
-                            type="text"
-                            placeholder={` ${level}`}
-                            value={
-                              formData.B.avgFeeByLevel[
-                                level as keyof typeof formData.B.avgFeeByLevel
-                              ]
-                            }
-                            onChange={(e) =>
+
+                    {formData.B.directors.map((name, index) => (
+                      <div key={index} className="flex gap-2 mb-2">
+                        <input
+                          type="text"
+                          placeholder={`Board of Trustee or Director ${
+                            index + 1
+                          }`}
+                          value={name}
+                          onChange={(e) =>
+                            setFormData((prev) => {
+                              const updated = [...prev.B.directors];
+                              updated[index] = e.target.value;
+                              return {
+                                ...prev,
+                                B: {
+                                  ...prev.B,
+                                  directors: updated,
+                                },
+                              };
+                            })
+                          }
+                          className="p-2 border rounded w-full"
+                        />
+                        {formData.B.directors.length > 1 && (
+                          <button
+                            type="button"
+                            onClick={() =>
                               setFormData((prev) => ({
                                 ...prev,
                                 B: {
                                   ...prev.B,
-                                  avgFeeByLevel: {
-                                    ...prev.B.avgFeeByLevel,
-                                    [level]: e.target.value,
-                                  },
+                                  directors: prev.B.directors.filter(
+                                    (_, i) => i !== index
+                                  ),
                                 },
                               }))
                             }
-                            className="p-2 border rounded"
-                          />
-                        </div>
-                      ))}
-                    </div>
+                            className="px-3 py-2 bg-red-500 text-white rounded"
+                          >
+                            ✕
+                          </button>
+                        )}
+                      </div>
+                    ))}
+
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setFormData((prev) => ({
+                          ...prev,
+                          B: {
+                            ...prev.B,
+                            directors: [...prev.B.directors, ""],
+                          },
+                        }))
+                      }
+                      className="px-4 py-2 bg-green-600 text-white rounded"
+                    >
+                      + Add Director
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              {/* Trustees 2 */}
+              <div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="flex flex-col gap-2">
+                    <label className="text-sm font-medium">
+                      School Contact Person
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="Name of School Contact Person"
+                      value={formData.A.website}
+                      onChange={(e) =>
+                        handleChange("A", "website", e.target.value)
+                      }
+                      className="w-full p-2 border  border-gray-400 rounded"
+                    />
+                  </div>
+                  <div className="flex flex-col gap-2">
+                    <label className="text-sm font-medium">
+                      School Contact Person Designation
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="(e.g Registrar, Bursar, etc)"
+                      value={formData.A.website}
+                      onChange={(e) =>
+                        handleChange("A", "website", e.target.value)
+                      }
+                      className="w-full p-2 border  border-gray-400 rounded"
+                    />
                   </div>
                 </div>
               </div>
@@ -575,67 +649,12 @@ export default function PrivateInstitutionsForm() {
                   </div>
                 </div>
               </div>
-
-              {/* Trustees */}
-              <div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className=" flex flex-col gap-2 md:col-span-2">
-                    <label className="text-sm font-medium">
-                      Principal Officers (Enter all names that apply)
-                    </label>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                      {["Provost", "Rector", "Registrar", "Bursar"].map(
-                        (officers) => (
-                          <div key={officers} className="flex flex-col">
-                            <input
-                              type="text"
-                              placeholder={` ${officers}`}
-                              value={
-                                formData.B.avgFeeByLevel[
-                                  officers as keyof typeof formData.B.avgFeeByLevel
-                                ]
-                              }
-                              onChange={(e) =>
-                                setFormData((prev) => ({
-                                  ...prev,
-                                  B: {
-                                    ...prev.B,
-                                    avgFeeByLevel: {
-                                      ...prev.B.avgFeeByLevel,
-                                      [officers]: e.target.value,
-                                    },
-                                  },
-                                }))
-                              }
-                              className="p-2 border rounded"
-                            />
-                          </div>
-                        )
-                      )}
-                    </div>
-                  </div>
-                </div>
-              </div>
             </div>
           )}
 
           {/* Section C */}
           {currentStep === 2 && (
             <div className="space-y-4 text-sm">
-              <div className="flex flex-col gap-2 md:col-span-2">
-                <label className="text-sm font-medium">
-                  Proposed Courses/Programmes
-                </label>
-                <input
-                  type="text"
-                  placeholder="Name(s) Courses (Mathematics, Physics, Bio-Chemistry)"
-                  value={formData.C.partnerBanks}
-                  onChange={(e) =>
-                    handleChange("C", "partnerBanks", e.target.value)
-                  }
-                  className="w-full p-2 border rounded"
-                />
-              </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 <div className="flex flex-col gap-2">
                   <label className="text-sm font-medium">
@@ -701,31 +720,85 @@ export default function PrivateInstitutionsForm() {
                       Select Document
                     </label>
                     <select
-                      value={formData.A.ownershipType}
-                      onChange={(e) =>
-                        handleChange("A", "ownershipType", e.target.value)
-                      }
+                      value={selectedType}
+                      onChange={(e) => setSelectedType(e.target.value)}
                       className="w-full p-2 border border-gray-400 rounded"
                     >
+                      <option value="">-- Select a document type --</option>
                       <option value="CAC Certificate">CAC Certificate</option>
-                      <option value="Faith-Based">
+                      <option value="TIN Registration Document">
                         TIN Registration Document
                       </option>
-                      <option value="Corporate Body">
+                      <option value="Evidence of Site Inspection/Approval">
                         Evidence of Site Inspection/Approval
                       </option>
-                      <option value="Corporate Body">
+                      <option value="Feasibility Study / Business Plan">
                         Feasibility Study / Business Plan
                       </option>
-                      <option value="Corporate Body">
+                      <option value="Proposed Fee Structure">
                         Proposed Fee Structure
                       </option>
-                      <option value="Corporate Body">
+                      <option value="NDLEA, Fire & Environmental Clearance">
                         NDLEA, Fire & Environmental Clearance
                       </option>
                     </select>
                   </div>
+
+                  {selectedType && (
+                    <div className="flex flex-col gap-2">
+                      <label className="flex items-center gap-1 text-sm font-medium">
+                        <FileUp size={16} /> Upload Document
+                      </label>
+                      <input
+                        type="file"
+                        accept=".pdf,.jpg,.jpeg,.png"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (file) handleAddDocument(selectedType, file);
+                        }}
+                        className="w-full p-2 border border-gray-400 rounded cursor-pointer"
+                      />
+                    </div>
+                  )}
                 </div>
+
+                {/* ✅ Show uploaded documents */}
+                {formData.D.documents.length > 0 && (
+                  <div className="mt-4">
+                    <h3 className="text-sm font-semibold mb-2">
+                      Uploaded Documents
+                    </h3>
+                    <ul className="space-y-2">
+                      {formData.D.documents.map((doc: any, index: number) => (
+                        <li
+                          key={index}
+                          className="flex justify-between items-center bg-gray-50 border border-gray-300 rounded px-3 py-2"
+                        >
+                          <span className="text-sm text-gray-700">
+                            {doc.type}
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setFormData((prev: any) => ({
+                                ...prev,
+                                D: {
+                                  ...prev.D,
+                                  documents: prev.D.documents.filter(
+                                    (_: any, i: number) => i !== index
+                                  ),
+                                },
+                              }))
+                            }
+                            className="text-red-600 hover:text-red-800 text-sm"
+                          >
+                            Remove
+                          </button>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
               </div>
             </div>
           )}
@@ -750,7 +823,7 @@ export default function PrivateInstitutionsForm() {
             {currentStep > 0 ? (
               <button
                 onClick={prevStep}
-                className="px-6 py-2 bg-gray-400 text-white font-semibold  rounded"
+                className="px-6 py-2 bg-gray-600 text-white font-semibold  rounded"
               >
                 Back
               </button>
