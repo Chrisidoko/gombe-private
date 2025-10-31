@@ -31,7 +31,7 @@ export async function GET(req: Request) {
     }
 
     return NextResponse.redirect(
-      `${process.env.NEXT_PUBLIC_APP_URL}/verification-success`
+      `${process.env.NEXT_PUBLIC_APP_URL}verification-success`
     );
   } catch (error) {
     console.error("Verification failed:", error);
