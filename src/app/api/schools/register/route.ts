@@ -1,4 +1,4 @@
-// /api/schools/register.ts
+// /api/schools/register.ts this not in use right now
 import { NextResponse } from "next/server";
 import client from "@/lib/db"; // your pg client
 

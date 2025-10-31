@@ -72,7 +72,7 @@ export async function POST(req: Request) {
     `;
 
     await transporter.sendMail({
-      from: `"PayPro Solutions Kano State IRS" <${process.env.SMTP_USER}>`,
+      from: `"CBS Portal" <${process.env.SMTP_USER}>`,
       to: email,
       subject: "Your OTP Code",
       html: htmlContent,

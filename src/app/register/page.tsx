@@ -351,7 +351,7 @@ export default function PrivateInstitutionsForm() {
   return (
     <div>
       <main>
-        <Link href="/">
+        <Link href="/home">
           <button className="w-full flex justify-center items-center gap-2 bg-[#28a745] text-white font-semibold py-3 text-sm transition cursor-pointer">
             <CircleX /> Cancel & Return Home
           </button>

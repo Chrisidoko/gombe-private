@@ -1,20 +1,63 @@
 "use client";
 
 import Image from "next/image";
-import { useState } from "react";
-import {
-  EyeClosed,
-  Eye,
-  ClipboardPen,
-  ReceiptText,
-  CircleCheckBig,
-  Building,
-} from "lucide-react";
-
+import { useState, useEffect } from "react";
+import { EyeClosed, Eye, Loader2 } from "lucide-react";
+import Rightside from "@/components/ui/rightside";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 
 const Page = () => {
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [passwordVisible, setPasswordVisible] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
+
+  const router = useRouter();
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError("");
+    setSuccess("");
+    setLoading(true);
+
+    try {
+      const res = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
+        // Important: include credentials so cookies are stored
+        credentials: "include",
+      });
+
+      const data = await res.json();
+      setLoading(false);
+
+      if (!res.ok) {
+        setError(data.message || "Login failed");
+        return;
+      }
+
+      // ✅ Success
+      setSuccess(data.message);
+      console.log("User details:", data.user);
+
+      // ✅ Cookie is already set by backend — just redirect based on role
+      if (data.user.role === "admin") {
+        router.push("/dashboard"); // (admin)
+      } else {
+        router.push("/home"); // (school)
+      }
+    } catch (err) {
+      console.error(err);
+      setError("Something went wrong. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <div className="w-full flex flex-col sm:flex-row ">
       {/* Left Section */}
@@ -32,14 +75,17 @@ const Page = () => {
             Access the Dashboard using your email and password.
           </p>
 
-          <form className="flex flex-col gap-4">
+          {error && <p className="text-red-600 text-sm">{error}</p>}
+          {success && <p className="text-green-600 text-sm">{success}</p>}
+
+          <form onSubmit={handleSubmit} className="flex flex-col gap-4">
             <label className="text-sm font-medium">Email</label>
             <input
               type="email"
               className="w-full p-2 border border-gray-300 rounded-md text-sm"
               placeholder="Enter your email"
-              // value={email}
-              // onChange={(e) => setEmail(e.target.value)}
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
             />
 
             <label className="text-sm font-medium">Password</label>
@@ -48,8 +94,8 @@ const Page = () => {
                 type={passwordVisible ? "text" : "password"}
                 className="w-full p-2 border border-gray-300 rounded-md text-sm"
                 placeholder="Enter your password"
-                // value={password}
-                // onChange={(e) => setPassword(e.target.value)}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
               />
               <button
                 type="button" // Prevents form submission
@@ -59,20 +105,28 @@ const Page = () => {
                 {passwordVisible ? <EyeClosed size={14} /> : <Eye size={14} />}
               </button>
             </div>
-
             <button
               type="submit"
-              // disabled={loading}
-              className="w-full bg-[#28a745] mt-2 text-white font-semibold py-3 rounded-md text-sm transition cursor-pointer "
+              disabled={loading}
+              className="w-full bg-[#28a745] mt-2 text-white font-semibold py-3 rounded-md text-sm transition cursor-pointer flex items-center justify-center"
             >
-              {/* {loading ? "Please Wait" : "Sign-In"} */}
-              Sign-In
+              {loading ? (
+                <>
+                  <Loader2 size={18} className="animate-spin mr-2" /> Please
+                  wait
+                </>
+              ) : (
+                "Sign-In"
+              )}
             </button>
           </form>
 
           <p className="text-xs text-gray-500">
             New on our platform?{" "}
-            <Link href="/#" className="text-sm text-blue-700 font-semibold">
+            <Link
+              href="/signup"
+              className="text-sm text-blue-700 font-semibold"
+            >
               Create an account
             </Link>
           </p>
@@ -101,41 +155,7 @@ const Page = () => {
           backgroundRepeat: "no-repeat",
         }}
       >
-        <div className="flex flex-col h-full px-12 py-12">
-          <div className="w-full font-semibold text-sm sm:text-lg bg-[#fbbf23] py-4 px-4 rounded-xl">
-            Quick Access Modules
-          </div>
-          <div className="w-full mt-[4vh] flex gap-5 flex-col text-white font-semibold text-sm sm:text-lg ">
-            <Link href="/renew">
-              <div className="flex items-center gap-5 bg-white/20 rounded-xl border border-white py-4 px-4 cursor-pointer hover:bg-white/30">
-                <ReceiptText /> Renew License
-              </div>
-            </Link>
-            <Link href="/verify">
-              <div className="flex items-center gap-5 bg-white/20 rounded-xl border border-white py-4 px-4 cursor-pointer hover:bg-white/30">
-                <CircleCheckBig /> Verify License
-              </div>
-            </Link>
-          </div>
-
-          <div className="sm:mt-[14vh] flex flex-col gap-5 py-7">
-            <div className="w-full font-semibold text-sm sm:text-lg text-white py-4 px-4 rounded-xl">
-              Click here to
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 text-white font-semibold text-sm sm:text-lg">
-              <Link href="/newregistration">
-                <div className="flex items-center gap-5 bg-white/20 rounded-xl border border-white py-4 px-4 cursor-pointer hover:bg-white/30 ">
-                  <ClipboardPen /> New School Registration
-                </div>
-              </Link>
-              <Link href="/onboard">
-                <div className="flex items-center gap-5 bg-white/20 rounded-xl border border-white py-4 px-4 cursor-pointer hover:bg-white/30 ">
-                  <Building /> Existing School Onboarding
-                </div>
-              </Link>
-            </div>
-          </div>
-        </div>
+        <Rightside />
       </div>
     </div>
   );
