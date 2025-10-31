@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { EyeClosed, Eye, Loader2 } from "lucide-react";
 import Rightside from "@/components/ui/rightside";
 import { useRouter } from "next/navigation";

@@ -26,7 +26,7 @@ export default async function HomeDashboard() {
   console.log("User object:", user);
 
   // ✅ Use an absolute base URL
-  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
+  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
 
   // ✅ Use the user's institution to fetch school data
   const res = await fetch(`${baseUrl}/api/schools/${user.institution}`, {
