@@ -1,4 +1,5 @@
 import Image from "next/image";
+import Link from "next/link";
 
 export default function VerificationSuccess() {
   return (
@@ -35,9 +36,11 @@ export default function VerificationSuccess() {
           The school operator account has been successfully approved.
         </p>
         {/* Your verification form/info goes here */}
-        <button className="mt-6 w-full py-2 bg-[#28a745] text-white font-semibold rounded-lg hover:bg-[#28a745]/80 transition">
-          Return Home
-        </button>
+        <Link href="/">
+          <button className="mt-6 w-full py-2 bg-[#28a745] text-white font-semibold rounded-lg hover:bg-[#28a745]/80 transition">
+            Return Home
+          </button>
+        </Link>
       </div>
     </div>
   );
