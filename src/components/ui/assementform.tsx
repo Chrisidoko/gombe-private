@@ -144,7 +144,7 @@ export default function AssesmentForm() {
         {loading ? (
           <>
             <Loader2 className="w-5 h-5 animate-spin" />
-            <span>Saving..</span>
+            <span>Submit</span>
           </>
         ) : (
           "Submit"

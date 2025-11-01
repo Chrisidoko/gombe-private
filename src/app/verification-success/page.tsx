@@ -33,7 +33,7 @@ export default function VerificationSuccess() {
           Account Verified
         </h2>
         <p className="text-gray-600">
-          The school operator account has been successfully approved.
+          Your school operator account has been successfully approved.
         </p>
         {/* Your verification form/info goes here */}
         <Link href="/">

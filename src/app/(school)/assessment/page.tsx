@@ -18,7 +18,7 @@ export default async function AssesmentDashboard() {
   // and if school already may has a pending assessment
 
   // ✅ Use an absolute base URL
-  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
+  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
 
   const res = await fetch(
     `${baseUrl}/api/assessment/status?school_id=${user.institution}`,
