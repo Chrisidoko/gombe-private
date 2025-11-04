@@ -1,6 +1,19 @@
+// app/(school)/fees/page.tsx
+import { getUserFromCookie } from "@/lib/auth";
 import { Divider } from "@/components/Divider";
+import FeesTable from "@/components/ui/feestable"; // import the client component
 
-export default function HomeDashboard() {
+export default async function FeeDashboard() {
+  const user = await getUserFromCookie();
+
+  if (!user) {
+    return (
+      <div className="text-red-600 font-semibold">
+        Error: Missing school ID.
+      </div>
+    );
+  }
+
   return (
     <main>
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -11,8 +24,11 @@ export default function HomeDashboard() {
           </p>
         </div>
       </div>
+
       <Divider />
-      {/* events grid */}
+
+      {/* Pass institution to the client component */}
+      <FeesTable schoolId={user.institution || ""} />
     </main>
   );
 }

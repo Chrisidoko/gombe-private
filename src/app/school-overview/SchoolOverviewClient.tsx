@@ -57,19 +57,38 @@ export default function SchoolOverviewClient() {
     fetchSchool();
   }, [tin]);
 
-  const handleRenew = () => {
-    setCloading(true);
-    setTimeout(() => {
+  const handleRenew = async () => {
+    try {
+      setCloading(true);
+
       if (!school) return;
-      const params = new URLSearchParams({
-        tin: school.tin,
-        email: school.email,
-        name: school.name,
-        amount: "500",
-        item: "license",
+
+      // Call API to create invoice first
+      const res = await fetch("/api/invoices/create-invoice", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          school_id: school.school_id,
+          amount: 500, // License fee
+        }),
       });
+
+      const data = await res.json();
+
+      if (!data.success) throw new Error("Invoice creation failed");
+
+      const params = new URLSearchParams({
+        ref: data.invoice_number,
+        item: "License",
+        school_id: school.school_id,
+      });
+
       router.push(`/checkout?${params.toString()}`);
-    }, 3000);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setCloading(false);
+    }
   };
 
   if (loading) {

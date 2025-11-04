@@ -44,14 +44,6 @@ type FormData = {
     programmes: string[];
   };
 
-  C: {
-    methodOfCollection: string[];
-    paymentGateway: string;
-    currentGateway: string;
-    partnerBanks: string;
-    paymentReports: string;
-  };
-
   D: {
     licenceStatus: string;
     prevLicence: string;
@@ -118,10 +110,9 @@ const lgas = [
 ];
 
 const sections = [
-  { id: "A", title: "Section A - Registration Details" },
-  { id: "B", title: "Section B - Ownership & Governance" },
-  { id: "C", title: "Section C - Academic Intent" },
-  { id: "D", title: "Section D - Required Documents (to attach)" },
+  { id: "A", title: "New Registration A - Registration Details" },
+  { id: "B", title: "New Registration  B - Ownership & Governance" },
+  { id: "C", title: "New Registration  C - Required Documents (to attach)" },
 ] as const;
 
 export default function PrivateInstitutionsForm() {
@@ -158,13 +149,6 @@ export default function PrivateInstitutionsForm() {
       sessionStart: "",
       sessionEnd: "",
       programmes: [],
-    },
-    C: {
-      methodOfCollection: [],
-      paymentGateway: "",
-      currentGateway: "",
-      partnerBanks: "",
-      paymentReports: "",
     },
 
     D: {
@@ -652,66 +636,8 @@ export default function PrivateInstitutionsForm() {
             </div>
           )}
 
-          {/* Section C */}
+          {/* Section C*/}
           {currentStep === 2 && (
-            <div className="space-y-4 text-sm">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                <div className="flex flex-col gap-2">
-                  <label className="text-sm font-medium">
-                    Target Start Date of Academic Session
-                  </label>
-                  <input
-                    type="date"
-                    placeholder="Payment Date"
-                    value={formData.D.prevDate}
-                    onChange={(e) =>
-                      setFormData((prev) => ({
-                        ...prev,
-                        D: {
-                          ...prev.D,
-                          prevDate: e.target.value,
-                        },
-                      }))
-                    }
-                    className={`p-2 border rounded ${
-                      formData.D.prevLicence === "No"
-                        ? "bg-gray-100 cursor-not-allowed"
-                        : ""
-                    }`}
-                    disabled={formData.D.prevLicence === "No"} // ✅ disable when No
-                  />
-                </div>
-                <div className="flex flex-col gap-2">
-                  <label className="text-sm font-medium">
-                    Expected Student Capacity
-                  </label>
-                  <input
-                    type="number"
-                    placeholder="Expected Student Capacity"
-                    value={formData.D.prevAmount}
-                    onChange={(e) =>
-                      setFormData((prev) => ({
-                        ...prev,
-                        D: {
-                          ...prev.D,
-                          prevAmount: e.target.value,
-                        },
-                      }))
-                    }
-                    className={`p-2 border rounded ${
-                      formData.D.prevLicence === "No"
-                        ? "bg-gray-100 cursor-not-allowed"
-                        : ""
-                    }`}
-                    disabled={formData.D.prevLicence === "No"} // ✅ disable when No
-                  />
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Section D */}
-          {currentStep === 3 && (
             <div className="space-y-4 text-sm">
               <div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

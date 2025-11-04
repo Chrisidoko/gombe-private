@@ -523,95 +523,6 @@ export default function PrivateInstitutionsForm() {
           {currentStep === 1 && (
             <div className="space-y-6 text-sm">
               {/* Financial & Payment System Information */}
-              <div>
-                {/* Method of Collection */}
-                <div>
-                  <h3 className="font-semibold mb-2">
-                    Current Method of Fee Collection (Tick all that apply):
-                  </h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                    {[
-                      "Bank Deposit",
-                      "POS",
-                      "Transfer",
-                      "Online Portal",
-                      "Cash",
-                    ].map((method) => (
-                      <label key={method} className="flex items-center gap-2">
-                        <input
-                          type="checkbox"
-                          checked={formData.C.methodOfCollection.includes(
-                            method
-                          )}
-                          onChange={() =>
-                            toggleCheckbox("C", "methodOfCollection", method)
-                          }
-                        />
-                        {method}
-                      </label>
-                    ))}
-                    {/* ✅ Add “Other” option */}
-                    <div className="flex items-center gap-2">
-                      <input
-                        type="checkbox"
-                        checked={formData.B.programmes.some((p: string) =>
-                          p.startsWith("Other:")
-                        )}
-                        onChange={(e) => {
-                          if (!e.target.checked) {
-                            // remove any "Other:" entry if unchecked
-                            setFormData((prev) => ({
-                              ...prev,
-                              B: {
-                                ...prev.B,
-                                programmes: prev.B.programmes.filter(
-                                  (p: string) => !p.startsWith("Other:")
-                                ),
-                              },
-                            }));
-                          } else {
-                            // add placeholder entry for Other
-                            setFormData((prev) => ({
-                              ...prev,
-                              B: {
-                                ...prev.B,
-                                programmes: [...prev.B.programmes, "Other:"],
-                              },
-                            }));
-                          }
-                        }}
-                      />
-                      <span>Others:</span>
-                      <input
-                        type="text"
-                        placeholder="Specify"
-                        value={
-                          formData.B.programmes
-                            .find((p: string) => p.startsWith("Other:"))
-                            ?.split("Other:")[1] || ""
-                        }
-                        onChange={(e) => {
-                          const val = e.target.value;
-                          setFormData((prev) => ({
-                            ...prev,
-                            B: {
-                              ...prev.B,
-                              programmes: [
-                                ...prev.B.programmes.filter(
-                                  (p: string) => !p.startsWith("Other:")
-                                ),
-                                val ? `Other:${val}` : "", // keep empty string if cleared
-                              ].filter(Boolean),
-                            },
-                          }));
-                        }}
-                        className="border rounded p-1 w-full md:w-auto"
-                      />
-                    </div>
-                  </div>
-                </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
-              </div>
 
               {/* Payment Gateway */}
               <div>
@@ -814,7 +725,7 @@ export default function PrivateInstitutionsForm() {
                   Preferred Integration Mode
                 </h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                  {["API", "Manual Upload"].map((method) => (
+                  {["API"].map((method) => (
                     <label key={method} className="flex items-center gap-2">
                       <input
                         type="checkbox"

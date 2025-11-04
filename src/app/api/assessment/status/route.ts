@@ -1,3 +1,4 @@
+// this is for the school to know their status of submition
 import { NextResponse } from "next/server";
 import pool from "@/lib/db";
 

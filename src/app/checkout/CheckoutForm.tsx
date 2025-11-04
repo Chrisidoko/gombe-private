@@ -13,6 +13,7 @@ interface Props {
   tin: string;
   item: string;
   amount?: string; // may be undefined
+  refId?: string;
 }
 
 interface InterswitchResponse {
@@ -35,12 +36,13 @@ export default function CheckoutForm({
   tin,
   item,
   amount: amountParam,
+  refId,
 }: Props) {
   const [selectedMethod, setSelectedMethod] = useState<
     "bank-branch" | "web" | ""
   >("");
   const [paymentStatus, setPaymentStatus] = useState<
-    "success" | "error" | "pending" | "saved" | null
+    "success" | "error" | "pending" | "saved" | "checking" | null
   >(null);
   //   const [paymentResponse, setPaymentResponse] =
   //     useState<InterswitchResponse | null>(null);
@@ -48,8 +50,9 @@ export default function CheckoutForm({
   // Form fields
   const [firstName, setFirstName] = useState(name || "");
   const [emailState, setEmailState] = useState(email || "");
-  const [tinState, setTinState] = useState(tin || "");
+  const [institutionTin, setInstitutionTin] = useState(tin || "");
   const [narration, setNarration] = useState(item || "");
+  const [paymentReference, setPaymentReferenc] = useState(refId || "");
   const [amount, setAmount] = useState<number | null>(() => {
     if (!amountParam) return null;
     const n = Number(amountParam);
@@ -76,10 +79,10 @@ export default function CheckoutForm({
     }
   }, []);
 
-  const paymentCallback = (response: any) => {
-    console.log("Payment Response:", response);
-    // Handle success or failure based on response
-  };
+  // const paymentCallback = (response: any) => {
+  //   console.log("Payment Response:", response);
+  //   // Handle success or failure based on response
+  // };
 
   const makePaymentWeb = () => {
     if (!amount) {
@@ -90,7 +93,7 @@ export default function CheckoutForm({
       const paymentRequest = {
         merchant_code: "MX146867",
         pay_item_id: "Default_Payable_MX146867",
-        txn_ref: `txn_${Date.now()}`,
+        txn_ref: refId,
         site_redirect_url: `${window.location.origin}/payment-success`,
         amount: Math.round(amount * 100), // amount in kobo
         currency: 566,
@@ -107,6 +110,63 @@ export default function CheckoutForm({
   const handlePayment = () => {
     if (selectedMethod === "web") makePaymentWeb();
     // add other method handlers if needed
+  };
+
+  const paymentCallback = async (response: any) => {
+    // Payment completed from Interswitch UI
+    console.log("Payment response:", response);
+
+    // Move to 'checking' state
+    setPaymentStatus("checking");
+
+    try {
+      // Interswitch returns 'txnref' not 'txn_ref'
+      const transactionRef = response.txnref || response.txn_ref;
+
+      if (!transactionRef) {
+        console.error("No transaction reference in response:", response);
+        setPaymentStatus("error");
+        return;
+      }
+
+      // Check if amount exists
+      if (!amount) {
+        console.error("Amount is missing");
+        setPaymentStatus("error");
+        return;
+      }
+      // Convert amount to kobo for verification (same as checkout)
+      const amountInKobo = Math.round(amount * 100);
+
+      const verifyRes = await fetch(
+        `/api/verify-transaction?ref=${transactionRef}&amount=${amountInKobo}`,
+        { cache: "no-store" }
+      );
+
+      const verifyData = await verifyRes.json();
+
+      if (verifyData.status === "success") {
+        // Save to backend (update invoice)
+        await fetch("/api/invoices/update-invoice", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            invoice_number: refId,
+            amount,
+            status: "Paid",
+            payment_reference: transactionRef,
+            payment_item: item,
+          }),
+        });
+
+        setPaymentStatus("success");
+      } else {
+        setPaymentStatus("error");
+      }
+    } catch (err) {
+      console.error("Verification failed:", err);
+      setPaymentStatus("error");
+    }
   };
 
   return (
@@ -149,6 +209,7 @@ export default function CheckoutForm({
                           value={firstName}
                           onChange={(e) => setFirstName(e.target.value)}
                           required
+                          readOnly
                         />
                       </div>
                     </div>
@@ -164,6 +225,7 @@ export default function CheckoutForm({
                           value={emailState}
                           onChange={(e) => setEmailState(e.target.value)}
                           required
+                          readOnly
                         />
                       </div>
                       <div className="w-[49%]">
@@ -173,9 +235,10 @@ export default function CheckoutForm({
                         <input
                           type="text"
                           className="w-full p-2 border border-[#e6e7eb] text-gray-600 bg-gray-100 font-base rounded-md"
-                          value={tinState}
-                          onChange={(e) => setTinState(e.target.value)}
+                          value={institutionTin}
+                          onChange={(e) => setInstitutionTin(e.target.value)}
                           required
+                          readOnly
                         />
                       </div>
                     </div>
@@ -198,6 +261,7 @@ export default function CheckoutForm({
                         value={narration}
                         onChange={(e) => setNarration(e.target.value)}
                         required
+                        readOnly
                       />
                     </div>
 
@@ -212,6 +276,7 @@ export default function CheckoutForm({
                           value={amount ?? ""}
                           onChange={(e) => setAmount(Number(e.target.value))}
                           required
+                          readOnly
                         />
                       </div>
 
@@ -268,6 +333,34 @@ export default function CheckoutForm({
                   Pay Now
                 </button>
               </form>
+            </div>
+          )}
+
+          {paymentStatus === "checking" && (
+            <div className="mx-auto mt-16 flex flex-col items-center justify-center text-blue-500">
+              <svg
+                className="animate-spin h-10 w-10 text-blue-500"
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
+              >
+                <circle
+                  className="opacity-25"
+                  cx="12"
+                  cy="12"
+                  r="10"
+                  stroke="currentColor"
+                  strokeWidth="4"
+                ></circle>
+                <path
+                  className="opacity-75"
+                  fill="currentColor"
+                  d="M4 12a8 8 0 018-8v8H4z"
+                ></path>
+              </svg>
+              <span className="text-lg mt-3 font-medium">
+                Checking payment status...
+              </span>
             </div>
           )}
 

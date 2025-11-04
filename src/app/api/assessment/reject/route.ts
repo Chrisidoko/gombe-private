@@ -4,7 +4,7 @@ import nodemailer from "nodemailer";
 
 export async function POST(req: Request) {
   try {
-    const { assessment_id } = await req.json();
+    const { assessment_id, reason } = await req.json();
 
     if (!assessment_id) {
       return NextResponse.json(
@@ -63,8 +63,12 @@ export async function POST(req: Request) {
       },
     });
 
-    // 🔹 Step 4: Send rejection email
-    await transporter.sendMail({
+    // 🔹 Step 4: Construct email body
+    const reasonMessage = reason
+      ? `<p><strong>Reason for rejection:</strong> ${reason}</p>`
+      : `<p>No specific reason was provided for this decision.</p>`;
+
+    const mailOptions = {
       from: `"CBS Portal" <${process.env.SMTP_USER}>`,
       to: school.email,
       subject: `Assessment Review Update for ${school.name}`,
@@ -72,12 +76,14 @@ export async function POST(req: Request) {
         <h2>Assessment Rejection Notice</h2>
         <p>Dear ${school.name},</p>
         <p>We regret to inform you that your submitted school assessment has been <strong>rejected</strong> after review.</p>
+        ${reasonMessage}
         <p>Please review your submission and reapply if applicable. For assistance, contact the KIRS Assessment Unit.</p>
         <br/>
         <p>Best regards,<br/>KIRS School Assessment Team</p>
       `,
-    });
+    };
 
+    await transporter.sendMail(mailOptions);
     console.log(`📧 Rejection email sent to ${school.email}`);
 
     return NextResponse.json({

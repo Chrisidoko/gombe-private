@@ -16,6 +16,7 @@ export interface Assessment {
   created_at: string;
   school_name: string;
   school_email: string;
+  reason: string;
 }
 
 export default function Requests() {
@@ -47,7 +48,8 @@ export default function Requests() {
     assessment_id: number,
     school_id: string,
     amount: string,
-    action: "approve" | "reject"
+    action: "approve" | "reject",
+    reason: string // lowercase
   ) {
     aSetLoading({ id: assessment_id, action });
 
@@ -60,7 +62,7 @@ export default function Requests() {
       const res = await fetch(endpoint, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ assessment_id, school_id, amount }),
+        body: JSON.stringify({ assessment_id, school_id, amount, reason }),
       });
 
       if (!res.ok) throw new Error(`Failed to ${action} assessment`);
@@ -135,7 +137,8 @@ export default function Requests() {
                             a.id,
                             a.school_id,
                             a.commission_amount,
-                            "approve"
+                            "approve",
+                            "" // no reason for approval at this time
                           )
                         }
                         className="bg-green-500 text-white text-sm font-semibold px-3 py-1 rounded-md flex items-center gap-2 cursor-pointer"
@@ -144,7 +147,7 @@ export default function Requests() {
                         aloading.action === "approve" ? (
                           <div className="flex items-center">
                             <Loader2 className="w-5 h-5 animate-spin" />
-                            <span>Processing</span>
+                            <span>Approve</span>
                           </div>
                         ) : (
                           "Approve"
@@ -156,21 +159,25 @@ export default function Requests() {
                         disabled={
                           aloading.id === a.id && aloading.action === "reject"
                         }
-                        onClick={() =>
+                        onClick={() => {
+                          const reason =
+                            prompt("Enter reason for rejection (optional):") ||
+                            "";
                           handleAction(
                             a.id,
                             a.school_id,
                             a.commission_amount,
-                            "reject"
-                          )
-                        }
+                            "reject",
+                            reason
+                          );
+                        }}
                         className="bg-red-500 text-white text-sm font-semibold px-3 py-1 rounded-md flex items-center gap-2 cursor-pointer"
                       >
                         {aloading.id === a.id &&
                         aloading.action === "reject" ? (
                           <div className="flex items-center">
                             <Loader2 className="w-5 h-5 animate-spin" />
-                            <span>Processing</span>
+                            <span>Reject</span>
                           </div>
                         ) : (
                           "Reject"
