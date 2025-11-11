@@ -1,26 +1,21 @@
 "use client";
 
 import { useEffect, useState } from "react";
-
 import { Divider } from "@/components/Divider";
-import { PackageOpen } from "lucide-react";
-import { formatDate } from "@/lib/formatDate";
-import { Loader2 } from "lucide-react";
+import { PackageOpen, Loader2 } from "lucide-react";
 import toast from "react-hot-toast";
 
-export interface Assessment {
+interface School {
   id: number;
   school_id: string;
-  total_revenue: string;
-  commission_amount: string;
+  name: string;
+  email: string;
+  license_number: string;
   created_at: string;
-  school_name: string;
-  school_email: string;
-  reason: string;
 }
 
 export default function Requests() {
-  const [assessments, setAssessments] = useState<Assessment[]>([]);
+  const [schools, setSchools] = useState<School[]>([]);
   const [loading, setLoading] = useState(true);
   const [aloading, aSetLoading] = useState<{
     id: number | null;
@@ -28,122 +23,114 @@ export default function Requests() {
   }>({
     id: null,
     action: null,
-  }); // loader strictly for assement
+  }); // loader strictly for school approvals
 
   useEffect(() => {
-    async function fetchPending() {
+    async function fetchSchools() {
       try {
-        const res = await fetch("/api/assessment/pending");
+        const res = await fetch("/api/schools/unapproved");
         const data = await res.json();
-        setAssessments(data.assessments || []);
+        setSchools(data.schools || []);
       } catch (err) {
         console.error(err);
+        toast.error("Failed to load schools.");
       } finally {
         setLoading(false);
       }
     }
-    fetchPending();
-  }, []);
-  async function handleAction(
-    assessment_id: number,
-    school_id: string,
-    amount: string,
-    action: "approve" | "reject",
-    reason: string // lowercase
-  ) {
-    aSetLoading({ id: assessment_id, action });
 
+    fetchSchools();
+  }, []);
+
+  if (loading)
+    return (
+      <div className="flex items-center gap-2">
+        <Loader2 className="w-5 h-5 animate-spin" /> <p>Loading schools...</p>
+      </div>
+    );
+
+  async function handleAction(
+    request_id: number,
+    school_id: string,
+    action: "approve" | "reject",
+    reason?: string
+  ) {
+    aSetLoading({ id: request_id, action });
     try {
       const endpoint =
-        action === "approve"
-          ? "/api/assessment/approve"
-          : "/api/assessment/reject";
+        action === "approve" ? "/api/schools/approve" : "/api/schools/reject";
 
       const res = await fetch(endpoint, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ assessment_id, school_id, amount, reason }),
+        body: JSON.stringify({ school_id, reason }),
       });
 
-      if (!res.ok) throw new Error(`Failed to ${action} assessment`);
+      const result = await res.json();
+      if (!res.ok) throw new Error(result.error);
 
-      toast.success(
-        action === "approve"
-          ? "Invoice generated and email sent successfully!"
-          : "Assessment rejected successfully!"
-      );
+      toast.success(result.message);
+
+      // refresh list after action
+      setSchools((prev) => prev.filter((s) => s.school_id !== school_id));
     } catch (error) {
-      console.error("Error:", error);
-      toast.error("Operation failed. Please try again.");
+      toast.error("Action failed");
+      console.error(error);
     } finally {
       aSetLoading({ id: null, action: null });
     }
   }
 
-  if (loading)
-    return (
-      <div className="flex items-center gap-2">
-        {" "}
-        <Loader2 className="w-5 h-5 animate-spin" /> <p>Loading assessments</p>
-      </div>
-    );
-
   return (
     <main>
       <div className="flex flex-col gap-4 sm:justify-between">
         <div>
-          <h1 className="text-2xl font-semibold text-gray-900">Requests</h1>
+          <h1 className="text-2xl font-semibold text-gray-900">
+            School Onboarding & Registrations
+          </h1>
           <p className="text-gray-500 sm:text-sm/6">
-            Manage aprrovals & Institutions
+            Manage onboarding approvals for institutions
           </p>
         </div>
 
         <div className="w-full py-6">
-          {assessments.length === 0 ? (
-            <div className="flex items-center justify-center  gap-4 mx-auto text-gray-500">
+          {schools.length === 0 ? (
+            <div className="flex items-center justify-center gap-4 text-gray-500">
               <PackageOpen />
-              <p>No pending assessments.</p>
+              <p>No unapproved schools available.</p>
             </div>
           ) : (
-            <table className="min-w-full border border-gray-200">
-              <thead>
-                <tr className="bg-gray-100 text-sm uppercase text-left">
-                  <th className="p-2">School</th>
-                  <th className="p-2">Revenue</th>
-                  <th className="p-2">5% Due</th>
-                  <th className="p-2">Filing Date</th>
-                  <th className="p-2">Actions</th>
+            <table className="w-full border divide-y rounded-lg">
+              <thead className="bg-gray-100">
+                <tr>
+                  <th className="p-2 text-left">School</th>
+                  <th className="p-2 text-left">School ID</th>
+                  <th className="p-2 text-left">Email</th>
+                  <th className="p-2 text-left">State License No.</th>
+                  <th className="p-2 text-left">Submitted</th>
                 </tr>
               </thead>
               <tbody>
-                {assessments.map((a) => (
-                  <tr key={a.id} className="border-t text-gray-500">
-                    <td className="p-2">{a.school_name}</td>
+                {schools.map((s) => (
+                  <tr key={s.id} className="border-b">
+                    <td className="p-2">{s.name}</td>
+                    <td className="p-2">{s.school_id}</td>
+                    <td className="p-2">{s.email ?? "—"}</td>
+                    <td className="p-2">{s.license_number}</td>
                     <td className="p-2">
-                      ₦{Number(a.total_revenue).toLocaleString()}
+                      {new Date(s.created_at).toLocaleDateString()}
                     </td>
-                    <td className="p-2">
-                      ₦{Number(a.commission_amount).toLocaleString()}
-                    </td>
-                    <td className="p-2">{formatDate(a.created_at)}</td>
                     <td className="p-2 flex gap-2">
-                      {/* Approve Button */}
                       <button
                         disabled={
-                          aloading.id === a.id && aloading.action === "approve"
+                          aloading.id === s.id && aloading.action === "approve"
                         }
                         onClick={() =>
-                          handleAction(
-                            a.id,
-                            a.school_id,
-                            a.commission_amount,
-                            "approve",
-                            "" // no reason for approval at this time
-                          )
+                          handleAction(s.id, s.school_id, "approve")
                         }
-                        className="bg-green-500 text-white text-sm font-semibold px-3 py-1 rounded-md flex items-center gap-2 cursor-pointer"
+                        className="bg-green-600 text-white px-3 py-1 rounded hover:bg-green-700"
                       >
-                        {aloading.id === a.id &&
+                        {aloading.id === s.id &&
                         aloading.action === "approve" ? (
                           <div className="flex items-center">
                             <Loader2 className="w-5 h-5 animate-spin" />
@@ -153,27 +140,19 @@ export default function Requests() {
                           "Approve"
                         )}
                       </button>
-
-                      {/* Reject Button */}
                       <button
                         disabled={
-                          aloading.id === a.id && aloading.action === "reject"
+                          aloading.id === s.id && aloading.action === "reject"
                         }
                         onClick={() => {
                           const reason =
                             prompt("Enter reason for rejection (optional):") ||
                             "";
-                          handleAction(
-                            a.id,
-                            a.school_id,
-                            a.commission_amount,
-                            "reject",
-                            reason
-                          );
+                          handleAction(s.id, s.school_id, "reject", reason);
                         }}
-                        className="bg-red-500 text-white text-sm font-semibold px-3 py-1 rounded-md flex items-center gap-2 cursor-pointer"
+                        className="bg-red-600 text-white px-3 py-1 rounded hover:bg-red-700"
                       >
-                        {aloading.id === a.id &&
+                        {aloading.id === s.id &&
                         aloading.action === "reject" ? (
                           <div className="flex items-center">
                             <Loader2 className="w-5 h-5 animate-spin" />
@@ -191,6 +170,7 @@ export default function Requests() {
           )}
         </div>
       </div>
+
       <Divider />
     </main>
   );

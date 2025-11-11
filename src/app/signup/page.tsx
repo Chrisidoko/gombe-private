@@ -1,5 +1,6 @@
 "use client";
 
+import { useSearchParams } from "next/navigation";
 import Image from "next/image";
 import { useState, useEffect } from "react";
 import { EyeClosed, Eye, Loader2 } from "lucide-react";
@@ -15,50 +16,48 @@ interface Institution {
 }
 
 const SignUp = () => {
+  const searchParams = useSearchParams();
+  const magicSchoolId = searchParams.get("school_id"); // ✅ read school ID from URL
+
   const [institutions, setInstitutions] = useState<Institution[]>([]);
   const [passwordVisible, setPasswordVisible] = useState(false);
+
   const [formData, setFormData] = useState({
     name: "",
     email: "",
-    institution: "",
+    institution: magicSchoolId || "", // ✅ auto set if magic link
     password: "",
   });
-  const [iloading, isetLoading] = useState(false); // for fetching institutions
+
+  const [iloading, isetLoading] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  // Fetch all institutions from DB
+  // ✅ Only fetch list if magicSchoolId is NOT present
   useEffect(() => {
+    if (magicSchoolId) return; // skip fetch
     const fetchInstitutions = async () => {
-      isetLoading(true); // Start loading before fetch begins
+      isetLoading(true);
       try {
         const res = await fetch("/api/schools/forsignup");
-        if (!res.ok) throw new Error("Failed to fetch institutions");
         const data = await res.json();
         setInstitutions(data);
-      } catch (err) {
-        console.error("Error fetching institutions:", err);
-        setInstitutions([]); // Ensure it's always an array
+      } catch {
+        setInstitutions([]);
       } finally {
-        isetLoading(false); // Stop loading after success or error
+        isetLoading(false);
       }
     };
 
     fetchInstitutions();
-  }, []);
+  }, [magicSchoolId]);
 
-  // ✅ Handle input change
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
-  ) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
-  };
+  ) => setFormData((prev) => ({ ...prev, [e.target.name]: e.target.value }));
 
-  // ✅ Handle form submit
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-
-    setLoading(true); // Start loading before fetch begins
+    setLoading(true);
 
     try {
       const res = await fetch("/api/auth/register", {
@@ -68,26 +67,11 @@ const SignUp = () => {
       });
 
       const data = await res.json();
+      if (!res.ok) return toast.error(data.error);
 
-      if (!res.ok) {
-        toast.error(data.error || "Failed to create account");
-        return;
-      }
-
-      toast.success(
-        "Account created successfully! Please reach out to your institution to verify your account.",
-        {
-          duration: 8000,
-        }
-      );
-    } catch (error: unknown) {
-      const errorMessage =
-        error instanceof Error
-          ? error.message
-          : "An unexpected error occurred.";
-      toast.error(errorMessage);
+      toast.success("Account created! Contact institution for verification.");
     } finally {
-      setLoading(false); // Stop loading after success or error
+      setLoading(false);
     }
   };
 
@@ -134,34 +118,32 @@ const SignUp = () => {
             {/* Institution (fetched from DB) */}
             <div>
               <label className="block text-sm font-medium">Institution</label>
-              <select
-                name="institution"
-                value={formData.institution}
-                onChange={(e) =>
-                  setFormData((prev) => ({
-                    ...prev,
-                    institution: e.target.value,
-                  }))
-                }
-                className="w-full p-2 border border-gray-300 rounded-md text-sm"
-                disabled={iloading} // optional: disable while loading
-              >
-                {iloading ? (
-                  <option value=""> ↻ Loading institutions...</option>
-                ) : (
-                  <>
-                    <option value="">Select Institution</option>
-                    {/* extra manual option */}
-                    <option value="CBS_Admin">CBS Admin</option>
-                    {/* mapped options from database */}
-                    {institutions.map((school) => (
-                      <option key={school.id} value={school.school_id}>
-                        {school.name}
-                      </option>
-                    ))}
-                  </>
-                )}
-              </select>
+
+              {magicSchoolId ? (
+                // ✅ magic link— lock the school selection
+                <input
+                  type="text"
+                  value={magicSchoolId}
+                  disabled
+                  className="w-full p-2 border border-gray-300 rounded-md bg-gray-100 text-sm"
+                />
+              ) : (
+                <select
+                  name="institution"
+                  value={formData.institution}
+                  onChange={handleChange}
+                  className="w-full p-2 border border-gray-300 rounded-md text-sm"
+                  disabled={iloading}
+                >
+                  <option value="">Select Institution</option>
+                  <option value="CBS_Admin">CBS Admin</option>
+                  {institutions.map((school) => (
+                    <option key={school.id} value={school.school_id}>
+                      {school.name}
+                    </option>
+                  ))}
+                </select>
+              )}
             </div>
 
             <label className="text-sm font-medium">Password</label>

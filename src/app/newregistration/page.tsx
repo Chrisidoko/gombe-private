@@ -18,7 +18,6 @@ type FormData = {
     chairmanName: string;
     licenseNumber: string;
     lastLicenseRenewal: string;
-    ownershipType: string;
     lastTaxFiling: string;
     address: string;
     lga: string;
@@ -30,18 +29,11 @@ type FormData = {
   };
 
   B: {
-    faculties: string;
-    modeOfOperation: string[];
-    studentPopulation: string;
-    intlStudents: string;
-    avgFee: string;
-    directors: string[]; // starting with one empty director and new array field
-    totalRevenue: string;
-    academicSession: string;
-    weeksPerSemester: string;
-    sessionStart: string;
-    sessionEnd: string;
-    programmes: string[];
+    schoolContact: string;
+    contactDesignation: string;
+    contactPhone: string;
+    ownershipType: string;
+    category: string[];
   };
 
   D: {
@@ -126,7 +118,6 @@ export default function PrivateInstitutionsForm() {
       chairmanName: "",
       licenseNumber: "",
       lastLicenseRenewal: "",
-      ownershipType: "",
       lastTaxFiling: "",
       address: "",
       lga: "",
@@ -137,18 +128,11 @@ export default function PrivateInstitutionsForm() {
       website: "",
     },
     B: {
-      faculties: "",
-      modeOfOperation: [],
-      studentPopulation: "",
-      intlStudents: "",
-      avgFee: "",
-      directors: [""], // starting with one empty director
-      totalRevenue: "",
-      academicSession: "",
-      weeksPerSemester: "",
-      sessionStart: "",
-      sessionEnd: "",
-      programmes: [],
+      schoolContact: "",
+      contactDesignation: "",
+      contactPhone: "",
+      ownershipType: "",
+      category: [],
     },
 
     D: {
@@ -431,11 +415,11 @@ export default function PrivateInstitutionsForm() {
 
               <div className="flex flex-col gap-2 md:col-span-2">
                 <label className="text-sm font-medium">
-                  Proposed Campus Address
+                  Proposed School Address
                 </label>
                 <input
                   type="text"
-                  placeholder="Proposed Campus Address of Institution"
+                  placeholder="Proposed Address of Institution"
                   value={formData.A.address}
                   onChange={(e) => handleChange("A", "address", e.target.value)}
                   className="w-full p-2 border rounded border-gray-400 "
@@ -490,12 +474,23 @@ export default function PrivateInstitutionsForm() {
                 )}
               </div>
               <div className="flex flex-col gap-2">
-                <label className="text-sm font-medium">Phone</label>
+                <label className="text-sm font-medium">Official Phone</label>
                 <input
-                  type="number"
+                  type="**numeric**"
                   placeholder="Telephone Number"
                   value={formData.A.phone}
+                  pattern="[0-9]*" // Optional: basic validation pattern for numbers
                   onChange={(e) => handleChange("A", "phone", e.target.value)}
+                  className="w-full p-2 border  border-gray-400 rounded"
+                />
+              </div>
+              <div className="flex flex-col gap-2">
+                <label className="text-sm font-medium">Website</label>
+                <input
+                  type="text"
+                  placeholder="www.yourwebsite.com"
+                  value={formData.A.website}
+                  onChange={(e) => handleChange("A", "website", e.target.value)}
                   className="w-full p-2 border  border-gray-400 rounded"
                 />
               </div>
@@ -508,7 +503,7 @@ export default function PrivateInstitutionsForm() {
               {/* Trustees */}
               <div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="flex flex-col gap-2 md:col-span-2">
+                  {/* <div className="flex flex-col gap-2 md:col-span-2">
                     <label className="text-sm font-medium">
                       Board of Trustees / Director(s)
                     </label>
@@ -573,23 +568,23 @@ export default function PrivateInstitutionsForm() {
                     >
                       + Add Director
                     </button>
-                  </div>
+                  </div> */}
                 </div>
               </div>
 
               {/* Trustees 2 */}
               <div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="flex flex-col gap-2">
+                  <div className="flex flex-col gap-2 md:col-span-2">
                     <label className="text-sm font-medium">
                       School Contact Person
                     </label>
                     <input
                       type="text"
                       placeholder="Name of School Contact Person"
-                      value={formData.A.website}
+                      value={formData.B.schoolContact}
                       onChange={(e) =>
-                        handleChange("A", "website", e.target.value)
+                        handleChange("B", "schoolContact", e.target.value)
                       }
                       className="w-full p-2 border  border-gray-400 rounded"
                     />
@@ -601,26 +596,36 @@ export default function PrivateInstitutionsForm() {
                     <input
                       type="text"
                       placeholder="(e.g Registrar, Bursar, etc)"
-                      value={formData.A.website}
+                      value={formData.B.contactDesignation}
                       onChange={(e) =>
-                        handleChange("A", "website", e.target.value)
+                        handleChange("B", "contactDesignation", e.target.value)
                       }
                       className="w-full p-2 border  border-gray-400 rounded"
                     />
                   </div>
-                </div>
-              </div>
-
-              <div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="flex flex-col gap-2">
                     <label className="text-sm font-medium">
-                      Type of Ownership
+                      School Contact Person Phone
+                    </label>
+                    <input
+                      type="**numeric**"
+                      placeholder="Telephone Number"
+                      value={formData.B.contactPhone}
+                      pattern="[0-9]*" // Optional: basic validation pattern for numbers
+                      onChange={(e) =>
+                        handleChange("B", "contactPhone", e.target.value)
+                      }
+                      className="w-full p-2 border  border-gray-400 rounded"
+                    />
+                  </div>
+                  <div className="flex flex-col gap-2">
+                    <label className="text-sm font-medium">
+                      Type of School Ownership
                     </label>
                     <select
-                      value={formData.A.ownershipType}
+                      value={formData.B.ownershipType}
                       onChange={(e) =>
-                        handleChange("A", "ownershipType", e.target.value)
+                        handleChange("B", "ownershipType", e.target.value)
                       }
                       className="w-full p-2 border border-gray-400 rounded"
                     >
@@ -630,6 +635,87 @@ export default function PrivateInstitutionsForm() {
                       <option value="Faith-Based">Faith-Based</option>
                       <option value="Corporate Body">Corporate Body</option>
                     </select>
+                  </div>
+                  <div className="w-full md:col-span-3">
+                    <h3 className="font-semibold mb-2">Category</h3>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                      {[
+                        "College of Education",
+                        "Polytechnic",
+                        "University",
+                      ].map((prog) => (
+                        <label key={prog} className="flex items-center gap-2">
+                          <input
+                            type="checkbox"
+                            checked={formData.B.category.includes(prog)}
+                            onChange={() =>
+                              toggleCheckbox("A", "category", prog)
+                            }
+                          />
+                          {prog}
+                        </label>
+                      ))}
+
+                      {/* ✅ Add “Other” option */}
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="checkbox"
+                          checked={formData.B.category.some((p: string) =>
+                            p.startsWith("Other:")
+                          )}
+                          onChange={(e) => {
+                            if (!e.target.checked) {
+                              // remove any "Other:" entry if unchecked
+                              setFormData((prev) => ({
+                                ...prev,
+                                A: {
+                                  ...prev.A,
+                                  programmes: prev.B.category.filter(
+                                    (p: string) => !p.startsWith("Other:")
+                                  ),
+                                },
+                              }));
+                            } else {
+                              // add placeholder entry for Other
+                              setFormData((prev) => ({
+                                ...prev,
+                                A: {
+                                  ...prev.A,
+                                  category: [...prev.B.category, "Other:"],
+                                },
+                              }));
+                            }
+                          }}
+                        />
+                        <span>Other:</span>
+                        <input
+                          type="text"
+                          placeholder="Specify"
+                          value={
+                            formData.B.category
+                              .find((p: string) => p.startsWith("Other:"))
+                              ?.split("Other:")[1] || ""
+                          }
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            setFormData((prev) => ({
+                              ...prev,
+                              B: {
+                                ...prev.B,
+                                category: [
+                                  ...prev.B.category.filter(
+                                    (p: string) => !p.startsWith("Other:")
+                                  ),
+                                  val ? `Other:${val}` : "", // keep empty string if cleared
+                                ].filter(Boolean),
+                              },
+                            }));
+                          }}
+                          className="border rounded p-1 w-full md:w-auto"
+                        />
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
