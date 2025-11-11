@@ -20,8 +20,9 @@ export default function SignUpForm() {
   const searchParams = useSearchParams();
   const magicSchoolId = searchParams.get("school_id");
 
-  const [institutions, setInstitutions] = useState<Institution[]>([]);
+  //   const [institutions, setInstitutions] = useState<Institution[]>([]);
   const [passwordVisible, setPasswordVisible] = useState(false);
+  const [selectedSchoolName, setSelectedSchoolName] = useState("");
 
   const [formData, setFormData] = useState({
     name: "",
@@ -34,16 +35,31 @@ export default function SignUpForm() {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    if (magicSchoolId) return;
-
     const fetchInstitutions = async () => {
+      if (magicSchoolId) {
+        // We only need the record for this specific school
+        try {
+          const res = await fetch(
+            `/api/schools/forsignup?school_id=${magicSchoolId}`
+          );
+          const data = await res.json();
+          if (data && data.name) {
+            setSelectedSchoolName(data.name);
+          }
+        } catch {
+          setSelectedSchoolName("Unknown School");
+        }
+        return;
+      }
+
+      // ✅ No magic link — fetch full list
       isetLoading(true);
       try {
         const res = await fetch("/api/schools/forsignup");
         const data = await res.json();
-        setInstitutions(data);
+        // setInstitutions(data);
       } catch {
-        setInstitutions([]);
+        // setInstitutions([]);
       } finally {
         isetLoading(false);
       }
@@ -90,7 +106,7 @@ export default function SignUpForm() {
           />
           <h2 className="text-lg font-bold mx-auto">Register</h2>
           <p className="text-gray-500 text-xs">
-            Create an account to view your Institutions insight.
+            Create an account to manage your Institutions.
           </p>
 
           <form className="flex flex-col gap-4" onSubmit={handleSubmit}>
@@ -120,9 +136,9 @@ export default function SignUpForm() {
             {magicSchoolId ? (
               <input
                 type="text"
-                value={magicSchoolId}
+                value={selectedSchoolName || "Loading..."}
                 disabled
-                className="w-full p-2 border border-gray-300 rounded bg-gray-100 text-sm"
+                className="w-full p-2 border border-gray-300 rounded-md bg-gray-100 text-sm"
               />
             ) : (
               <select
@@ -134,11 +150,11 @@ export default function SignUpForm() {
               >
                 <option value="">Select Institution</option>
                 <option value="CBS_Admin">CBS Admin</option>
-                {institutions.map((school) => (
+                {/* {institutions.map((school) => (
                   <option key={school.id} value={school.school_id}>
                     {school.name}
                   </option>
-                ))}
+                ))} */}
               </select>
             )}
 
@@ -148,6 +164,7 @@ export default function SignUpForm() {
                 type={passwordVisible ? "text" : "password"}
                 id="password"
                 name="password"
+                placeholder="Enter your password"
                 className="w-full p-2 border border-gray-300 rounded-md text-sm"
                 value={formData.password}
                 onChange={handleChange}

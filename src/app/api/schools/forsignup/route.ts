@@ -1,13 +1,34 @@
 // src/app/api/schools/forsignup/route.ts
-// simply to pull all the existing school
-
 import { NextResponse } from "next/server";
 import pool from "@/lib/db";
 
-export async function GET() {
+export async function GET(req: Request) {
   try {
-    //  Fetch all schools (id, school_id, and name)
-    const result = await pool.query(
+    // Read query parameter from URL
+    const url = new URL(req.url);
+    const schoolId = url.searchParams.get("school_id");
+
+    let result;
+
+    if (schoolId) {
+      // Fetch single school by school_id
+      result = await pool.query(
+        `SELECT id, school_id, name FROM schoolskano WHERE school_id = $1`,
+        [schoolId]
+      );
+
+      if (result.rows.length === 0) {
+        return NextResponse.json(
+          { error: "School not found" },
+          { status: 404 }
+        );
+      }
+
+      return NextResponse.json(result.rows[0], { status: 200 });
+    }
+
+    // Fetch all schools if no school_id provided
+    result = await pool.query(
       `SELECT id, school_id, name FROM schoolskano ORDER BY name ASC`
     );
 
