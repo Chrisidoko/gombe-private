@@ -13,7 +13,7 @@ export async function GET(req: Request) {
     if (schoolId) {
       // Fetch single school by school_id
       result = await pool.query(
-        `SELECT id, school_id, name FROM schoolskano WHERE school_id = $1`,
+        `SELECT id, school_id, name, email FROM schoolskano WHERE school_id = $1`,
         [schoolId]
       );
 

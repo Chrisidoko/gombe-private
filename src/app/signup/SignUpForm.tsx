@@ -23,6 +23,7 @@ export default function SignUpForm() {
   //   const [institutions, setInstitutions] = useState<Institution[]>([]);
   const [passwordVisible, setPasswordVisible] = useState(false);
   const [selectedSchoolName, setSelectedSchoolName] = useState("");
+  const [selectedSchoolEmail, setSelectedSchoolEmail] = useState("");
 
   const [formData, setFormData] = useState({
     name: "",
@@ -45,9 +46,18 @@ export default function SignUpForm() {
           const data = await res.json();
           if (data && data.name) {
             setSelectedSchoolName(data.name);
+            setSelectedSchoolEmail(data.email);
+
+            // ✅ Update formData.email immediately
+            setFormData((prev) => ({
+              ...prev,
+              email: data.email || "",
+              institution: magicSchoolId,
+            }));
           }
         } catch {
           setSelectedSchoolName("Unknown School");
+          setSelectedSchoolEmail("");
         }
         return;
       }
@@ -57,7 +67,7 @@ export default function SignUpForm() {
       try {
         const res = await fetch("/api/schools/forsignup");
         const data = await res.json();
-        // setInstitutions(data);
+        // setInstitutions(data); // to fetch institution currently not needed so commented out
       } catch {
         // setInstitutions([]);
       } finally {
@@ -122,16 +132,24 @@ export default function SignUpForm() {
             />
 
             <label className="text-sm font-medium">Email</label>
-            <input
-              type="email"
-              id="email"
-              name="email"
-              className="w-full p-2 border border-gray-300 rounded-md text-sm"
-              placeholder="Enter your email"
-              value={formData.email}
-              onChange={handleChange}
-            />
-
+            {magicSchoolId ? (
+              <input
+                type="text"
+                value={selectedSchoolEmail || "Loading..."}
+                disabled
+                className="w-full p-2 border border-gray-300 rounded-md bg-gray-100 text-sm"
+              />
+            ) : (
+              <input
+                type="email"
+                id="email"
+                name="email"
+                className="w-full p-2 border border-gray-300 rounded-md text-sm"
+                placeholder="Enter your email"
+                value={formData.email}
+                onChange={handleChange}
+              />
+            )}
             <label className="text-sm font-medium">Institution</label>
             {magicSchoolId ? (
               <input

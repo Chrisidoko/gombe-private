@@ -67,7 +67,8 @@ export default function AssesmentForm() {
           {["100", "200", "300", "400", "500", "postgrad"].map((level) => (
             <input
               key={level}
-              type="number"
+              type="**numeric**"
+              pattern="[0-9]*"
               placeholder={`${level} Level`}
               onChange={(e) =>
                 handleChange(`population_${level}`, Number(e.target.value))
@@ -85,7 +86,8 @@ export default function AssesmentForm() {
           {["100", "200", "300", "400", "500", "postgrad"].map((level) => (
             <input
               key={level}
-              type="number"
+              type="**numeric**"
+              pattern="[0-9]*"
               placeholder={`${level} Level Fee`}
               onChange={(e) =>
                 handleChange(`fee_${level}`, Number(e.target.value))

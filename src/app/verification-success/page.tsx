@@ -33,11 +33,11 @@ export default function VerificationSuccess() {
           Account Verified
         </h2>
         <p className="text-gray-600">
-          Your school operator account has been successfully approved.
+          Your school operations account has been successfully approved.
         </p>
         {/* Your verification form/info goes here */}
         <Link href="/">
-          <button className="mt-6 w-full py-2 bg-[#28a745] text-white font-semibold rounded-lg hover:bg-[#28a745]/80 transition">
+          <button className="mt-6 w-full py-2 bg-[#28a745] text-white font-semibold rounded-lg hover:bg-[#28a745]/80 transition cursor-pointer">
             Return Home
           </button>
         </Link>
