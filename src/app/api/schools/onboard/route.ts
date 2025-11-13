@@ -1,3 +1,4 @@
+// i dont think i use this one for anything i will check later
 import { NextResponse } from "next/server";
 import pool from "@/lib/db";
 import { generateSchoolID } from "@/lib/generateSchoolID";

@@ -60,20 +60,33 @@ export async function POST(req: Request) {
 
     // ✅ SECTION C — Portal + API Readiness
     else if (section === "C") {
-      const { schoolportal, schoolPortalVendor, readyForApi } = body;
+      const {
+        schoolportal,
+        schoolPortalVendor,
+        readyForApi,
+        email,
+        phone,
+        website,
+      } = body;
 
       updateQuery = `
         UPDATE schoolskano
         SET school_portal = $1,
             school_portal_vendor = $2,
-            ready_for_api = $3
-        WHERE school_id = $4
+            ready_for_api = $3,
+            email = $4,
+            phone = $5,
+            website = $6
+        WHERE school_id = $7
       `;
 
       values = [
         sanitize(schoolportal),
         sanitize(schoolPortalVendor),
         sanitize(readyForApi),
+        sanitize(email),
+        sanitize(phone),
+        sanitize(website),
         sanitize(school_id),
       ];
     }
