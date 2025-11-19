@@ -40,6 +40,7 @@ interface SchoolDetails {
   email: string;
   phone: string;
   tin: string;
+  website: string;
   license_number: string;
   license_status: string;
   last_license_renewal: string;
@@ -370,10 +371,10 @@ export default function Requests() {
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div className="bg-gray-50 rounded-lg p-4">
                           <label className="text-sm font-medium text-gray-500 block mb-1">
-                            State
+                            Website
                           </label>
                           <p className="text-gray-900">
-                            {schoolDetails.state || "Not specified"}
+                            {schoolDetails.website || "Not specified"}
                           </p>
                         </div>
 
