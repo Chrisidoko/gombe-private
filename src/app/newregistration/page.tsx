@@ -4,24 +4,30 @@
 import { useState } from "react";
 import Image from "next/image";
 import { CircleX, Loader2, CircleCheck, FileUp } from "lucide-react";
-// import toast from "react-hot-toast";
-//import { useRouter } from "next/navigation";
-
+import toast from "react-hot-toast";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
+
+// Type definitions
+interface PendingDocument {
+  type: string;
+  file: File;
+  id: string; // Unique ID for each pending document
+}
+
+interface UploadedDocument {
+  type: string;
+  url: string;
+  public_id: string;
+}
 
 type FormData = {
   A: {
     officialName: string;
-    yearEstablished: string;
     cacNumber: string;
     proprietorName: string;
-    chairmanName: string;
-    licenseNumber: string;
-    lastLicenseRenewal: string;
-    lastTaxFiling: string;
     address: string;
     lga: string;
-    state: string;
     email: string;
     confirmemail: string;
     phone: string;
@@ -29,25 +35,15 @@ type FormData = {
   };
 
   B: {
-    schoolContact: string;
-    contactDesignation: string;
-    contactPhone: string;
+    contact_person: string;
+    contact_person_designation: string;
+    contact_person_phone: string;
     ownershipType: string;
-    category: string[];
+    category: string;
   };
 
-  D: {
-    licenceStatus: string;
-    prevLicence: string;
-    prevAmount: string;
-    prevDate: string;
-    outstandingPenalties: string;
-    penalty: string;
-    documents: [];
-  };
-  E: {
-    eName: string;
-    comments: string;
+  C: {
+    documents: PendingDocument[];
   };
 
   // ✅ Safely allow dynamic string keys for toggleCheckbox
@@ -104,7 +100,14 @@ const lgas = [
 const sections = [
   { id: "A", title: "New Registration A - Registration Details" },
   { id: "B", title: "New Registration  B - Ownership & Governance" },
-  { id: "C", title: "New Registration  C - Required Documents (to attach)" },
+  {
+    id: "C",
+    title: "New Registration  C - Required Documents (Upload All that Apply)",
+  },
+  {
+    id: "D",
+    title: "New Registration D - Complete)",
+  },
 ] as const;
 
 export default function PrivateInstitutionsForm() {
@@ -112,56 +115,178 @@ export default function PrivateInstitutionsForm() {
   const [formData, setFormData] = useState<FormData>({
     A: {
       officialName: "",
-      yearEstablished: "",
       cacNumber: "",
       proprietorName: "",
-      chairmanName: "",
-      licenseNumber: "",
-      lastLicenseRenewal: "",
-      lastTaxFiling: "",
       address: "",
       lga: "",
-      state: "",
       email: "",
       confirmemail: "",
       phone: "",
       website: "",
     },
     B: {
-      schoolContact: "",
-      contactDesignation: "",
-      contactPhone: "",
+      contact_person: "",
+      contact_person_designation: "",
+      contact_person_phone: "",
       ownershipType: "",
-      category: [],
+      category: "",
     },
 
-    D: {
-      licenceStatus: "",
-      prevLicence: "",
-      prevAmount: "",
-      prevDate: "",
-      outstandingPenalties: "",
-      penalty: "",
-      documents: [], // each item will look like { type: string, file: File | null }
-    },
-    E: {
-      eName: "",
-      comments: "",
+    C: {
+      documents: [] as { type: string; file: File; id: string }[],
     },
   });
   const [selectedType, setSelectedType] = useState("");
   const [emailError, setEmailError] = useState(""); // to catch email validation error's
   const [loading, setLoading] = useState(false); //loadind state for moving steps to steps
-  // const router = useRouter(); // to redirect user when done.
+  const [pendingDocuments, setPendingDocuments] = useState<PendingDocument[]>(
+    []
+  );
 
-  const handleAddDocument = (type: string, file: File) => {
-    setFormData((prev: any) => ({
-      ...prev,
-      D: {
-        ...prev.D,
-        documents: [...prev.D.documents, { type, file }],
-      },
-    }));
+  const router = useRouter(); // to redirect user when done.
+
+  // Stage a document (add to pending list)
+  const handleStageDocument = (type: string, file: File) => {
+    // Validate file size (2MB max)
+    const maxSize = 2 * 1024 * 1024;
+    if (file.size > maxSize) {
+      toast.error("File size must be less than 2MB");
+      return;
+    }
+
+    // Validate file type
+    const allowedTypes = [
+      "application/pdf",
+      "image/jpeg",
+      "image/jpg",
+      "image/png",
+    ];
+    if (!allowedTypes.includes(file.type)) {
+      toast.error("Only PDF, JPG, JPEG, and PNG files are allowed");
+      return;
+    }
+
+    // Check if document type already exists in pending
+    const existingPending = pendingDocuments.find((doc) => doc.type === type);
+    if (existingPending) {
+      toast.error(
+        `"${type}" is already staged. Remove it first to add a new one.`
+      );
+      return;
+    }
+
+    // Check if document type already exists in uploaded
+    const existingUploaded = formData.C.documents.find(
+      (doc: any) => doc.type === type
+    );
+    if (existingUploaded) {
+      toast.error(
+        `"${type}" is already uploaded. Remove it first to add a new one.`
+      );
+      return;
+    }
+
+    // Add to pending list with unique ID
+    const newPendingDoc: PendingDocument = {
+      type,
+      file,
+      id: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+    };
+
+    setPendingDocuments((prev) => [...prev, newPendingDoc]);
+    setSelectedType(""); // Reset dropdown
+    toast.success(`"${type}" staged successfully!`);
+  };
+
+  // Remove a pending document
+  const removePendingDocument = (id: string) => {
+    setPendingDocuments((prev) => prev.filter((doc) => doc.id !== id));
+    toast("Document removed from staging", { icon: "📂" });
+  };
+
+  // Upload all pending documents
+  const uploadAllPendingDocuments = async (): Promise<boolean> => {
+    if (pendingDocuments.length === 0) {
+      return true; // No documents to upload
+    }
+
+    const schoolId = formData.school_id || localStorage.getItem("school_id");
+
+    if (!schoolId) {
+      toast.error("School ID is missing. Please complete Section A first.");
+      return false;
+    }
+
+    let successCount = 0;
+    let failCount = 0;
+    const uploadedDocs: UploadedDocument[] = [];
+
+    // Show loading toast
+    const loadingToastId = toast.loading(
+      `Uploading ${pendingDocuments.length} document(s)...`
+    );
+
+    for (const pendingDoc of pendingDocuments) {
+      const formDataToSend = new FormData();
+      formDataToSend.append("file", pendingDoc.file);
+      formDataToSend.append("type", pendingDoc.type);
+      formDataToSend.append("school_id", String(schoolId));
+
+      try {
+        const res = await fetch("/api/upload", {
+          method: "POST",
+          body: formDataToSend,
+        });
+
+        const result = await res.json();
+
+        if (result.success) {
+          successCount++;
+          uploadedDocs.push({
+            type: pendingDoc.type,
+            url: result.url,
+            public_id: result.public_id,
+          });
+        } else {
+          failCount++;
+          console.error(`Failed to upload ${pendingDoc.type}:`, result.message);
+        }
+      } catch (err) {
+        failCount++;
+        console.error(`Error uploading ${pendingDoc.type}:`, err);
+      }
+    }
+
+    // Dismiss loading toast
+    toast.dismiss(loadingToastId);
+
+    // Update form data with successfully uploaded documents
+    if (uploadedDocs.length > 0) {
+      setFormData((prev: any) => ({
+        ...prev,
+        C: {
+          ...prev.C,
+          documents: [...(prev.C.documents || []), ...uploadedDocs],
+        },
+      }));
+    }
+
+    // Clear pending documents
+    setPendingDocuments([]);
+
+    // Show result toast
+    if (failCount === 0) {
+      toast.success(`All ${successCount} document(s) uploaded successfully!`);
+      return true;
+    } else if (successCount > 0) {
+      toast.error(
+        `${successCount} succeeded, ${failCount} failed. Please retry failed uploads.`
+      );
+      return false;
+    } else {
+      toast.error("All uploads failed. Please try again.");
+      return false;
+    }
   };
 
   const handleChange = <T extends keyof FormData>(
@@ -178,35 +303,6 @@ export default function PrivateInstitutionsForm() {
     }));
   };
 
-  // For general use of all checkboxes
-  const toggleCheckbox = (
-    section: keyof FormData,
-    field: string,
-    value: string
-  ) => {
-    setFormData((prev) => {
-      const currentField = prev[section][field];
-
-      // 🧩 Type check before using array methods
-      if (Array.isArray(currentField)) {
-        const selected = currentField.includes(value)
-          ? currentField.filter((item: string) => item !== value)
-          : [...currentField, value];
-
-        return {
-          ...prev,
-          [section]: {
-            ...prev[section],
-            [field]: selected,
-          },
-        };
-      }
-
-      // Fallback (in case field is not an array)
-      return prev;
-    });
-  };
-
   const nextStep = () => {
     if (currentStep < sections.length - 1) setCurrentStep(currentStep + 1);
   };
@@ -215,122 +311,155 @@ export default function PrivateInstitutionsForm() {
     if (currentStep > 0) setCurrentStep(currentStep - 1);
   };
 
-  //   const handleSubmit = async () => {
-  //     try {
-  //       // ✅ Retrieve the stored TIN (from Section A)
-  //       const tin = localStorage.getItem("tin");
+  // Modified saveCurrentSection for Section D
+  // Modified saveCurrentSection for Section D (Documents)
+  const saveCurrentSection = async (
+    autoProgress: boolean = false
+  ): Promise<boolean> => {
+    setLoading(true);
 
-  //       if (!tin) {
-  //         toast.error("Missing TIN. Please complete Section A first.");
-  //         return;
-  //       }
+    try {
+      const sectionKey = Object.keys(formData)[currentStep];
+      const sectionData = formData[sectionKey] || {};
 
-  //       const res = await fetch("/api/schools/register", {
-  //         method: "POST",
-  //         headers: { "Content-Type": "application/json" },
-  //         body: JSON.stringify({
-  //           tin,
-  //           formStatus: "completed",
-  //         }),
-  //       });
+      setEmailError("");
 
-  //       const data = await res.json();
+      // Email validation for Section A
+      if (sectionKey === "A") {
+        const email = (sectionData.email ?? "").toString().trim();
+        const confirmEmail = (sectionData.confirmemail ?? "").toString().trim();
 
-  //       if (res.ok && data.success) {
-  //         toast.success("Form submitted successfully!");
-  //         console.log("Saved record:", data);
-  //         // Wait a moment, then redirect
-  //         setTimeout(() => {
-  //           router.push("/");
-  //         }, 4500);
-  //       } else {
-  //         toast.error(` Submission failed: ${data.error || "Unknown error"}`);
-  //       }
-  //     } catch (err) {
-  //       console.error("Error during submission:", err);
-  //       toast.error("⚠️ An error occurred while submitting the form.");
-  //     }
-  //   };
+        if (!email || !confirmEmail) {
+          setEmailError("Please enter and confirm your email address.");
+          setLoading(false);
+          return false;
+        }
 
-  //   const saveCurrentSection = async (): Promise<boolean> => {
-  //     setLoading(true);
+        if (email !== confirmEmail) {
+          setEmailError("Email addresses do not match. Please recheck.");
+          setLoading(false);
+          return false;
+        }
+      }
 
-  //     try {
-  //       const sectionKey = Object.keys(formData)[currentStep];
-  //       const sectionData = formData[sectionKey] || {};
+      // ✅ Section C: Handle document uploads
+      if (sectionKey === "C") {
+        // Upload pending documents first if any exist
+        if (pendingDocuments.length > 0) {
+          const uploadSuccess = await uploadAllPendingDocuments();
+          if (!uploadSuccess) {
+            setLoading(false);
+            return false;
+          }
+          // Wait a moment for state to update
+          await new Promise((resolve) => setTimeout(resolve, 300));
+        }
 
-  //       setEmailError("");
+        // After upload, verify at least one document exists
+        const docs = formData.C?.documents || [];
+        if (docs.length === 0) {
+          toast.error("Please upload at least one document before proceeding.");
+          setLoading(false);
+          return false;
+        }
+      }
 
-  //       // ✅ Validate email only for Section A
-  //       if (sectionKey === "A") {
-  //         const email = (sectionData.email ?? "").toString().trim();
-  //         const confirmEmail = (sectionData.confirmemail ?? "").toString().trim();
+      // Prepare data for saving (remove confirmemail if exists)
+      const { confirmemail, ...sanitizedData } = sectionData;
 
-  //         if (!email || !confirmEmail) {
-  //           setEmailError("Please enter and confirm your email address.");
-  //           setLoading(false);
-  //           return false;
-  //         }
+      let endpoint = "/api/schools/newreg/create";
+      let bodyData: Record<string, any> = {
+        section: sectionKey,
+        ...sanitizedData,
+      };
 
-  //         if (email !== confirmEmail) {
-  //           setEmailError("Email addresses do not match. Please recheck.");
-  //           setLoading(false);
-  //           return false;
-  //         }
-  //       }
+      // For sections other than A, use update endpoint
+      if (sectionKey !== "A") {
+        endpoint = "/api/schools/newreg/update";
 
-  //       // ✅ Remove confirmemail before sending
-  //       const { confirmemail, ...sanitizedData } = sectionData;
+        if (!formData.school_id) {
+          toast.error("❗ Missing school ID. Please complete section A first.");
+          setLoading(false);
+          return false;
+        }
 
-  //       // ✅ Always include TIN — either from current section or stored value
-  //       const tinFromStorage = localStorage.getItem("tin");
-  //       const tinToUse =
-  //         sanitizedData.tin || tinFromStorage || sectionData.tin || "";
+        bodyData.school_id =
+          formData.school_id || localStorage.getItem("school_id");
+      }
 
-  //       const res = await fetch("/api/schools/temp", {
-  //         method: "POST",
-  //         headers: { "Content-Type": "application/json" },
-  //         body: JSON.stringify({
-  //           section: sectionKey,
-  //           tin: tinToUse,
-  //           ...sanitizedData,
-  //         }),
-  //       });
+      // Save section to database
+      const res = await fetch(endpoint, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(bodyData),
+      });
 
-  //       const result = await res.json();
+      const result = await res.json();
 
-  //       if (!result.success) {
-  //         console.error("Failed to save section:", result.error);
+      if (!result.success) {
+        console.error("Failed to save section:", result.message);
+        toast.error(result.message);
+        setLoading(false);
+        return false;
+      }
 
-  //         setLoading(false);
-  //         return false;
-  //       }
+      // Store school_id from Section A
+      if (sectionKey === "A" && result.school_id) {
+        setFormData((prev) => ({ ...prev, school_id: result.school_id }));
+        localStorage.setItem("school_id", result.school_id);
+        console.log("🎯 Stored school_id:", result.school_id);
+      }
 
-  //       console.log(`✅ Section  saved successfully`);
-  //       toast.success(` Section ${sectionKey} saved successfully!`);
+      toast.success(`Section ${sectionKey} saved successfully`);
+      setLoading(false);
 
-  //       // ✅ Save TIN from Section A into localStorage (so later sections can reuse it)
-  //       if (sectionKey === "A" && sanitizedData.tin) {
-  //         localStorage.setItem("tin", String(sanitizedData.tin)); // Please keep in mid that local storage is not good for SSR components
-  //         console.log("📦 Saved TIN:", sanitizedData.tin);
-  //       }
+      // Auto-progress to next section if requested
+      if (autoProgress) {
+        await new Promise((resolve) => setTimeout(resolve, 500));
+        nextStep();
+      }
 
-  //       setLoading(false);
-  //       return true;
-  //     } catch (err) {
-  //       console.error("Save error:", err);
-  //       setEmailError("An unexpected error occurred.");
-  //       toast.error("Something went wrong.");
-  //       setLoading(false);
-  //       return false;
-  //     }
-  //   };
+      return true;
+    } catch (err) {
+      console.error("Save error:", err);
+      setEmailError("An unexpected error occurred.");
+      toast.error("Something went wrong.");
+      setLoading(false);
+      return false;
+    }
+  };
 
+  // Simplified handleProceed
   const handleProceed = async () => {
-    // const success = await saveCurrentSection();
-    // if (!success) return; // ❌ Stop here if validation or save fails
+    const success = await saveCurrentSection(true);
+    // nextStep() is now handled inside saveCurrentSection when autoProgress is true
+  };
 
-    nextStep(); // ✅ Move only when successful
+  // Add this function to handle finish
+  const handleFinish = async () => {
+    setLoading(true);
+
+    try {
+      // Optional: Make a final API call to mark submission as complete
+      // const res = await fetch("/api/schools/onboard/finalize", {
+      //   method: "POST",
+      //   headers: { "Content-Type": "application/json" },
+      //   body: JSON.stringify({ school_id: formData.school_id }),
+      // });
+
+      toast.success("Registration submitted successfully!");
+
+      // Wait a moment for the toast to be visible
+      await new Promise((resolve) => setTimeout(resolve, 2000));
+
+      // Route to home page
+      router.push("/");
+    } catch (err) {
+      console.error("Finish error:", err);
+      toast.error("Something went wrong. Please try again.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -582,9 +711,9 @@ export default function PrivateInstitutionsForm() {
                     <input
                       type="text"
                       placeholder="Name of School Contact Person"
-                      value={formData.B.schoolContact}
+                      value={formData.B.contact_person}
                       onChange={(e) =>
-                        handleChange("B", "schoolContact", e.target.value)
+                        handleChange("B", "contact_person", e.target.value)
                       }
                       className="w-full p-2 border  border-gray-400 rounded"
                     />
@@ -596,9 +725,13 @@ export default function PrivateInstitutionsForm() {
                     <input
                       type="text"
                       placeholder="(e.g Registrar, Bursar, etc)"
-                      value={formData.B.contactDesignation}
+                      value={formData.B.contact_person_designation}
                       onChange={(e) =>
-                        handleChange("B", "contactDesignation", e.target.value)
+                        handleChange(
+                          "B",
+                          "contact_person_designation",
+                          e.target.value
+                        )
                       }
                       className="w-full p-2 border  border-gray-400 rounded"
                     />
@@ -610,10 +743,14 @@ export default function PrivateInstitutionsForm() {
                     <input
                       type="**numeric**"
                       placeholder="Telephone Number"
-                      value={formData.B.contactPhone}
+                      value={formData.B.contact_person_phone}
                       pattern="[0-9]*" // Optional: basic validation pattern for numbers
                       onChange={(e) =>
-                        handleChange("B", "contactPhone", e.target.value)
+                        handleChange(
+                          "B",
+                          "contact_person_phone",
+                          e.target.value
+                        )
                       }
                       className="w-full p-2 border  border-gray-400 rounded"
                     />
@@ -639,7 +776,7 @@ export default function PrivateInstitutionsForm() {
                   <div className="w-full md:col-span-3">
                     <h3 className="font-semibold mb-2">Category</h3>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
                       {[
                         "College of Education",
                         "Polytechnic",
@@ -647,55 +784,45 @@ export default function PrivateInstitutionsForm() {
                       ].map((prog) => (
                         <label key={prog} className="flex items-center gap-2">
                           <input
-                            type="checkbox"
-                            checked={formData.B.category.includes(prog)}
+                            type="radio"
+                            name="category"
+                            checked={formData.B.category === prog}
                             onChange={() =>
-                              toggleCheckbox("A", "category", prog)
+                              setFormData((prev) => ({
+                                ...prev,
+                                B: {
+                                  ...prev.B,
+                                  category: prog,
+                                },
+                              }))
                             }
                           />
                           {prog}
                         </label>
                       ))}
 
-                      {/* ✅ Add “Other” option */}
-                      <div className="flex items-center gap-2">
+                      {/* ✅ Other Option */}
+                      <div className="flex items-center gap-2 col-span-1 md:col-span-2">
                         <input
-                          type="checkbox"
-                          checked={formData.B.category.some((p: string) =>
-                            p.startsWith("Other:")
-                          )}
-                          onChange={(e) => {
-                            if (!e.target.checked) {
-                              // remove any "Other:" entry if unchecked
-                              setFormData((prev) => ({
-                                ...prev,
-                                A: {
-                                  ...prev.A,
-                                  programmes: prev.B.category.filter(
-                                    (p: string) => !p.startsWith("Other:")
-                                  ),
-                                },
-                              }));
-                            } else {
-                              // add placeholder entry for Other
-                              setFormData((prev) => ({
-                                ...prev,
-                                A: {
-                                  ...prev.A,
-                                  category: [...prev.B.category, "Other:"],
-                                },
-                              }));
-                            }
-                          }}
+                          type="radio"
+                          name="category"
+                          checked={formData.B.category?.startsWith("Other:")}
+                          onChange={() =>
+                            setFormData((prev) => ({
+                              ...prev,
+                              B: { ...prev.B, category: "Other:" },
+                            }))
+                          }
                         />
                         <span>Other:</span>
+
                         <input
                           type="text"
                           placeholder="Specify"
                           value={
-                            formData.B.category
-                              .find((p: string) => p.startsWith("Other:"))
-                              ?.split("Other:")[1] || ""
+                            formData.B.category?.startsWith("Other:")
+                              ? formData.B.category.split("Other:")[1] || ""
+                              : ""
                           }
                           onChange={(e) => {
                             const val = e.target.value;
@@ -703,12 +830,7 @@ export default function PrivateInstitutionsForm() {
                               ...prev,
                               B: {
                                 ...prev.B,
-                                category: [
-                                  ...prev.B.category.filter(
-                                    (p: string) => !p.startsWith("Other:")
-                                  ),
-                                  val ? `Other:${val}` : "", // keep empty string if cleared
-                                ].filter(Boolean),
+                                category: val ? `Other:${val}` : "Other:",
                               },
                             }));
                           }}
@@ -729,12 +851,12 @@ export default function PrivateInstitutionsForm() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="flex flex-col gap-2">
                     <label className="text-sm font-medium">
-                      Select Document
+                      Select Document Type
                     </label>
                     <select
                       value={selectedType}
                       onChange={(e) => setSelectedType(e.target.value)}
-                      className="w-full p-2 border border-gray-400 rounded"
+                      className="w-full p-2 border border-gray-400 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                     >
                       <option value="">-- Select a document type --</option>
                       <option value="CAC Certificate">CAC Certificate</option>
@@ -759,36 +881,110 @@ export default function PrivateInstitutionsForm() {
                   {selectedType && (
                     <div className="flex flex-col gap-2">
                       <label className="flex items-center gap-1 text-sm font-medium">
-                        <FileUp size={16} /> Upload Document
+                        <FileUp size={16} /> Select Document File
                       </label>
                       <input
                         type="file"
                         accept=".pdf,.jpg,.jpeg,.png"
                         onChange={(e) => {
                           const file = e.target.files?.[0];
-                          if (file) handleAddDocument(selectedType, file);
+                          if (file) handleStageDocument(selectedType, file);
                         }}
-                        className="w-full p-2 border border-gray-400 rounded cursor-pointer"
+                        className="w-full p-2 border border-gray-400 rounded cursor-pointer focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                       />
+                      <p className="text-xs text-gray-500">
+                        Max 2MB • PDF, JPG, PNG
+                      </p>
                     </div>
                   )}
                 </div>
 
-                {/* ✅ Show uploaded documents */}
-                {formData.D.documents.length > 0 && (
+                {/* Pending Documents Preview (Multiple) */}
+                {pendingDocuments.length > 0 && (
+                  <div className="mt-4 p-4 bg-yellow-50 border border-yellow-300 rounded">
+                    <div className="flex items-center justify-between mb-3">
+                      <h3 className="text-sm font-semibold flex items-center gap-2">
+                        <span className="inline-flex items-center justify-center w-5 h-5 bg-yellow-100 text-yellow-700 rounded-full text-xs">
+                          ⏳
+                        </span>
+                        Staged Documents ({pendingDocuments.length})
+                      </h3>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setPendingDocuments([]);
+                          toast("All staged documents cleared", { icon: "📂" });
+                        }}
+                        className="text-red-600 hover:text-red-800 text-xs font-medium"
+                      >
+                        Clear All
+                      </button>
+                    </div>
+
+                    <ul className="space-y-2">
+                      {pendingDocuments.map((doc) => (
+                        <li
+                          key={doc.id}
+                          className="flex items-start justify-between bg-white border border-yellow-200 rounded px-3 py-2"
+                        >
+                          <div className="flex items-center gap-3">
+                            <FileUp
+                              className="text-yellow-600 flex-shrink-0"
+                              size={18}
+                            />
+                            <div>
+                              <p className="text-sm font-medium text-gray-900">
+                                {doc.type}
+                              </p>
+                              <p className="text-xs text-gray-600 mt-0.5">
+                                {doc.file.name} •{" "}
+                                {(doc.file.size / 1024).toFixed(1)} KB
+                              </p>
+                            </div>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => removePendingDocument(doc.id)}
+                            className="text-red-600 hover:text-red-800 text-sm font-medium ml-2"
+                          >
+                            Remove
+                          </button>
+                        </li>
+                      ))}
+                    </ul>
+
+                    <p className="text-xs text-yellow-700 mt-3 flex items-center gap-1">
+                      <span>⚠️</span>
+                      Click "Proceed" below to upload all{" "}
+                      {pendingDocuments.length} staged document(s)
+                    </p>
+                  </div>
+                )}
+
+                {/* Uploaded Documents List */}
+                {formData.C.documents.length > 0 && (
                   <div className="mt-4">
-                    <h3 className="text-sm font-semibold mb-2">
-                      Uploaded Documents
+                    <h3 className="text-sm font-semibold mb-2 flex items-center gap-2">
+                      <span className="inline-flex items-center justify-center w-5 h-5 bg-green-100 text-green-700 rounded-full text-xs">
+                        ✓
+                      </span>
+                      Uploaded Documents ({formData.C.documents.length})
                     </h3>
                     <ul className="space-y-2">
-                      {formData.D.documents.map((doc: any, index: number) => (
+                      {formData.C.documents.map((doc: any, index: number) => (
                         <li
                           key={index}
-                          className="flex justify-between items-center bg-gray-50 border border-gray-300 rounded px-3 py-2"
+                          className="flex justify-between items-center bg-green-50 border border-green-300 rounded px-3 py-2"
                         >
-                          <span className="text-sm text-gray-700">
+                          <a
+                            href={doc.url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-sm text-blue-600 hover:underline font-medium flex items-center gap-2"
+                          >
+                            <FileUp size={14} />
                             {doc.type}
-                          </span>
+                          </a>
                           <button
                             type="button"
                             onClick={() =>
@@ -802,7 +998,7 @@ export default function PrivateInstitutionsForm() {
                                 },
                               }))
                             }
-                            className="text-red-600 hover:text-red-800 text-sm"
+                            className="text-red-600 hover:text-red-800 text-sm font-medium"
                           >
                             Remove
                           </button>
@@ -811,28 +1007,112 @@ export default function PrivateInstitutionsForm() {
                     </ul>
                   </div>
                 )}
+
+                {/* Helper text */}
+                {formData.C.documents.length === 0 &&
+                  pendingDocuments.length === 0 && (
+                    <p className="mt-4 text-sm text-gray-500 italic">
+                      No documents uploaded yet. Please select and stage at
+                      least one document.
+                    </p>
+                  )}
               </div>
             </div>
           )}
 
-          {/* Section F - Congratulations */}
-          {currentStep === 5 && (
-            <div className="flex flex-col bg-green-600 text-white items-center justify-center text-center space-y-5 py-6 rounded-2xl shadow-sm">
-              <CircleCheck size={100} />
+          {/* Section C - Congratulations */}
+          {currentStep === 3 && (
+            <div className="flex flex-col items-center justify-center text-center space-y-6 py-12 px-6">
+              {/* Success Icon with Animation */}
+              <div className="relative">
+                <div className="absolute inset-0 bg-green-100 rounded-full blur-2xl opacity-50 animate-pulse"></div>
+                <div className="relative bg-gradient-to-br from-green-50 to-green-100 p-8 rounded-full">
+                  <CircleCheck
+                    size={80}
+                    className="text-[#28a745]"
+                    strokeWidth={2}
+                  />
+                </div>
+              </div>
 
-              <h2 className="text-2xl font-semibold ">🎉 Congratulations!</h2>
-              <p className="max-w-lg ">
-                You&apos;re all set! Please review the details of your Private
-                Institution Registration. Click Submit to send your data.
-                We&apos;ll notify you by email immediately there&apos;s an
-                approval of your school&apos;s information.
-              </p>
+              {/* Heading */}
+              <div className="space-y-2">
+                <h2 className="text-3xl font-bold text-gray-900">
+                  🎉 Congratulations!
+                </h2>
+                <p className="text-lg text-gray-600 font-medium">
+                  Your registration is complete
+                </p>
+              </div>
+
+              {/* Message */}
+              <div className="max-w-2xl space-y-4">
+                <p className="text-gray-700 leading-relaxed">
+                  Your institution registration has been successfully submitted.
+                  Our team will review your information and you'll receive an
+                  email notification once your school has been approved.
+                </p>
+
+                {/* Info Box */}
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 text-left">
+                  <p className="text-sm text-blue-800">
+                    <strong>What's next?</strong>
+                  </p>
+                  <ul className="text-sm text-blue-700 mt-2 space-y-1 list-disc list-inside">
+                    <li>Review typically takes 1-2 days</li>
+                    <li>Check your email for approval notification</li>
+                    <li>You can log in once approved</li>
+                  </ul>
+                </div>
+              </div>
+
+              {/* Action Button */}
+              <button
+                onClick={handleFinish}
+                disabled={loading}
+                className="mt-6 px-8 py-3 bg-[#28a745] hover:bg-[#218838] text-white font-semibold rounded-lg shadow-lg hover:shadow-xl transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+              >
+                {loading ? (
+                  <>
+                    <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
+                      <circle
+                        className="opacity-25"
+                        cx="12"
+                        cy="12"
+                        r="10"
+                        stroke="currentColor"
+                        strokeWidth="4"
+                        fill="none"
+                      ></circle>
+                      <path
+                        className="opacity-75"
+                        fill="currentColor"
+                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                      ></path>
+                    </svg>
+                    Processing...
+                  </>
+                ) : (
+                  <>
+                    Finish & Return Home
+                    <span className="text-lg">→</span>
+                  </>
+                )}
+              </button>
+
+              {/* Optional: Back to review */}
+              {/* <button
+                onClick={() => setCurrentStep(0)}
+                className="text-sm text-gray-500 hover:text-gray-700 underline"
+              >
+                Go back to review details
+              </button> */}
             </div>
           )}
 
           {/* Navigation Buttons */}
           <div className="flex justify-between mt-8">
-            {currentStep > 0 ? (
+            {currentStep > 0 && currentStep < 3 ? (
               <button
                 onClick={prevStep}
                 className="px-6 py-2 bg-gray-600 text-white font-semibold  rounded"
@@ -862,12 +1142,8 @@ export default function PrivateInstitutionsForm() {
                 )}
               </button>
             ) : (
-              <button
-                // onClick={handleSubmit}
-                className="px-6 py-2 bg-green-600 text-white rounded"
-              >
-                Submit
-              </button>
+              //use to be where submit button was
+              <></>
             )}
           </div>
         </div>

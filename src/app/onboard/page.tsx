@@ -241,7 +241,7 @@ export default function PrivateInstitutionsForm() {
       }
 
       // ✅ Section D: Upload pending document first
-      if (sectionKey === "D") {
+      if (sectionKey === "C") {
         // Check if at least one document exists OR pending document to upload
         const docs = formData.D?.documents || [];
 

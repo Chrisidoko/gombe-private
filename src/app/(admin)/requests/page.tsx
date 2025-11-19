@@ -480,7 +480,7 @@ export default function Requests() {
                         <p className="text-gray-600">Loading documents...</p>
                       </div>
                     ) : documents.length > 0 ? (
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="grid grid-cols-1 md:grid-cols-1 gap-4">
                         {documents.map((doc) => (
                           <div
                             key={doc.id}
