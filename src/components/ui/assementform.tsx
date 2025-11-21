@@ -100,8 +100,8 @@ export default function AssesmentForm() {
       <div className="text-center mb-6">
         <h3 className="text-lg font-semibold text-gray-800">
           {step === 1
-            ? "Step 1: Population & Fees"
-            : "Step 2: Academic Session"}
+            ? " Self Assessment Step 1: Population & Fees"
+            : " Self Assessment Step 2: Academic Session"}
         </h3>
         <p className="text-sm text-gray-500 mt-1">
           {step === 1

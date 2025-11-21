@@ -28,15 +28,12 @@ export default async function AssesmentDashboard() {
 
   return (
     <main>
-      <div className="flex flex-col gap-4 sm:flex-row ">
-        <div className="sm:w-1/3 w-full">
-          <h1 className="text-2xl  font-semibold text-gray-900">
+      <div className="flex flex-col gap-12 items-center ">
+        {/* <div className="w-full">
+          <h1 className="text-2xl font-semibold text-gray-900">
             Self Assessment
           </h1>
-          <p className="text-gray-500 sm:text-sm/6">
-            Please enter assessment details of your institution
-          </p>
-        </div>
+        </div> */}
         {status === "pending" ? (
           <div className="bg-yellow-100 text-yellow-800 p-4 rounded-lg text-center font-semibold">
             Waiting for approval. You cannot refill this form at the moment.
