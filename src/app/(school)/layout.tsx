@@ -19,7 +19,7 @@ export default function SchoolLayout({
   }
 
   return (
-    <div className="bg-white min-h-screen">
+    <div className="bg-gray-50 min-h-screen">
       {/* Top Bar - adjusts with sidebar */}
       <div
         className={`fixed top-0 right-0 left-0 h-16 z-10 transition-all duration-300`}

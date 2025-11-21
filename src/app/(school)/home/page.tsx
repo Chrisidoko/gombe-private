@@ -1,6 +1,6 @@
 import {
   Building,
-  Calendar,
+  // Calendar,
   MapPin,
   FileText,
   AlertCircle,
@@ -8,13 +8,14 @@ import {
   Clock,
 } from "lucide-react";
 import { getUserFromCookie } from "@/lib/auth";
+import Link from "next/link";
 import { formatDate } from "@/lib/formatDate";
 import dynamic from "next/dynamic";
 
-const CompleteProfile = dynamic(() => import("@/components/profilecomplete"), {
-  ssr: true, // or false, depending on your needs
-  loading: () => <div>Loading...</div>, // optional loading state
-});
+// const CompleteProfile = dynamic(() => import("@/components/profilecomplete"), {
+//   ssr: true, // or false, depending on your needs
+//   loading: () => <div>Loading...</div>, // optional loading state
+// });
 
 // Sample stats - these would come from your API
 const complianceStats = {
@@ -108,12 +109,15 @@ export default async function SchoolOverviewDashboard({
           </div>
 
           {school?.form_status !== "completed" && (
-            <div className="bg-yellow-50 border border-yellow-200 rounded-lg px-4 py-2 flex items-center gap-2">
+            <Link
+              href="/register"
+              className="bg-yellow-50 border border-yellow-200 rounded-lg px-4 py-2 flex items-center gap-2 cursor-pointer"
+            >
               <AlertCircle className="w-5 h-5 text-yellow-600" />
               <span className="text-sm font-medium text-yellow-800">
                 Profile Incomplete
               </span>
-            </div>
+            </Link>
           )}
         </div>
       </div>
@@ -238,7 +242,7 @@ export default async function SchoolOverviewDashboard({
           <div
             className="absolute inset-0 opacity-10"
             style={{
-              backgroundImage: "url('/kirs.png')",
+              backgroundImage: "url('/KD_logo.png')",
               backgroundSize: "cover",
               backgroundPosition: "center",
             }}
