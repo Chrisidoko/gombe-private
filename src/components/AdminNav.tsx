@@ -5,7 +5,12 @@ import Link from "next/link";
 import LogoutButton from "@/components/ui/logoutbutton";
 import { usePathname } from "next/navigation";
 
-function Navigation() {
+interface NavigationProps {
+  collapsed: boolean;
+  setCollapsed: (val: boolean) => void;
+}
+
+const Navigation: React.FC<NavigationProps> = ({ collapsed, setCollapsed }) => {
   const pathname = usePathname();
 
   return (
@@ -17,8 +22,54 @@ function Navigation() {
             Kano State Electronic School Management System
           </span>
         </div>
-        <div className="flex items-center flex-nowrap gap-1 ">
-          <LogoutButton />
+        {/* User Section & Logout */}
+        <div
+          className={`p-4 border-t border-gray-200 ${collapsed ? "px-2" : ""}`}
+        >
+          {!collapsed ? (
+            <div className="mb-3 p-3 bg-gradient-to-r from-green-50 to-orange-50 rounded-lg">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-full flex items-center justify-center text-white font-bold flex-shrink-0">
+                  <svg
+                    className="w-6 h-6"
+                    fill="currentColor"
+                    viewBox="0 0 20 20"
+                  >
+                    <path
+                      fillRule="evenodd"
+                      d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z"
+                      clipRule="evenodd"
+                    />
+                  </svg>
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-semibold text-gray-900 truncate">
+                    School Admin
+                  </p>
+                  <p className="text-xs text-gray-600 truncate">
+                    admin@school.com
+                  </p>
+                </div>
+              </div>
+            </div>
+          ) : (
+            <div className="mb-3 flex justify-center">
+              <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-full flex items-center justify-center text-white font-bold">
+                <svg
+                  className="w-6 h-6"
+                  fill="currentColor"
+                  viewBox="0 0 20 20"
+                >
+                  <path
+                    fillRule="evenodd"
+                    d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z"
+                    clipRule="evenodd"
+                  />
+                </svg>
+              </div>
+            </div>
+          )}
+          <LogoutButton collapsed={collapsed} />
         </div>
       </div>
       <TabNavigation className="mt-12">
@@ -71,6 +122,6 @@ function Navigation() {
       </TabNavigation>
     </div>
   );
-}
+};
 
 export { Navigation };
