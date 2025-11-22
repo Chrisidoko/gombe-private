@@ -255,14 +255,16 @@ const Navigation: React.FC<NavigationProps> = ({ collapsed, setCollapsed }) => {
                       />
                     </svg>
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-semibold text-gray-900 truncate">
-                      School Admin
-                    </p>
-                    <p className="text-xs text-gray-600 truncate">
-                      admin@school.com
-                    </p>
-                  </div>
+                  <Link href="/profile">
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-semibold text-gray-900 truncate">
+                        School Admin
+                      </p>
+                      <p className="text-xs text-gray-600 truncate">
+                        Click to View Profile
+                      </p>
+                    </div>
+                  </Link>
                 </div>
               </div>
             ) : (
@@ -342,7 +344,7 @@ const Navigation: React.FC<NavigationProps> = ({ collapsed, setCollapsed }) => {
             </svg>
             <span className="font-medium text-gray-900">
               {navItems.find((item) => item.href === pathname)?.label ||
-                "Overview"}
+                "Profile"}
             </span>
           </div>
 

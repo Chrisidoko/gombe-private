@@ -23,6 +23,7 @@ export async function POST(req: Request) {
         lastTaxFiling,
         licenseNumber,
         lastLicenseRenewal,
+        licenseExpiry,
         category,
       } = body;
 
@@ -60,9 +61,10 @@ export async function POST(req: Request) {
           last_tax_filing,
           license_number,
           last_license_renewal,
+          license_expiry_date,
           category
         )
-        VALUES ($1,$2,$3,$4,$5,$6,$7,$8)
+        VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)
         RETURNING school_id;
       `;
 
@@ -74,6 +76,7 @@ export async function POST(req: Request) {
         sanitize(lastTaxFiling),
         sanitize(licenseNumber),
         sanitize(lastLicenseRenewal),
+        sanitize(licenseExpiry),
         sanitize(category),
       ];
 

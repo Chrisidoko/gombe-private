@@ -1,7 +1,7 @@
 "use client";
 /* eslint-disable */
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import Image from "next/image";
 import { CircleX, Loader2, CircleCheck, FileUp } from "lucide-react";
 import toast from "react-hot-toast";
@@ -21,6 +21,7 @@ type FormData = {
     lastTaxFiling: string;
     licenseNumber: string;
     lastLicenseRenewal: string;
+    licenseExpiry: string;
     category: string;
   };
 
@@ -39,6 +40,10 @@ type FormData = {
     confirmemail: string;
     phone: string;
     website: string;
+    academicSession: string;
+    weeksPerSemester: string;
+    sessionStart: string;
+    sessionEnd: string;
   };
 
   D: {
@@ -70,6 +75,7 @@ export default function PrivateInstitutionsForm() {
       lastTaxFiling: "",
       licenseNumber: "",
       lastLicenseRenewal: "",
+      licenseExpiry: "",
       category: "",
     },
     B: {
@@ -86,6 +92,10 @@ export default function PrivateInstitutionsForm() {
       confirmemail: "",
       phone: "",
       website: "",
+      academicSession: "",
+      weeksPerSemester: "",
+      sessionStart: "",
+      sessionEnd: "",
     },
     D: {
       documents: [] as { type: string; url: string }[], // ✅ Array of objects
@@ -511,6 +521,20 @@ export default function PrivateInstitutionsForm() {
                   className="w-full p-2 border border-gray-400 rounded"
                 />
               </div>
+              <div className="flex flex-col gap-2">
+                <label className="text-sm font-medium">
+                  License Expiry Date
+                </label>
+                <input
+                  type="date"
+                  placeholder="Date of Last License Renewal"
+                  value={formData.A.licenseExpiry}
+                  onChange={(e) =>
+                    handleChange("A", "licenseExpiry", e.target.value)
+                  }
+                  className="w-full p-2 border border-gray-400 rounded"
+                />
+              </div>
 
               <div className="w-full md:col-span-3">
                 <h3 className="font-semibold mb-2">Category</h3>
@@ -789,7 +813,7 @@ export default function PrivateInstitutionsForm() {
                 <div className="flex flex-col gap-2">
                   <label className="text-sm font-medium">Phone</label>
                   <input
-                    type="**numeric**"
+                    type="number"
                     placeholder="Telephone Number"
                     value={formData.C.phone}
                     pattern="[0-9]*" // Optional: basic validation pattern for numbers
@@ -808,6 +832,76 @@ export default function PrivateInstitutionsForm() {
                       handleChange("C", "website", e.target.value)
                     }
                     className="w-full p-2 border  border-gray-400 rounded"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="flex flex-col gap-2">
+                  <label className="text-sm font-medium">
+                    Academic Session
+                  </label>
+                  <select
+                    value={formData.C.academicSession}
+                    onChange={(e) =>
+                      handleChange("C", "academicSession", e.target.value)
+                    }
+                    className="p-2 border rounded bg-white"
+                  >
+                    <option value="">Select Session</option>
+                    {Array.from({ length: 5 }).map((_, i) => {
+                      const startYear = new Date().getFullYear() - i;
+                      const endYear = startYear + 1;
+                      const session = `${startYear}/${endYear}`;
+                      return (
+                        <option key={session} value={session}>
+                          {session}
+                        </option>
+                      );
+                    })}
+                  </select>
+                </div>
+
+                <div className="flex flex-col gap-2">
+                  <label className="text-sm font-medium">
+                    Weeks Per Semester
+                  </label>
+                  <input
+                    type="number"
+                    placeholder="Number of Weeks per Semester"
+                    value={formData.C.weeksPerSemester}
+                    onChange={(e) =>
+                      handleChange("C", "weeksPerSemester", e.target.value)
+                    }
+                    className="p-2 border rounded"
+                  />
+                </div>
+                <div className="flex flex-col gap-2">
+                  <label className="text-sm font-medium">
+                    Session Start Date
+                  </label>
+                  <input
+                    type="date"
+                    placeholder="Session Start Date"
+                    value={formData.C.sessionStart}
+                    onChange={(e) =>
+                      handleChange("C", "sessionStart", e.target.value)
+                    }
+                    className="p-2 border rounded"
+                  />
+                </div>
+                <div className="flex flex-col gap-2">
+                  <label className="text-sm font-medium">
+                    Expected End Date
+                  </label>
+                  <input
+                    type="date"
+                    placeholder="Expected End Date"
+                    value={formData.C.sessionEnd}
+                    onChange={(e) =>
+                      handleChange("C", "sessionEnd", e.target.value)
+                    }
+                    className="p-2 border rounded"
                   />
                 </div>
               </div>
@@ -995,7 +1089,6 @@ export default function PrivateInstitutionsForm() {
                     <strong>What's next?</strong>
                   </p>
                   <ul className="text-sm text-blue-700 mt-2 space-y-1 list-disc list-inside">
-                    <li>Review typically takes 1-2 days</li>
                     <li>Check your email for approval notification</li>
                     <li>You can log in once approved</li>
                   </ul>

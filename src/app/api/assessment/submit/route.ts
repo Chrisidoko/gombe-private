@@ -80,11 +80,20 @@ export async function POST(req: Request) {
       ]
     );
 
-    // 4️⃣ Update schoolskano form_status to "completed"
-    // await pool.query(
-    //   `UPDATE schoolskano SET form_status = 'completed' WHERE school_id = $1`,
-    //   [user.institution]
-    // );
+    // 4️⃣ Update schoolskano session details
+    await pool.query(
+      `UPDATE schoolskano
+       SET
+        academic_session = COALESCE($2, academic_session),
+        session_end = COALESCE($3, session_end),
+        session_start = COALESCE($4, session_start)
+       WHERE school_id = $1`,
+      [user.institution, session, end_date, start_date] // ✅ Now passing all 4 parameters
+    );
+
+    //How COALESCE Works
+    //If $2 (session) is NOT NULL → use the new value
+    //If $2 is NULL → keep the existing academic_session value
 
     return NextResponse.json({
       success: true,

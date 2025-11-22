@@ -45,7 +45,7 @@ export async function POST(req: Request) {
       subject: "Your School Registration Has Been Approved",
       html: `
         <p>Dear <strong>${name}</strong>,</p>
-        <p>Your institution has been successfully approved on the Kano Private University Portal.</p>
+        <p>Your institution has been successfully approved on the Kaduna Private University Portal.</p>
         <p>You can now proceed to create your admin account and start onboarding:</p>
        <p>Click below to sign up and complete your registration:</p>
         <p>
@@ -54,7 +54,7 @@ export async function POST(req: Request) {
            </a>
         </p>
         <br />
-        <p>Best Regards,<br>KIRS School Assessment Team</p>
+        <p>Best Regards,<br>Kadirs School Assessment Team</p>
       `,
     });
 

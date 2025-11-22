@@ -51,50 +51,29 @@ type FormData = {
 };
 
 const lgas = [
-  "Ajingi",
-  "Albasu",
-  "Bagwai",
-  "Bebeji",
-  "Bichi",
-  "Bunkure",
-  "Dala",
-  "Dambatta",
-  "Dawakin Kudu",
-  "Dawakin Tofa",
-  "Doguwa",
-  "Fagge",
-  "Gabasawa",
-  "Garko",
-  "Garun Mallam",
-  "Gaya",
-  "Gezawa",
-  "Gwale",
-  "Gwarzo",
-  "Kabo",
-  "Kano Municipal",
-  "Karaye",
-  "Kibiya",
-  "Kiru",
-  "Kumbotso",
-  "Kunchi",
-  "Kura",
-  "Madobi",
-  "Makoda",
-  "Minjibir",
-  "Nasarawa",
-  "Rano",
-  "Rimin Gado",
-  "Rogo",
-  "Shanono",
-  "Sumaila",
-  "Takai",
-  "Tarauni",
-  "Tofa",
-  "Tsanyawa",
-  "Tudun Wada",
-  "Ungogo",
-  "Warawa",
-  "Wudil",
+  "Birnin Gwari",
+  "Chikun",
+  "Giwa",
+  "Igabi",
+  "Ikara",
+  "Jaba",
+  "Jema'a",
+  "Kachia",
+  "Kaduna North",
+  "Kaduna South",
+  "Kagarko",
+  "Kajuru",
+  "Kaura",
+  "Kauru",
+  "Kubau",
+  "Kudan",
+  "Lere",
+  "Makarfi",
+  "Sabon Gari",
+  "Sanga",
+  "Soba",
+  "Zangon Kataf",
+  "Zaria",
 ];
 
 const sections = [
@@ -605,7 +584,7 @@ export default function PrivateInstitutionsForm() {
               <div className="flex flex-col gap-2">
                 <label className="text-sm font-medium">Official Phone</label>
                 <input
-                  type="**numeric**"
+                  type="number"
                   placeholder="Telephone Number"
                   value={formData.A.phone}
                   pattern="[0-9]*" // Optional: basic validation pattern for numbers
@@ -741,7 +720,7 @@ export default function PrivateInstitutionsForm() {
                       School Contact Person Phone
                     </label>
                     <input
-                      type="**numeric**"
+                      type="number"
                       placeholder="Telephone Number"
                       value={formData.B.contact_person_phone}
                       pattern="[0-9]*" // Optional: basic validation pattern for numbers

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { formatDate } from "@/lib/formatDate";
+
 import Link from "next/link";
 import { FileText } from "lucide-react";
 
@@ -13,6 +13,14 @@ interface invoiceTypes {
   issue_date: string;
   due_date: string;
   status: string;
+}
+
+function formatDate(dateString: string) {
+  return new Date(dateString).toLocaleDateString("en-US", {
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+  });
 }
 
 function getDaysUntilDue(dueDate: string) {

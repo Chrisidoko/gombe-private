@@ -67,6 +67,10 @@ export async function POST(req: Request) {
         email,
         phone,
         website,
+        academicSession,
+        weeksPerSemester,
+        sessionStart,
+        sessionEnd,
       } = body;
 
       updateQuery = `
@@ -76,8 +80,12 @@ export async function POST(req: Request) {
             ready_for_api = $3,
             email = $4,
             phone = $5,
-            website = $6
-        WHERE school_id = $7
+            website = $6,
+            academic_session = COALESCE($7, academic_session),
+            weeks_per_semester = COALESCE($8, weeks_per_semester),
+            session_start = COALESCE($9, session_start),
+            session_end = COALESCE($10, session_end)
+        WHERE school_id = $11
       `;
 
       values = [
@@ -87,6 +95,10 @@ export async function POST(req: Request) {
         sanitize(email),
         sanitize(phone),
         sanitize(website),
+        sanitize(academicSession),
+        sanitize(weeksPerSemester),
+        sanitize(sessionStart),
+        sanitize(sessionEnd),
         sanitize(school_id),
       ];
     }

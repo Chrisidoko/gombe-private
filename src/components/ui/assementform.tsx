@@ -54,6 +54,8 @@ export default function AssesmentForm() {
       const data = await res.json();
       if (data.success) {
         toast.success("Assessment submitted successfully!");
+        // Optionally refresh the page or redirect
+        window.location.reload();
       } else {
         toast.error(data.message || "Failed to submit assessment.");
       }
@@ -120,7 +122,7 @@ export default function AssesmentForm() {
               {["100", "200", "300", "400", "500", "postgrad"].map((level) => (
                 <input
                   key={level}
-                  type="**numeric**"
+                  type="number"
                   pattern="[0-9]*"
                   placeholder={`${level} Level`}
                   onChange={(e) =>
@@ -139,7 +141,7 @@ export default function AssesmentForm() {
               {["100", "200", "300", "400", "500", "postgrad"].map((level) => (
                 <input
                   key={level}
-                  type="**numeric**"
+                  type="number"
                   pattern="[0-9]*"
                   placeholder={`${level} Level Fee`}
                   onChange={(e) =>
