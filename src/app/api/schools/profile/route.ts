@@ -18,11 +18,14 @@ export async function POST(req: Request) {
 
     const {
       // General Information
+
       proprietorName,
       chairmanName,
       ownershipType,
       tin,
       lastTaxFiling,
+      address,
+      lga,
 
       // Academic Information
       modeOfOperation,
@@ -44,18 +47,21 @@ export async function POST(req: Request) {
     const result = await pool.query(
       `UPDATE schoolskano
        SET
+       
         proprietor_name = COALESCE($2, proprietor_name),
         chairman_name = COALESCE($3, chairman_name),
         ownership = COALESCE($4, ownership),
         tin = COALESCE($5, tin),
         last_tax_filing = COALESCE($6, last_tax_filing),
-        mode_of_operation = COALESCE($7::jsonb, mode_of_operation),
-        avg_fee = COALESCE($8, avg_fee),
-        total_revenue = COALESCE($9, total_revenue),
-        programmes = COALESCE($10::jsonb, programmes),
-        licence_status = COALESCE($11, licence_status),
-        prev_amount = COALESCE($12, prev_amount),
-        prev_licence_date = COALESCE($13, prev_licence_date),
+        address = COALESCE($7, address),
+        lga = COALESCE($8, lga),
+        mode_of_operation = COALESCE($9::jsonb, mode_of_operation),
+        avg_fee = COALESCE($10, avg_fee),
+        total_revenue = COALESCE($11, total_revenue),
+        programmes = COALESCE($12::jsonb, programmes),
+        licence_status = COALESCE($13, licence_status),
+        prev_amount = COALESCE($14, prev_amount),
+        prev_licence_date = COALESCE($15, prev_licence_date),
         form_status = 'completed',
         updated_at = NOW()
        WHERE school_id = $1
@@ -67,6 +73,8 @@ export async function POST(req: Request) {
         ownershipType || null,
         tin || null,
         lastTaxFiling || null,
+        address || null,
+        lga || null,
         JSON.stringify(modeOfOperation || []), // ✅ Convert to JSON string
         avgFee || null,
         totalRevenue || null,

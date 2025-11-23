@@ -14,9 +14,12 @@ import toast from "react-hot-toast";
 
 type FormData = {
   // General Information
+
   proprietorName: string;
   chairmanName: string;
   ownershipType: string;
+  address: string;
+  lga: string;
   tin: string;
   lastTaxFiling: string;
 
@@ -36,11 +39,39 @@ type FormData = {
   prevDate: string;
 };
 
+const lgas = [
+  "Birnin Gwari",
+  "Chikun",
+  "Giwa",
+  "Igabi",
+  "Ikara",
+  "Jaba",
+  "Jema'a",
+  "Kachia",
+  "Kaduna North",
+  "Kaduna South",
+  "Kagarko",
+  "Kajuru",
+  "Kaura",
+  "Kauru",
+  "Kubau",
+  "Kudan",
+  "Lere",
+  "Makarfi",
+  "Sabon Gari",
+  "Sanga",
+  "Soba",
+  "Zangon Kataf",
+  "Zaria",
+];
+
 export default function SchoolProfileForm() {
   const [formData, setFormData] = useState<FormData>({
     proprietorName: "",
     chairmanName: "",
     ownershipType: "Private Individual",
+    address: "",
+    lga: "",
     tin: "",
     lastTaxFiling: "",
     modeOfOperation: [],
@@ -272,6 +303,37 @@ export default function SchoolProfileForm() {
                   </select>
                 </div>
 
+                <div className="md:col-span-2 ">
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    Institution Address <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="Enter institution Address"
+                    value={formData.address}
+                    onChange={(e) => handleChange("address", e.target.value)}
+                    className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    LGA <span className="text-red-500">*</span>
+                  </label>
+                  <select
+                    value={formData.lga}
+                    onChange={(e) => handleChange("lga", e.target.value)}
+                    className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all"
+                  >
+                    <option value="">Select LGA</option>
+                    {lgas.sort().map((lga) => (
+                      <option key={lga} value={lga}>
+                        {lga}
+                      </option>
+                    ))}
+                  </select>
+                </div>
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 mb-2">
                     TIN <span className="text-red-500">*</span>

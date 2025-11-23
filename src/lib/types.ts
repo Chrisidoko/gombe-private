@@ -116,3 +116,17 @@ export interface SchoolProfileData {
   profileCompleted: boolean;
   lastUpdated: string;
 }
+
+// for transactions
+
+export interface TransactionType {
+  id: number;
+  school_id: string;
+  reference: string;
+  amount: string;
+  status: string;
+  payment_item: string;
+  invoice_number: string;
+  updated_at: string;
+  created_at: string;
+}

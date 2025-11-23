@@ -64,8 +64,8 @@ const Page = () => {
       <div className="w-[100%] sm:w-[45%] h-[100vh] bg-[#ffffff] relative top-0 left-0 flex flex-col justify-between sm:order-1 order-1">
         <div className="w-4/5 sm:w-3/5 mx-auto my-auto flex flex-col gap-4 px-6 sm:px-0">
           <Image
-            src="/kirs.png"
-            alt="kano state"
+            src="/KD_logo.png"
+            alt="kaduna state"
             width={66}
             height={66}
             className="md:block object-cover mx-auto"
@@ -149,7 +149,7 @@ const Page = () => {
         className="w-full sm:w-[55%] relative bg-[#199b39] bg-cover bg-center sm:order-2 order-1"
         style={{
           backgroundImage:
-            "linear-gradient(rgba(25,155,57,0.9), rgba(25,155,57,1.0)), url('/kirs.png')",
+            "linear-gradient(rgba(25,155,57,0.9), rgba(25,155,57,1.0)), url('/KD_logo.png')",
           backgroundSize: "620px",
           backgroundPosition: "center",
           backgroundRepeat: "no-repeat",

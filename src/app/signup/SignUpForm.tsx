@@ -108,8 +108,8 @@ export default function SignUpForm() {
       <div className="w-[100%] sm:w-[45%] h-[100%] bg-[#ffffff] relative top-0 left-0 flex flex-col justify-between">
         <div className="w-4/5 sm:w-3/5 mx-auto mt-6 flex flex-col gap-4 px-6 sm:px-0">
           <Image
-            src="/kirs.png"
-            alt="kano state"
+            src="/KD_logo.png"
+            alt="kaduna state"
             width={56}
             height={56}
             className="md:block object-cover mx-auto"
