@@ -35,6 +35,7 @@ export const hasErrorInput = [
   // ring color
   "ring-red-200",
 ];
+
 // Number formatter function
 
 type FormatterFunction = (number: number, currency?: string) => string;

@@ -70,7 +70,7 @@ export default function VerifyForm() {
           {/* Top Logo */}
           <div className="max-w-6xl px-6 py-2">
             <Image
-              src="/kirs.png"
+              src="/KD_logo.png"
               alt="Logo"
               className="mx-auto"
               width={76}
