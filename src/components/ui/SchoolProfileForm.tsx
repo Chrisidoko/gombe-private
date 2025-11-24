@@ -269,12 +269,11 @@ export default function SchoolProfileForm() {
 
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 mb-2">
-                    Chairman&lsquo;s Name{" "}
-                    <span className="text-red-500">*</span>
+                    Contact Person <span className="text-red-500">*</span>
                   </label>
                   <input
                     type="text"
-                    placeholder="Governing Council Chairman's name"
+                    placeholder="School Contact Person"
                     value={formData.chairmanName}
                     onChange={(e) =>
                       handleChange("chairmanName", e.target.value)

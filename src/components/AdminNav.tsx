@@ -260,7 +260,7 @@ const Navigation: React.FC<NavigationProps> = ({ collapsed, setCollapsed }) => {
                       CBS Admin
                     </p>
                     <p className="text-xs text-gray-600 truncate">
-                      admin@school.com
+                      Click to View Profile
                     </p>
                   </div>
                 </div>
