@@ -50,8 +50,8 @@ export async function POST(req: Request) {
         SET contact_person = $1,
             contact_person_designation = $2,
             contact_person_phone = $3,
-            ownershipType = $4,
-            category = $5,
+            ownership = $4,
+            category = $5
         WHERE school_id = $6
       `;
 
