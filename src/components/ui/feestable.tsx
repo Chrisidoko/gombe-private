@@ -4,12 +4,14 @@ import { useEffect, useState } from "react";
 
 import Link from "next/link";
 import { FileText } from "lucide-react";
+import toast from "react-hot-toast";
 
 interface invoiceTypes {
   id: number;
   school_id: string;
   invoice_number: string;
   amount: string | number;
+  bill_reference: string | null;
   issue_date: string;
   due_date: string;
   status: string;
@@ -34,7 +36,8 @@ function getDaysUntilDue(dueDate: string) {
 export default function FeesTable({ schoolId }: { schoolId: string }) {
   const [invoices, setInvoices] = useState<invoiceTypes[]>([]);
   const [loading, setLoading] = useState(true);
-  const [filter, setFilter] = useState<"all" | "paid" | "unpaid">("all");
+  const [filter, setFilter] = useState<"all" | "Paid" | "Unpaid">("all");
+  const [checkoutLoading, setCheckoutLoading] = useState<number | null>(null);
 
   useEffect(() => {
     if (!schoolId) return;
@@ -60,8 +63,39 @@ export default function FeesTable({ schoolId }: { schoolId: string }) {
   });
 
   const totalUnpaid = invoices
-    .filter((inv) => inv.status === "unpaid")
+    .filter((inv) => inv.status === "Unpaid")
     .reduce((sum, inv) => sum + Number(inv.amount), 0);
+
+  async function handleCheckout(invoiceId: number) {
+    setCheckoutLoading(invoiceId);
+
+    try {
+      const response = await fetch("/api/payments/checkout", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          invoice_id: invoiceId,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || "Failed to create checkout session");
+      }
+
+      // Redirect to PayKaduna checkout page
+      window.location.href = data.checkoutUrl;
+    } catch (error) {
+      console.error("Checkout error:", error);
+      toast.error(
+        error instanceof Error ? error.message : "Failed to initiate checkout"
+      );
+      setCheckoutLoading(null);
+    }
+  }
 
   if (loading) {
     return (
@@ -78,60 +112,6 @@ export default function FeesTable({ schoolId }: { schoolId: string }) {
       </div>
     );
   }
-
-  // return (
-  //   <div className="bg-white p-6 rounded-xl shadow-md">
-  //     <h2 className="text-xl font-semibold mb-4">Invoices</h2>
-
-  //     {invoices.length === 0 ? (
-  //       <p className="text-gray-500">No invoices found.</p>
-  //     ) : (
-  //       <table className="w-full border-collapse">
-  //         <thead>
-  //           <tr className="bg-gray-100 text-sm">
-  //             <th className="p-2 text-left">Invoice #</th>
-  //             <th className="p-2 text-left">Amount</th>
-  //             <th className="p-2 text-left">Issue Date</th>
-  //             <th className="p-2 text-left">Due Date</th>
-  //             <th className="p-2 text-left">Status</th>
-  //             <th className="p-2 text-left">Action</th>
-  //           </tr>
-  //         </thead>
-  //         <tbody>
-  //           {invoices.map((inv) => (
-  //             <tr key={inv.id} className="border-b text-sm">
-  //               <td className="p-2">{inv.invoice_number}</td>
-  //               <td className="p-2">₦{Number(inv.amount).toLocaleString()}</td>
-  //               <td className="p-2">{formatDate(inv.issue_date)}</td>
-  //               <td className="p-2">{formatDate(inv.due_date)}</td>
-  //               <td
-  //                 className={`p-2 font-semibold ${
-  //                   inv.status === "unpaid" ? "text-red-500" : "text-green-600"
-  //                 }`}
-  //               >
-  //                 {inv.status.toUpperCase()}
-  //               </td>
-  //               <td className="p-2">
-  //                 {inv.status === "unpaid" ? (
-  //                   <Link
-  //                     href={`/checkout?school_id=${schoolId}&ref=${encodeURIComponent(
-  //                       inv.invoice_number
-  //                     )}&amount=${inv.amount}&item=Tax Invoice`}
-  //                     className="bg-blue-600 text-white px-3 py-1 rounded-md text-sm hover:bg-blue-700"
-  //                   >
-  //                     Pay Now
-  //                   </Link>
-  //                 ) : (
-  //                   <span className="text-gray-400">Paid</span>
-  //                 )}
-  //               </td>
-  //             </tr>
-  //           ))}
-  //         </tbody>
-  //       </table>
-  //     )}
-  //   </div>
-  // );
 
   return (
     <div className="overflow-hidden">
@@ -162,7 +142,7 @@ export default function FeesTable({ schoolId }: { schoolId: string }) {
       <div className="bg-white rounded-xl shadow-sm border border-gray-100">
         <div className="px-6 pt-4 border-b border-gray-200">
           <div className="flex gap-2">
-            {(["all", "unpaid", "paid"] as const).map((status) => (
+            {(["all", "Unpaid", "Paid"] as const).map((status) => (
               <button
                 key={status}
                 onClick={() => setFilter(status)}
@@ -237,11 +217,11 @@ export default function FeesTable({ schoolId }: { schoolId: string }) {
                   {filteredInvoices.map((inv) => {
                     const daysUntilDue = getDaysUntilDue(inv.due_date);
                     const isOverdue =
-                      daysUntilDue < 0 && inv.status === "unpaid";
+                      daysUntilDue < 0 && inv.status === "Unpaid";
                     const isDueSoon =
                       daysUntilDue <= 7 &&
                       daysUntilDue >= 0 &&
-                      inv.status === "unpaid";
+                      inv.status === "Unpaid";
 
                     return (
                       <tr
@@ -293,14 +273,14 @@ export default function FeesTable({ schoolId }: { schoolId: string }) {
                         <td className="py-4">
                           <span
                             className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold ${
-                              inv.status === "paid"
+                              inv.status === "Paid"
                                 ? "bg-green-100 text-green-700"
                                 : isOverdue
                                 ? "bg-red-100 text-red-700"
                                 : "bg-yellow-100 text-yellow-700"
                             }`}
                           >
-                            {inv.status === "paid" && (
+                            {inv.status === "Paid" && (
                               <svg
                                 className="w-3 h-3 mr-1"
                                 fill="currentColor"
@@ -316,27 +296,50 @@ export default function FeesTable({ schoolId }: { schoolId: string }) {
                             {inv.status.toUpperCase()}
                           </span>
                         </td>
+
                         <td className="py-4">
-                          {inv.status === "unpaid" ? (
-                            <Link
-                              href={`/checkout?school_id=${schoolId}&ref=${encodeURIComponent(
-                                inv.invoice_number
-                              )}&amount=${inv.amount}&item=Tax Invoice`}
-                              className="bg-gradient-to-r from-green-500 to-green-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:from-blue-700 hover:to-indigo-700 transition-all shadow-sm hover:shadow-md"
+                          {inv.status === "Unpaid" ? (
+                            <button
+                              onClick={() => handleCheckout(inv.id)}
+                              disabled={checkoutLoading === inv.id}
+                              className={`
+        bg-gradient-to-r from-green-500 to-green-600 text-white 
+        px-4 py-2 rounded-lg text-sm font-medium 
+        hover:from-green-600 hover:to-green-700 
+        transition-all shadow-sm hover:shadow-md
+        disabled:opacity-50 disabled:cursor-not-allowed
+        flex items-center gap-2
+      `}
                             >
-                              Pay Now
-                            </Link>
+                              {checkoutLoading === inv.id ? (
+                                <>
+                                  <svg
+                                    className="animate-spin h-4 w-4"
+                                    xmlns="http://www.w3.org/2000/svg"
+                                    fill="none"
+                                    viewBox="0 0 24 24"
+                                  >
+                                    <circle
+                                      className="opacity-25"
+                                      cx="12"
+                                      cy="12"
+                                      r="10"
+                                      stroke="currentColor"
+                                      strokeWidth="4"
+                                    />
+                                    <path
+                                      className="opacity-75"
+                                      fill="currentColor"
+                                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                                    />
+                                  </svg>
+                                  Pay Now
+                                </>
+                              ) : (
+                                "Pay Now"
+                              )}
+                            </button>
                           ) : (
-                            // <button
-                            //   onClick={() =>
-                            //     alert(
-                            //       `Redirecting to payment for ${inv.invoice_number}`
-                            //     )
-                            //   }
-                            //   className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:from-blue-700 hover:to-indigo-700 transition-all shadow-sm hover:shadow-md"
-                            // >
-                            //   Pay Now
-                            // </button>
                             <div className="flex items-center gap-2 text-gray-400 text-sm">
                               <svg
                                 className="w-4 h-4"
@@ -353,6 +356,34 @@ export default function FeesTable({ schoolId }: { schoolId: string }) {
                             </div>
                           )}
                         </td>
+                        {/* <td className="py-4">
+                          {inv.status === "Unpaid" ? (
+                            <Link
+                              href={`/checkout?school_id=${schoolId}&ref=${encodeURIComponent(
+                                inv.invoice_number
+                              )}&amount=${inv.amount}&item=Tax Invoice`}
+                              className="bg-gradient-to-r from-green-500 to-green-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:from-blue-700 hover:to-indigo-700 transition-all shadow-sm hover:shadow-md"
+                            >
+                              Pay Now
+                            </Link>
+                          ) : (
+                          
+                            <div className="flex items-center gap-2 text-gray-400 text-sm">
+                              <svg
+                                className="w-4 h-4"
+                                fill="currentColor"
+                                viewBox="0 0 20 20"
+                              >
+                                <path
+                                  fillRule="evenodd"
+                                  d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                                  clipRule="evenodd"
+                                />
+                              </svg>
+                              Paid
+                            </div>
+                          )}
+                        </td> */}
                       </tr>
                     );
                   })}
@@ -378,7 +409,7 @@ export default function FeesTable({ schoolId }: { schoolId: string }) {
                   <span className="font-bold text-green-700">
                     ₦
                     {invoices
-                      .filter((inv) => inv.status === "paid")
+                      .filter((inv) => inv.status === "Paid")
                       .reduce((sum, inv) => sum + Number(inv.amount), 0)
                       .toLocaleString()}
                   </span>

@@ -1,3 +1,4 @@
+// I dont think i am still using this i will conform later to be sure.
 import { NextResponse } from "next/server";
 import pool from "@/lib/db";
 

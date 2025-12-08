@@ -23,12 +23,12 @@ export default function Transactions() {
   });
 
   //data drawer
-  const [selectedRow, setSelectedRow] = useState<TransactionType | undefined>(
-    undefined
-  );
-  const [drawerOpen, setDrawerOpen] = useState(false);
+  // const [selectedRow, setSelectedRow] = useState<TransactionType | undefined>(
+  //   undefined
+  // );
+  // const [drawerOpen, setDrawerOpen] = useState(false);
   const handleRowClick = (row: Row<TransactionType>) => {
-    setSelectedRow(row.original);
+    // setSelectedRow(row.original);
     // setDrawerOpen(true);
   };
   const columns = getColumns({ onRowClick: handleRowClick });

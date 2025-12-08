@@ -174,14 +174,14 @@ export default function CheckoutForm({
       <div className="relative flex items-center pt-6 px-6">
         <div className="flex gap-2">
           <Image
-            src="/kirs.png"
-            alt="kano state"
+            src="/KD_logo.png"
+            alt="kaduna state"
             width={50}
             height={50}
             className="object-cover"
           />
           <div className="flex flex-col text-[#28a745] font-bold">
-            <span className="text-base">Kano State Electronic</span>
+            <span className="text-base">Kaduna State Electronic</span>
             <span className="text-sm">School Management System</span>
           </div>
         </div>
