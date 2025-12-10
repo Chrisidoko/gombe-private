@@ -111,7 +111,7 @@ export async function GET(req: Request) {
          (id, reference, amount, status, payment_method, payment_item, invoice_number, school_id, created_at)
          VALUES ($1, $2, $3, 'Paid', 'paykaduna', $4, $5, $6, NOW())
          ON CONFLICT (reference) 
-         DO UPDATE SET status = 'Paid', created_at = NOW()`,
+         DO UPDATE SET status = 'Paid', payment_item = $4`,
         [
           invoice.id,
           billReference,
