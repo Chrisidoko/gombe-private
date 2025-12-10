@@ -132,7 +132,7 @@ function getStatusIcon(status: string) {
 export default function TransactionsTable({ schoolId }: { schoolId: string }) {
   const [transactions, setTransactions] = useState<TransactionType[]>([]);
   const [loading, setLoading] = useState(true);
-  const [filter, setFilter] = useState<"all" | "Paid" | "unpaid" | "pending">(
+  const [filter, setFilter] = useState<"all" | "Paid" | "Unpaid" | "pending">(
     "all"
   );
   const [searchTerm, setSearchTerm] = useState("");
@@ -403,7 +403,7 @@ export default function TransactionsTable({ schoolId }: { schoolId: string }) {
 
           {/* Status Filter */}
           <div className="flex gap-2 flex-wrap">
-            {(["all", "Paid", "unpaid", "pending"] as const).map((status) => (
+            {(["all", "Paid", "Unpaid", "pending"] as const).map((status) => (
               <button
                 key={status}
                 onClick={() => {
