@@ -23,8 +23,7 @@ export async function POST(req: Request) {
     const body = await req.json();
     console.log("🔹 Webhook received:", body);
 
-    const { billReference, paymentChannel, paymentGateway, status, paidat } =
-      body;
+    const { billReference, paymentGateway, status, paidat } = body;
 
     if (!billReference || !status) {
       console.error("❌ Missing required fields");
@@ -95,8 +94,8 @@ export async function POST(req: Request) {
 
       await client.query(
         `INSERT INTO transactionskano 
-         (invoice_number, reference, amount, status, payment_method, gateway_response, payment_item, paid_at, created_at)
-         VALUES ($1, $2, $3, 'Paid', 'paykaduna', $4, 'Assessment Payment', $5, NOW())
+         (invoice_number, reference, amount, status, payment_method, gateway_response, payment_item, paid_at, created_at, school_id)
+         VALUES ($1, $2, $3, 'Paid', 'paykaduna', $4, 'Assessment Payment', $5, NOW(), $6)
          ON CONFLICT (reference) 
          DO UPDATE SET 
            status = 'Paid', 
@@ -109,6 +108,7 @@ export async function POST(req: Request) {
           invoice.amount,
           paymentGateway || "Unknown",
           paidAtDate,
+          invoice.school_id,
         ]
       );
       console.log("📝 Inserting transaction:", {
@@ -120,6 +120,7 @@ export async function POST(req: Request) {
         gateway_response: paymentGateway || "Unknown",
         payment_item: "Assessment Payment",
         paid_at: paidAtDate,
+        school_id: invoice.school_id,
       });
 
       console.log("✅ Transaction logged");
