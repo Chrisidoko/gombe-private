@@ -86,8 +86,17 @@ export default function FeesTable({ schoolId }: { schoolId: string }) {
         throw new Error(data.error || "Failed to create checkout session");
       }
 
-      // Redirect to PayKaduna checkout page
-      window.location.href = data.checkoutUrl;
+      // Redirect to PayKaduna checkout page in the same tab
+      // window.location.href = data.checkoutUrl;
+
+      // Create temporary anchor element to open a new tab to guarantee it opens in a new tab without popup blockers interfering
+      const link = document.createElement("a");
+      link.href = data.checkoutUrl;
+      link.target = "_blank";
+      link.rel = "noopener noreferrer"; // Security best practice
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
     } catch (error) {
       console.error("Checkout error:", error);
       toast.error(
