@@ -98,7 +98,7 @@ export async function GET(req: Request) {
     if (payStatus === "paid") {
       await client.query(
         `UPDATE schoolkano_invoices 
-         SET status = 'Paid', paid_at = NOW()
+         SET status = 'Paid'
          WHERE id = $1 AND status = 'Unpaid'`,
         [invoice.id]
       );
