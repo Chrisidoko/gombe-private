@@ -10,9 +10,9 @@ const poppins = Poppins({
 });
 
 export const metadata: Metadata = {
-  title: "KANO STATE IRS",
+  title: "Kaduna STATE IRS",
   description:
-    "Kano State Electronic School Management System for Private institutions",
+    "Kaduna State Private Tertiary Institutions Electronic Management System",
 };
 
 export default function RootLayout({
