@@ -61,7 +61,7 @@ export async function POST(req: Request) {
     // ✅ Include school name in the email body
     const htmlContent = `
       <div style="font-family: Arial, sans-serif; line-height: 1.6;">
-        <h2 style="color: #28a745;">Kano State IRS</h2>
+        <h2 style="color: #28a745;">Kaduna State IRS</h2>
         <p>Hello <b>${school.name}</b>,</p>
         <p>Your One-Time Password (OTP) for login is:</p>
         <h3 style="color: #333; font-size: 22px;">${otp}</h3>

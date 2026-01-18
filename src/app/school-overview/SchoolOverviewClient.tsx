@@ -83,7 +83,7 @@ export default function SchoolOverviewClient() {
         school_id: school.school_id,
       });
 
-      router.push(`/checkout?${params.toString()}`);
+      router.push(`/license?${params.toString()}`);
     } catch (err) {
       console.error(err);
     } finally {
