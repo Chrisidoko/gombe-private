@@ -21,7 +21,7 @@ export async function POST(req: Request) {
 
     const { email, name } = result.rows[0];
 
-    const signupLink = `https://privateuni.payprosolutionsltd.com/signup?school_id=${school_id}`;
+    const signupLink = `https://kaptems.payprosolutionsltd.com/signup?school_id=${school_id}`;
 
     // ✅ Verify SMTP credentials
     if (!process.env.SMTP_USER || !process.env.SMTP_PASS) {
