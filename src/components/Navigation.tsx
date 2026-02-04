@@ -134,10 +134,10 @@ const Navigation: React.FC<NavigationProps> = ({ collapsed, setCollapsed }) => {
               {!collapsed && (
                 <div className="min-w-0">
                   <h1 className="font-bold text-sm text-gray-900 leading-tight">
-                    Kaduna State Electronic
+                    Kaduna State Private
                   </h1>
                   <p className="text-xs text-gray-600">
-                    School Management System
+                    Tertiary Institutions Portal
                   </p>
                 </div>
               )}

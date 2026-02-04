@@ -31,6 +31,49 @@ export default function CheckoutClient({ invoiceData }: CheckoutClientProps) {
   const [paymentUrl, setPaymentUrl] = useState("");
   const [checkingStatus, setCheckingStatus] = useState(false);
   const [paymentSuccess, setPaymentSuccess] = useState(false);
+  const [downloadingLicense, setDownloadingLicense] = useState(false);
+
+  const handleDownloadLicense = async () => {
+    try {
+      setDownloadingLicense(true);
+
+      const response = await fetch("/api/generate-license", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          school_id: invoiceData.school_id,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to generate license");
+      }
+
+      // Get the PDF blob
+      const blob = await response.blob();
+
+      // Create download link
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `license-${invoiceData.school_id}-${new Date().getTime()}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+
+      // Cleanup
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+
+      toast.success("License downloaded successfully!");
+    } catch (error) {
+      console.error("Download error:", error);
+      toast.error("Failed to download license. Please try again.");
+    } finally {
+      setDownloadingLicense(false);
+    }
+  };
 
   async function handleCheckout() {
     setCheckoutLoading(true);
@@ -58,7 +101,7 @@ export default function CheckoutClient({ invoiceData }: CheckoutClientProps) {
     } catch (error) {
       console.error("Checkout error:", error);
       toast.error(
-        error instanceof Error ? error.message : "Failed to initiate checkout"
+        error instanceof Error ? error.message : "Failed to initiate checkout",
       );
     } finally {
       setCheckoutLoading(false);
@@ -78,7 +121,7 @@ export default function CheckoutClient({ invoiceData }: CheckoutClientProps) {
         `/api/payments/check-status?bill_reference=${invoiceData.bill_reference}`,
         {
           method: "GET",
-        }
+        },
       );
 
       const data = await response.json();
@@ -86,20 +129,44 @@ export default function CheckoutClient({ invoiceData }: CheckoutClientProps) {
       if (!response.ok) {
         throw new Error(data.error || "Failed to check payment status");
       }
-
       if (data.payment_status === "paid") {
-        setPaymentSuccess(true);
-        toast.success(
-          "Payment confirmed! Your license will be sent to your email shortly."
-        );
+        // Update the database with license information
+        try {
+          const updateResponse = await fetch("/api/license/update", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              school_id: invoiceData.school_id, // Pass the school_id from your invoice data
+              bill_reference: invoiceData.bill_reference, // Optional: for logging/tracking (might use later)
+            }),
+          });
 
-        // Redirect to dashboard or success page after 3 seconds
-        setTimeout(() => {
-          router.push("/dashboard");
-        }, 3000);
+          const updateData = await updateResponse.json();
+
+          if (!updateResponse.ok) {
+            throw new Error(updateData.error || "Failed to update license");
+          }
+
+          setPaymentSuccess(true);
+          toast.success(
+            `Payment confirmed! License ${updateData.data.license_number} has been issued.`,
+          );
+
+          // Redirect to dashboard or success page after 3 seconds
+          // setTimeout(() => {
+          //   router.push("/");
+          // }, 3000);
+        } catch (updateError) {
+          console.error("License update error:", updateError);
+          toast.error(
+            "Payment confirmed but failed to update license. Please contact support.",
+          );
+        }
       } else {
         toast.error(
-          "Payment not confirmed yet. Please complete the payment or try again."
+          "Payment not confirmed yet. Please complete the payment or try again.",
         );
       }
     } catch (error) {
@@ -107,7 +174,7 @@ export default function CheckoutClient({ invoiceData }: CheckoutClientProps) {
       toast.error(
         error instanceof Error
           ? error.message
-          : "Failed to verify payment status"
+          : "Failed to verify payment status",
       );
     } finally {
       setCheckingStatus(false);
@@ -155,22 +222,72 @@ export default function CheckoutClient({ invoiceData }: CheckoutClientProps) {
                   clipRule="evenodd"
                 />
               </svg>
-              <div className="ml-4">
+              <div className="ml-4 flex-1">
                 <h3 className="text-lg font-semibold text-green-900">
                   Payment Successful!
                 </h3>
                 <p className="mt-1 text-sm text-green-700">
-                  Your payment has been confirmed. Your license will be sent to{" "}
-                  <strong>{invoiceData.school_email}</strong> shortly.
+                  Your payment has been confirmed. Your license is ready to
+                  download.
                 </p>
-                <p className="mt-2 text-sm text-green-600">
-                  Redirecting to dashboard in 3 seconds...
+
+                {/* Download Button */}
+                <button
+                  onClick={handleDownloadLicense}
+                  disabled={downloadingLicense}
+                  className="mt-4 inline-flex items-center px-4 py-2 bg-green-600 hover:bg-green-700 text-white font-medium rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {downloadingLicense ? (
+                    <>
+                      <svg
+                        className="animate-spin -ml-1 mr-3 h-5 w-5 text-white"
+                        xmlns="http://www.w3.org/2000/svg"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                      >
+                        <circle
+                          className="opacity-25"
+                          cx="12"
+                          cy="12"
+                          r="10"
+                          stroke="currentColor"
+                          strokeWidth="4"
+                        ></circle>
+                        <path
+                          className="opacity-75"
+                          fill="currentColor"
+                          d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                        ></path>
+                      </svg>
+                      Generating License...
+                    </>
+                  ) : (
+                    <>
+                      <svg
+                        className="w-5 h-5 mr-2"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                        />
+                      </svg>
+                      Download License
+                    </>
+                  )}
+                </button>
+
+                <p className="mt-3 text-sm text-green-600">
+                  ← Back to Dashboard
                 </p>
               </div>
             </div>
           </div>
         )}
-
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Main Content - Left Side */}
           <div className="space-y-6">
@@ -258,8 +375,8 @@ export default function CheckoutClient({ invoiceData }: CheckoutClientProps) {
                           clipRule="evenodd"
                         />
                       </svg>
-                      Your license will be automatically sent to{" "}
-                      <strong>{invoiceData.school_email}</strong>
+                      Your license will be made available for download
+                      immediately after payment{" "}
                     </li>
                     <li className="flex items-start">
                       <svg
@@ -492,7 +609,7 @@ export default function CheckoutClient({ invoiceData }: CheckoutClientProps) {
                           <p className="text-gray-600">Valid Until</p>
                           <p className="font-semibold">
                             {formatDate(
-                              new Date(Date.now() + 365 * 24 * 60 * 60 * 1000)
+                              new Date(Date.now() + 365 * 24 * 60 * 60 * 1000),
                             )}
                           </p>
                         </div>

@@ -1,53 +1,104 @@
 // app/api/generate-license/route.ts
 import { NextRequest, NextResponse } from "next/server";
-import { cookies } from "next/headers";
+// import { cookies } from "next/headers";
+// import { formatDate } from "@/lib/formatDate";
+import { PDFFont, RGB } from "pdf-lib";
+import pool from "@/lib/db";
 
 interface LicenseData {
-  school_id: string;
   school_name: string;
   license_number: string;
   issue_date: string;
   expiry_date: string;
-  invoice_number: string;
+  state: string;
+  lga: string;
+  address: string;
+  ownership: string;
+  phone: string;
+  email: string;
 }
 
 export async function POST(request: NextRequest) {
   try {
     // Get auth token from cookies
-    const cookieStore = await cookies();
-    const authToken = cookieStore.get("auth_token")?.value;
+    // const cookieStore = await cookies();
+    // const authToken = cookieStore.get("auth_token")?.value;
 
-    if (!authToken) {
+    // if (!authToken) {
+    //   return NextResponse.json(
+    //     { status: false, error: "Unauthorized" },
+    //     { status: 401 },
+    //   );
+    // }
+
+    const body = await request.json();
+    const { school_id } = body;
+
+    if (!school_id) {
       return NextResponse.json(
-        { status: false, error: "Unauthorized" },
-        { status: 401 }
+        { status: false, error: "school_id is required" },
+        { status: 400 },
       );
     }
 
-    const body: LicenseData = await request.json();
+    // Fetch the most recent school information from database
+    const result = await pool.query(
+      `SELECT 
+        school_id, 
+        name, 
+        license_number, 
+        last_license_renewal, 
+        license_expiry_date,
+        state,
+        lga,
+        address,
+        ownership,
+        phone,
+        email
+       FROM schoolskano 
+       WHERE school_id = $1`,
+      [school_id],
+    );
 
-    // Validate required fields
-    if (!body.school_id || !body.school_name || !body.license_number) {
+    if (result.rows.length === 0) {
       return NextResponse.json(
-        { status: false, error: "Missing required fields" },
-        { status: 400 }
+        { status: false, error: "School not found" },
+        { status: 404 },
       );
     }
+
+    const schoolData = result.rows[0];
+
+    // Format dates
+    const formatDate = (date: string | Date) => {
+      return new Date(date).toLocaleDateString("en-US", {
+        year: "numeric",
+        month: "long",
+        day: "numeric",
+      });
+    };
+
+    const licenseData: LicenseData = {
+      school_name: schoolData.name,
+      license_number: schoolData.license_number,
+      issue_date: formatDate(schoolData.last_license_renewal),
+      expiry_date: formatDate(schoolData.license_expiry_date),
+      state: schoolData.state,
+      lga: schoolData.lga,
+      address: schoolData.address,
+      ownership: schoolData.ownership,
+      phone: schoolData.phone || "N/A",
+      email: schoolData.email || "N/A",
+    };
 
     // Generate QR code data URL
-    const qrCodeData = await generateQRCode(body.license_number);
+    const qrCodeData = await generateQRCode(
+      `License: ${licenseData.license_number}\nSchool: ${licenseData.school_name}\nValid Until: ${licenseData.expiry_date}`,
+    );
 
-    // Here you would use a PDF library like pdf-lib to:
-    // 1. Load your template PDF
-    // 2. Add text fields (school name, license number, dates)
-    // 3. Add QR code image
-    // 4. Save the modified PDF
-
-    // For now, returning the data structure
-    // Install pdf-lib: npm install pdf-lib
-
+    // Generate PDF
     const pdfData = await createLicensePDF({
-      ...body,
+      ...licenseData,
       qrCode: qrCodeData,
     });
 
@@ -55,23 +106,20 @@ export async function POST(request: NextRequest) {
       status: 200,
       headers: {
         "Content-Type": "application/pdf",
-        "Content-Disposition": `attachment; filename="license-${body.license_number}.pdf"`,
+        "Content-Disposition": `attachment; filename="license-${licenseData.license_number}.pdf"`,
       },
     });
   } catch (error) {
     console.error("Error generating license:", error);
     return NextResponse.json(
       { status: false, error: "Failed to generate license" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
 
 // Helper function to generate QR code
 async function generateQRCode(data: string): Promise<string> {
-  // You can use a library like 'qrcode' for this
-  // Install: npm install qrcode @types/qrcode
-
   const QRCode = await import("qrcode");
 
   try {
@@ -92,7 +140,7 @@ async function generateQRCode(data: string): Promise<string> {
 
 // Helper function to create PDF with dynamic content
 async function createLicensePDF(
-  data: LicenseData & { qrCode: string }
+  data: LicenseData & { qrCode: string },
 ): Promise<Buffer> {
   const { PDFDocument, rgb, StandardFonts } = await import("pdf-lib");
   const fs = await import("fs");
@@ -102,7 +150,7 @@ async function createLicensePDF(
   const templatePath = path.join(
     process.cwd(),
     "public",
-    "license-template.pdf"
+    "license-template.pdf",
   );
   const existingPdfBytes = fs.readFileSync(templatePath);
 
@@ -114,65 +162,102 @@ async function createLicensePDF(
   // Get page dimensions
   const { width, height } = firstPage.getSize();
 
-  // Embed font
+  const drawCenteredText = (
+    text: string,
+    y: number,
+    size: number,
+    font: PDFFont,
+    color: RGB = rgb(0, 0, 0),
+  ) => {
+    const textWidth = font.widthOfTextAtSize(text, size);
+    const x = (width - textWidth) / 2;
+    firstPage.drawText(text, { x, y, size, font, color });
+  };
+
+  // Embed fonts
   const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
   const boldFont = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
 
   // Add School Name (adjust coordinates based on your template)
-  firstPage.drawText(data.school_name, {
-    x: 150, // Adjust X coordinate
-    y: height - 200, // Adjust Y coordinate
-    size: 18,
-    font: boldFont,
-    color: rgb(0, 0, 0),
-  });
+  drawCenteredText(
+    data.school_name.toUpperCase(),
+    height - 370,
+    20,
+    boldFont,
+    rgb(0, 0, 0),
+  );
 
   // Add License Number
-  firstPage.drawText(`License #: ${data.license_number}`, {
-    x: 150,
-    y: height - 250,
-    size: 14,
-    font: font,
-    color: rgb(0, 0, 0),
+  firstPage.drawText(`LN:${data.license_number}`, {
+    x: width - 140,
+    y: height - 160,
+    size: 12,
+    font: boldFont,
+    color: rgb(0.2, 0.2, 0.8),
   });
 
-  // Add School ID
-  firstPage.drawText(`School ID: ${data.school_id}`, {
-    x: 150,
-    y: height - 280,
+  // Add Address
+  firstPage.drawText(`Address: ${data.address}`, {
+    x: 50,
+    y: height - 170,
+    size: 11,
+    font: font,
+    color: rgb(0.3, 0.3, 0.3),
+  });
+
+  // Add LGA and State
+  firstPage.drawText(`${data.lga}, ${data.state} State`, {
+    x: 50,
+    y: height - 190,
     size: 12,
     font: font,
     color: rgb(0.3, 0.3, 0.3),
+  });
+
+  // Add Ownership Type
+  drawCenteredText(
+    `Ownership: ${data.ownership}`,
+    height - 440,
+    16,
+    boldFont,
+    rgb(0.2, 0.2, 0.8),
+  );
+
+  // Add Contact Information
+  firstPage.drawText(`Phone: ${data.phone} | Email: ${data.email}`, {
+    x: 150,
+    y: height - 400,
+    size: 10,
+    font: font,
+    color: rgb(0.4, 0.4, 0.4),
   });
 
   // Add Issue Date
   firstPage.drawText(`Issued: ${data.issue_date}`, {
-    x: 150,
-    y: height - 310,
-    size: 12,
+    x: 50,
+    y: height - 210,
+    size: 10,
     font: font,
-    color: rgb(0.3, 0.3, 0.3),
+    color: rgb(0.4, 0.4, 0.4),
   });
 
   // Add Expiry Date
   firstPage.drawText(`Valid Until: ${data.expiry_date}`, {
-    x: 150,
-    y: height - 340,
-    size: 12,
+    x: 50,
+    y: height - 230,
+    size: 10,
     font: font,
-    color: rgb(0.3, 0.3, 0.3),
+    color: rgb(0.4, 0.4, 0.4),
   });
 
   // Add QR Code (if data URL is available)
   if (data.qrCode) {
-    // Convert data URL to buffer
     const qrImageBytes = Buffer.from(data.qrCode.split(",")[1], "base64");
-
     const qrImage = await pdfDoc.embedPng(qrImageBytes);
 
     firstPage.drawImage(qrImage, {
-      x: width - 150, // Position on right side
-      y: height - 250,
+      x: width - 130,
+      y: height - 270,
       width: 100,
       height: 100,
     });
@@ -183,21 +268,35 @@ async function createLicensePDF(
   return Buffer.from(pdfBytes);
 }
 
-// GET endpoint to preview a sample license
+// GET endpoint to preview a sample license (optional)
 export async function GET() {
   try {
     const sampleData: LicenseData = {
-      school_id: "SAMPLE123",
-      school_name: "Sample School Name",
-      license_number: "LIC-2026-001",
-      issue_date: new Date().toLocaleDateString(),
+      school_name: "Marayam Abacha College of Health",
+      license_number: "KN-2026-001234",
+      issue_date: new Date().toLocaleDateString("en-US", {
+        year: "numeric",
+        month: "short",
+        day: "numeric",
+      }),
       expiry_date: new Date(
-        Date.now() + 365 * 24 * 60 * 60 * 1000
-      ).toLocaleDateString(),
-      invoice_number: "INV-SAMPLE",
+        Date.now() + 365 * 24 * 60 * 60 * 1000,
+      ).toLocaleDateString("en-US", {
+        year: "numeric",
+        month: "short",
+        day: "numeric",
+      }),
+      state: "Kaduna",
+      lga: "Sample LGA",
+      address: "123 Sample Street, Sample Area",
+      ownership: "Private",
+      phone: "+234 800 000 0000",
+      email: "sample@school.com",
     };
 
-    const qrCodeData = await generateQRCode(sampleData.license_number);
+    const qrCodeData = await generateQRCode(
+      `License: ${sampleData.license_number}\nSchool: ${sampleData.school_name}\nValid Until: ${sampleData.expiry_date}`,
+    );
     const pdfData = await createLicensePDF({
       ...sampleData,
       qrCode: qrCodeData,
@@ -214,7 +313,7 @@ export async function GET() {
     console.error("Error generating sample license:", error);
     return NextResponse.json(
       { status: false, error: "Failed to generate sample license" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
