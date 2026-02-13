@@ -46,6 +46,8 @@ type FormData = {
     documents: PendingDocument[];
   };
 
+  D: Record<string, never>; // Empty object type - Section D has no fields
+
   // ✅ Safely allow dynamic string keys for toggleCheckbox
   [key: string]: Record<string, unknown>;
 };
@@ -114,12 +116,14 @@ export default function PrivateInstitutionsForm() {
     C: {
       documents: [] as { type: string; file: File; id: string }[],
     },
+
+    D: {}, // empty object since Section D just completes the form
   });
   const [selectedType, setSelectedType] = useState("");
   const [emailError, setEmailError] = useState(""); // to catch email validation error's
   const [loading, setLoading] = useState(false); //loadind state for moving steps to steps
   const [pendingDocuments, setPendingDocuments] = useState<PendingDocument[]>(
-    []
+    [],
   );
 
   const router = useRouter(); // to redirect user when done.
@@ -149,18 +153,18 @@ export default function PrivateInstitutionsForm() {
     const existingPending = pendingDocuments.find((doc) => doc.type === type);
     if (existingPending) {
       toast.error(
-        `"${type}" is already staged. Remove it first to add a new one.`
+        `"${type}" is already staged. Remove it first to add a new one.`,
       );
       return;
     }
 
     // Check if document type already exists in uploaded
     const existingUploaded = formData.C.documents.find(
-      (doc: any) => doc.type === type
+      (doc: any) => doc.type === type,
     );
     if (existingUploaded) {
       toast.error(
-        `"${type}" is already uploaded. Remove it first to add a new one.`
+        `"${type}" is already uploaded. Remove it first to add a new one.`,
       );
       return;
     }
@@ -202,7 +206,7 @@ export default function PrivateInstitutionsForm() {
 
     // Show loading toast
     const loadingToastId = toast.loading(
-      `Uploading ${pendingDocuments.length} document(s)...`
+      `Uploading ${pendingDocuments.length} document(s)...`,
     );
 
     for (const pendingDoc of pendingDocuments) {
@@ -259,7 +263,7 @@ export default function PrivateInstitutionsForm() {
       return true;
     } else if (successCount > 0) {
       toast.error(
-        `${successCount} succeeded, ${failCount} failed. Please retry failed uploads.`
+        `${successCount} succeeded, ${failCount} failed. Please retry failed uploads.`,
       );
       return false;
     } else {
@@ -271,7 +275,7 @@ export default function PrivateInstitutionsForm() {
   const handleChange = <T extends keyof FormData>(
     section: T,
     field: keyof FormData[T],
-    value: string
+    value: string,
   ) => {
     setFormData((prev) => ({
       ...prev,
@@ -293,7 +297,7 @@ export default function PrivateInstitutionsForm() {
   // Modified saveCurrentSection for Section D
   // Modified saveCurrentSection for Section D (Documents)
   const saveCurrentSection = async (
-    autoProgress: boolean = false
+    autoProgress: boolean = false,
   ): Promise<boolean> => {
     setLoading(true);
 
@@ -333,14 +337,45 @@ export default function PrivateInstitutionsForm() {
           // Wait a moment for state to update
           await new Promise((resolve) => setTimeout(resolve, 300));
         }
+      }
 
-        // After upload, verify at least one document exists
-        const docs = formData.C?.documents || [];
-        if (docs.length === 0) {
-          toast.error("Please upload at least one document before proceeding.");
+      // ✅ Section D: Mark form as complete
+      if (sectionKey === "D") {
+        if (!formData.school_id) {
+          toast.error(
+            "❗ Missing school ID. Please complete previous sections first.",
+          );
           setLoading(false);
           return false;
         }
+
+        const res = await fetch("/api/schools/newreg/update", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            section: "D",
+            school_id: formData.school_id || localStorage.getItem("school_id"),
+          }),
+        });
+
+        const result = await res.json();
+
+        if (!result.success) {
+          console.error("Failed to complete registration:", result.message);
+          toast.error(result.message || "Failed to complete registration");
+          setLoading(false);
+          return false;
+        }
+
+        toast.success("🎉 Registration completed successfully!");
+        setLoading(false);
+
+        // Redirect to success page or dashboard
+        // setTimeout(() => {
+        //   router.push("/registration-complete"); // or wherever you want
+        // }, 1500);
+
+        return true;
       }
 
       // Prepare data for saving (remove confirmemail if exists)
@@ -353,7 +388,7 @@ export default function PrivateInstitutionsForm() {
       };
 
       // For sections other than A, use update endpoint
-      if (sectionKey !== "A") {
+      if (sectionKey !== "A" && sectionKey !== "D") {
         endpoint = "/api/schools/newreg/update";
 
         if (!formData.school_id) {
@@ -364,6 +399,19 @@ export default function PrivateInstitutionsForm() {
 
         bodyData.school_id =
           formData.school_id || localStorage.getItem("school_id");
+      }
+
+      // Skip API call for Section C (documents handled separately)
+      if (sectionKey === "C") {
+        toast.success("Documents uploaded successfully");
+        setLoading(false);
+
+        if (autoProgress) {
+          await new Promise((resolve) => setTimeout(resolve, 500));
+          nextStep();
+        }
+
+        return true;
       }
 
       // Save section to database
@@ -540,6 +588,7 @@ export default function PrivateInstitutionsForm() {
                   value={formData.A.lga}
                   onChange={(e) => handleChange("A", "lga", e.target.value)}
                   className="w-full p-2 border border-gray-400 rounded"
+                  required
                 >
                   <option value="">Select LGA</option>
                   {lgas.sort().map((lga) => (
@@ -709,7 +758,7 @@ export default function PrivateInstitutionsForm() {
                         handleChange(
                           "B",
                           "contact_person_designation",
-                          e.target.value
+                          e.target.value,
                         )
                       }
                       className="w-full p-2 border  border-gray-400 rounded"
@@ -728,7 +777,7 @@ export default function PrivateInstitutionsForm() {
                         handleChange(
                           "B",
                           "contact_person_phone",
-                          e.target.value
+                          e.target.value,
                         )
                       }
                       className="w-full p-2 border  border-gray-400 rounded"
@@ -972,7 +1021,7 @@ export default function PrivateInstitutionsForm() {
                                 D: {
                                   ...prev.D,
                                   documents: prev.D.documents.filter(
-                                    (_: any, i: number) => i !== index
+                                    (_: any, i: number) => i !== index,
                                   ),
                                 },
                               }))
@@ -1038,7 +1087,7 @@ export default function PrivateInstitutionsForm() {
                     <strong>What's next?</strong>
                   </p>
                   <ul className="text-sm text-blue-700 mt-2 space-y-1 list-disc list-inside">
-                    <li>Review typically takes 1-2 days</li>
+                    {/* <li>Review typically takes 1-2 days</li> */}
                     <li>Check your email for approval notification</li>
                     <li>You can log in once approved</li>
                   </ul>

@@ -1,3 +1,4 @@
+// app/api/schools/newreg/create/route.ts
 import { NextResponse } from "next/server";
 import pool from "@/lib/db";
 import { generateSchoolID } from "@/lib/generateSchoolID";
@@ -48,7 +49,7 @@ export async function POST(req: Request) {
             success: false,
             message: "School name and email are required.",
           },
-          { status: 400 }
+          { status: 400 },
         );
       }
 
@@ -117,7 +118,7 @@ export async function POST(req: Request) {
 
     return NextResponse.json(
       { success: false, message: "Invalid section" },
-      { status: 400 }
+      { status: 400 },
     );
   } catch (error) {
     await client.query("ROLLBACK");
@@ -125,7 +126,7 @@ export async function POST(req: Request) {
 
     return NextResponse.json(
       { success: false, error: "Server error during registration" },
-      { status: 500 }
+      { status: 500 },
     );
   } finally {
     client.release();

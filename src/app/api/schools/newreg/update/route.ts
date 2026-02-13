@@ -1,3 +1,4 @@
+// app/api/schools/newreg/update/route.ts
 import { NextResponse } from "next/server";
 import pool from "@/lib/db";
 
@@ -12,7 +13,7 @@ export async function POST(req: Request) {
     if (!school_id) {
       return NextResponse.json(
         { success: false, message: "school_id is required" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -28,7 +29,7 @@ export async function POST(req: Request) {
       await client.query("ROLLBACK");
       return NextResponse.json(
         { success: false, message: "School not found" },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
@@ -85,12 +86,33 @@ export async function POST(req: Request) {
       ];
     }
 
+    // ✅ SECTION D — Mark Form as Complete
+    else if (section === "D") {
+      updateQuery = `
+        UPDATE schoolskano
+        SET form_status = 'complete'
+        WHERE school_id = $1
+        RETURNING school_id, name, form_status
+      `;
+
+      values = [school_id];
+
+      const result = await client.query(updateQuery, values);
+      await client.query("COMMIT");
+
+      return NextResponse.json({
+        success: true,
+        message: "Registration completed successfully",
+        data: result.rows[0],
+      });
+    }
+
     // ❗ Invalid section
     else {
       await client.query("ROLLBACK");
       return NextResponse.json(
         { success: false, message: "Invalid section" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -106,7 +128,7 @@ export async function POST(req: Request) {
     console.error("❌ Update failed:", error);
     return NextResponse.json(
       { success: false, message: "Database update failed" },
-      { status: 500 }
+      { status: 500 },
     );
   } finally {
     client.release();

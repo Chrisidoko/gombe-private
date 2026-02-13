@@ -59,7 +59,7 @@ export default function Requests() {
   const [loading, setLoading] = useState(true);
   const [selectedSchool, setSelectedSchool] = useState<School | null>(null);
   const [schoolDetails, setSchoolDetails] = useState<SchoolDetails | null>(
-    null
+    null,
   );
   const [documents, setDocuments] = useState<SchoolDocument[]>([]);
   const [detailsLoading, setDetailsLoading] = useState(false);
@@ -98,7 +98,7 @@ export default function Requests() {
       try {
         // Fetch school details
         const detailsRes = await fetch(
-          `/api/schools/${selectedSchool.school_id}`
+          `/api/schools/${selectedSchool.school_id}`,
         );
         if (detailsRes.ok) {
           const data = await detailsRes.json();
@@ -113,7 +113,7 @@ export default function Requests() {
       try {
         // Fetch documents
         const docsRes = await fetch(
-          `/api/schools/${selectedSchool.school_id}/documents`
+          `/api/schools/${selectedSchool.school_id}/documents`,
         );
         if (docsRes.ok) {
           const data = await docsRes.json();
@@ -133,7 +133,7 @@ export default function Requests() {
     request_id: number,
     school_id: string,
     action: "approve" | "reject",
-    reason?: string
+    reason?: string,
   ) {
     aSetLoading({ id: request_id, action });
     try {
@@ -404,7 +404,7 @@ export default function Requests() {
                               License Number
                             </label>
                             <p className="text-gray-900">
-                              {schoolDetails.license_number}
+                              {schoolDetails.license_number || "Not available"}
                             </p>
                           </div>
                         </div>
@@ -434,7 +434,7 @@ export default function Requests() {
                             <p className="text-gray-900">
                               {schoolDetails.last_license_renewal
                                 ? new Date(
-                                    schoolDetails.last_license_renewal
+                                    schoolDetails.last_license_renewal,
                                   ).toLocaleDateString("en-US", {
                                     year: "numeric",
                                     month: "long",
@@ -456,7 +456,7 @@ export default function Requests() {
                             <p className="text-gray-900">
                               {schoolDetails.license_expiry_date
                                 ? new Date(
-                                    schoolDetails.license_expiry_date
+                                    schoolDetails.license_expiry_date,
                                   ).toLocaleDateString("en-US", {
                                     year: "numeric",
                                     month: "long",
@@ -533,7 +533,7 @@ export default function Requests() {
                         handleAction(
                           selectedSchool.id,
                           selectedSchool.school_id,
-                          "approve"
+                          "approve",
                         )
                       }
                       className="flex-1 bg-green-600 text-white px-6 py-3 rounded-lg hover:bg-green-700 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
@@ -562,7 +562,7 @@ export default function Requests() {
                           selectedSchool.id,
                           selectedSchool.school_id,
                           "reject",
-                          reason
+                          reason,
                         );
                       }}
                       className="flex-1 bg-red-600 text-white px-6 py-3 rounded-lg hover:bg-red-700 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
