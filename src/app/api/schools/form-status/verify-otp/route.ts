@@ -1,19 +1,22 @@
+// Verify OTP -> specifically for form status check flow (can be reused for other flows later)
+// This used to verify otp to change email of school account.. make shift process during the early onboarding faces
+
 // Verify OTP
 import { NextResponse } from "next/server";
-import pool from "../../../lib/db";
+import pool from "@/lib/db";
 
 export async function POST(req: Request) {
   try {
-    const { tin, otp } = await req.json();
+    const { school_id, otp } = await req.json();
 
     const result = await pool.query(
       `SELECT o.id 
          FROM otps o
          JOIN schoolskano s ON o.school_id = s.id
-        WHERE s.tin = $1
+        WHERE s.school_id = $1
           AND o.otp_code = $2
           AND o.expires_at > NOW()`,
-      [tin, otp],
+      [school_id, otp],
     );
 
     if (result.rows.length === 0) {

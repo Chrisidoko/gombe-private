@@ -108,7 +108,7 @@ export default async function SchoolOverviewDashboard({
             </div>
           </div>
 
-          {school?.form_status !== "completed" && (
+          {school?.form_status !== "complete" && (
             <Link
               href="/profile"
               className="bg-yellow-50 border border-yellow-200 rounded-lg px-4 py-2 flex items-center gap-2 cursor-pointer"
@@ -312,8 +312,8 @@ export default async function SchoolOverviewDashboard({
                     isExpired
                       ? "text-red-300"
                       : isExpiringSoon
-                      ? "text-yellow-300"
-                      : "text-white"
+                        ? "text-yellow-300"
+                        : "text-white"
                   }`}
                 >
                   {daysUntilExpiry !== null

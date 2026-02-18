@@ -12,7 +12,7 @@ export async function POST(req: Request) {
     if (!school_id) {
       return NextResponse.json(
         { success: false, message: "school_id is required" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -28,7 +28,7 @@ export async function POST(req: Request) {
       await client.query("ROLLBACK");
       return NextResponse.json(
         { success: false, message: "School not found" },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
@@ -112,6 +112,7 @@ export async function POST(req: Request) {
         SET email = $1,
             phone = $2,
             website = $3
+            form_status = 'complete
         WHERE school_id = $4
       `;
 
@@ -128,7 +129,7 @@ export async function POST(req: Request) {
       await client.query("ROLLBACK");
       return NextResponse.json(
         { success: false, message: "Invalid section" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -144,7 +145,7 @@ export async function POST(req: Request) {
     console.error("❌ Update failed:", error);
     return NextResponse.json(
       { success: false, message: "Database update failed" },
-      { status: 500 }
+      { status: 500 },
     );
   } finally {
     client.release();

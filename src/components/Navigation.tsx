@@ -56,7 +56,7 @@ const Navigation: React.FC<NavigationProps> = ({ collapsed, setCollapsed }) => {
     {
       href: "/fees",
       label: "Invoices",
-      badge: 3,
+      // badge: 3,
       icon: (
         <svg
           className="w-5 h-5"
@@ -202,7 +202,7 @@ const Navigation: React.FC<NavigationProps> = ({ collapsed, setCollapsed }) => {
                       <span className="flex-1 font-medium text-sm">
                         {item.label}
                       </span>
-                      {item.badge && (
+                      {/* {item.badge && (
                         <span
                           className={`flex items-center justify-center w-6 h-6 text-xs font-bold rounded-full ${
                             isActive
@@ -212,14 +212,14 @@ const Navigation: React.FC<NavigationProps> = ({ collapsed, setCollapsed }) => {
                         >
                           {item.badge}
                         </span>
-                      )}
+                      )} */}
                     </>
                   )}
-                  {collapsed && item.badge && (
+                  {/* {collapsed && item.badge && (
                     <span className="absolute -top-1 -right-1 flex items-center justify-center w-5 h-5 text-xs font-bold rounded-full bg-red-500 text-white">
                       {item.badge}
                     </span>
-                  )}
+                  )} */}
 
                   {/* Tooltip for collapsed state */}
                   {collapsed && (

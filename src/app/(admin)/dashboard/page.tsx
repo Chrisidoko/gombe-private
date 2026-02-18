@@ -1,4 +1,5 @@
 import React from "react";
+import pool from "@/lib/db";
 import {
   School,
   CheckCircle2,
@@ -11,18 +12,21 @@ import {
 } from "lucide-react";
 import { getUserFromCookie } from "@/lib/auth";
 
+interface SchoolStats {
+  totalSchools: number;
+  activeSchools: number;
+  pendingApprovals: number;
+  totalLicenses: number;
+}
+
 // Dummy data
 const dashboardStats = {
-  totalSchools: 156,
-  activeSchools: 142,
-  approvedSchools: 148,
-  totalLicenses: 200,
-  activeLicenses: 167,
-  expiringLicenses: 23,
+  activeLicenses: 0,
+  expiringLicenses: 0,
   schoolsByCategory: {
-    polytechnics: 45,
-    universities: 67,
-    colleges: 44,
+    polytechnics: 0,
+    universities: 0,
+    colleges: 0,
   },
 };
 
@@ -43,17 +47,17 @@ const StatCard: React.FC<StatCardProps> = ({
 }) => {
   return (
     <div
-      className="bg-white rounded-lg shadow-md p-6 border-l-4 transition-all hover:shadow-lg"
-      style={{ borderLeftColor: color }}
+      className="bg-white rounded-lg shadow-md p-5 border-b-4 transition-all hover:shadow-lg"
+      style={{ borderBottomColor: color }}
     >
       <div className="flex items-start justify-between">
         <div className="flex-1">
-          <p className="text-sm font-medium text-gray-600 mb-1">{title}</p>
+          <p className="text-xs font-medium text-gray-600 mb-1">{title}</p>
           <p className="text-3xl font-bold text-gray-900">{value}</p>
           {subtitle && <p className="text-xs text-gray-500 mt-1">{subtitle}</p>}
         </div>
         <div
-          className="p-3 rounded-lg"
+          className="p-2 rounded-lg"
           style={{ backgroundColor: `${color}20` }}
         >
           <div style={{ color }}>{icon}</div>
@@ -77,25 +81,37 @@ const CategoryCard: React.FC<CategoryCardProps> = ({
   color,
 }) => {
   return (
-    <div className="bg-white rounded-lg shadow-md p-5 hover:shadow-lg transition-all">
+    <div className="bg-white rounded-lg shadow-md px-4 py-2 hover:shadow-lg transition-all">
       <div className="flex items-center gap-4">
         <div
-          className="p-3 rounded-full"
+          className="p-2 rounded-full"
           style={{ backgroundColor: `${color}20` }}
         >
           <div style={{ color }}>{icon}</div>
         </div>
         <div>
           <p className="text-sm font-medium text-gray-600">{category}</p>
-          <p className="text-2xl font-bold text-gray-900">{count}</p>
+          <p className="text-xl font-semibold text-gray-900">{count}</p>
         </div>
       </div>
     </div>
   );
 };
 
+async function getSchoolStats(): Promise<SchoolStats> {
+  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+  const res = await fetch(`${baseUrl}/api/dashboard/stats`, {
+    next: { revalidate: 60 },
+  });
+
+  if (!res.ok) throw new Error("Failed to fetch school stats");
+
+  return res.json();
+}
+
 export default async function AdminDashboard() {
   const user = await getUserFromCookie();
+  const stats = await getSchoolStats();
 
   if (!user) {
     return (
@@ -104,65 +120,97 @@ export default async function AdminDashboard() {
       </div>
     );
   }
-  console.log("User object:", user);
+  // console.log("User object:", user);
 
   return (
-    <main className="p-6">
+    <main className="px-6">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between mb-6">
         <div className="w-full">
-          <div className="mb-4">
-            <h3 className="font-semibold text-[#28a745] text-xl">
-              Welcome to your Dashboard,
-              <span className="font-light text-gray-700"> {user?.name}</span>
+          <div className="mb-4 flex flex-col sm:flex-row justify-between items-center">
+            <h3 className="font-semibold text-gray-900 text-2xl">
+              Dashboard Overview{" "}
             </h3>
-            <div className="text-sm max-w-2xl grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-4 mt-2">
-              <span className="border-r border-gray-300 pr-4">
-                Designation: CBS Admin{" "}
-              </span>
-              <span className="text-gray-600">
-                Email: {user?.email ?? "N/A"}
+            <div className="text-sm grid grid-cols-1 gap-2 mt-2">
+              <div className="flex items-center gap-2">
+                <div className="text-base text-gray-500">
+                  <span className="font-semibold text-sm text-gray-700">
+                    {user?.name}
+                  </span>
+                </div>
+
+                <div className="bg-green-500/20 rounded-md p-1 flex items-center justify-center">
+                  <span className="mx-auto text-xs text-green-700 font-semibold">
+                    CBS Admin
+                  </span>
+                </div>
+              </div>
+              <span className="text-center sm:text-right text-gray-600 text-xs">
+                {user?.email ?? "N/A"}
               </span>
             </div>
           </div>
         </div>
       </div>
 
-      <div className="w-full h-px bg-gray-300 my-6" />
-
       {/* Main Statistics Grid */}
       <div className="mb-8">
-        <h2 className="text-lg font-semibold text-gray-800 mb-4">
-          Overview Statistics
-        </h2>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           <StatCard
             title="Total Schools"
-            value={dashboardStats.totalSchools}
-            icon={<School size={24} />}
+            value={stats.totalSchools}
+            icon={<School size={20} />}
             color="#3b82f6"
             subtitle="Registered institutions"
           />
           <StatCard
             title="Active Schools"
-            value={dashboardStats.activeSchools}
-            icon={<CheckCircle2 size={24} />}
+            value={stats.activeSchools}
+            icon={<CheckCircle2 size={20} />}
             color="#10b981"
-            subtitle="Currently operational"
+            subtitle="Approved & Operational"
           />
           <StatCard
-            title="Approved Schools"
-            value={dashboardStats.approvedSchools}
-            icon={<FileCheck size={24} />}
+            title="Pending Approvals"
+            value={stats.pendingApprovals}
+            icon={<FileCheck size={20} />}
             color="#8b5cf6"
-            subtitle="Verified & approved"
+            subtitle="Awaiting verification"
           />
           <StatCard
             title="Total Licenses"
-            value={dashboardStats.totalLicenses}
-            icon={<Users size={24} />}
+            value={stats.totalLicenses}
+            icon={<Users size={20} />}
             color="#f59e0b"
             subtitle="All licenses issued"
           />
+        </div>
+      </div>
+
+      {/* Schools by Category */}
+      <div className="mb-8">
+        <h2 className="text-lg font-semibold text-gray-800 mb-4">Category</h2>
+        <div className="flex">
+          <div className="w-1/2 grid grid-cols-1 md:grid-cols-2 gap-6">
+            <CategoryCard
+              category="Polytechnics"
+              count={dashboardStats.schoolsByCategory.polytechnics}
+              icon={<Building2 size={20} />}
+              color="#06b6d4"
+            />
+            <CategoryCard
+              category="Universities"
+              count={dashboardStats.schoolsByCategory.universities}
+              icon={<GraduationCap size={20} />}
+              color="#8b5cf6"
+            />
+            <CategoryCard
+              category="Colleges"
+              count={dashboardStats.schoolsByCategory.colleges}
+              icon={<BookOpen size={20} />}
+              color="#ec4899"
+            />
+          </div>
+          <div></div>
         </div>
       </div>
 
@@ -212,42 +260,15 @@ export default async function AdminDashboard() {
               </div>
             </div>
             <p className="text-3xl font-bold text-gray-900">
-              {dashboardStats.totalLicenses - dashboardStats.activeLicenses}
+              {stats.totalLicenses - dashboardStats.activeLicenses}
             </p>
             <p className="text-xs text-gray-500 mt-1">Ready to assign</p>
           </div>
         </div>
       </div>
 
-      {/* Schools by Category */}
-      <div className="mb-8">
-        <h2 className="text-lg font-semibold text-gray-800 mb-4">
-          Schools by Category
-        </h2>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <CategoryCard
-            category="Polytechnics"
-            count={dashboardStats.schoolsByCategory.polytechnics}
-            icon={<Building2 size={24} />}
-            color="#06b6d4"
-          />
-          <CategoryCard
-            category="Universities"
-            count={dashboardStats.schoolsByCategory.universities}
-            icon={<GraduationCap size={24} />}
-            color="#8b5cf6"
-          />
-          <CategoryCard
-            category="Colleges"
-            count={dashboardStats.schoolsByCategory.colleges}
-            icon={<BookOpen size={24} />}
-            color="#ec4899"
-          />
-        </div>
-      </div>
-
       {/* Summary Card */}
-      <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg shadow-md p-6 border border-blue-200">
+      {/* <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg shadow-md p-6 border border-blue-200">
         <h2 className="text-lg font-semibold text-gray-800 mb-4">
           Quick Summary
         </h2>
@@ -256,7 +277,7 @@ export default async function AdminDashboard() {
             <p className="text-2xl font-bold text-blue-600">
               {Math.round(
                 (dashboardStats.activeSchools / dashboardStats.totalSchools) *
-                  100
+                  100,
               )}
               %
             </p>
@@ -266,7 +287,7 @@ export default async function AdminDashboard() {
             <p className="text-2xl font-bold text-green-600">
               {Math.round(
                 (dashboardStats.activeLicenses / dashboardStats.totalLicenses) *
-                  100
+                  100,
               )}
               %
             </p>
@@ -274,7 +295,7 @@ export default async function AdminDashboard() {
           </div>
           <div>
             <p className="text-2xl font-bold text-purple-600">
-              {dashboardStats.approvedSchools}
+              {dashboardStats.pendingApprovals}
             </p>
             <p className="text-xs text-gray-600 mt-1">Approved Total</p>
           </div>
@@ -285,55 +306,7 @@ export default async function AdminDashboard() {
             <p className="text-xs text-gray-600 mt-1">Need Attention</p>
           </div>
         </div>
-      </div>
+      </div> */}
     </main>
   );
 }
-
-// import { Divider } from "@/components/Divider";
-
-// // import { Building } from "lucide-react";
-
-// // import Emptystate from "@/components/ui/emptystate";
-
-// import { getUserFromCookie } from "@/lib/auth";
-// // import { formatDate } from "@/lib/formatDate";
-
-// export default async function HomeDashboard() {
-//   const user = await getUserFromCookie();
-
-//   if (!user) {
-//     return (
-//       <div className="text-red-500 font-semibold mt-10 text-center">
-//         Unauthorized — please log in again.
-//       </div>
-//     );
-//   }
-//   console.log("User object:", user);
-
-// return (
-//   <main>
-//     <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-//       <div className="w-full">
-//         <div className="mb-4">
-//           <h3 className="font-semibold text-[#28a745]">
-//             Welcome to your Dashboard,
-//             <span className="font-light text-gray-700"> {user?.name}</span>
-//           </h3>
-//           <div className="text-sm max-w-2xl grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-4 mt-2">
-//             <span className="border-r border-gray-300">
-//               Designation: CBS Admin{" "}
-//             </span>
-//             <span className="border-r border-gray-300">
-//               Email: {user?.email ?? "N/A"}
-//             </span>
-//           </div>
-//         </div>
-//       </div>
-//     </div>
-//     <Divider />
-
-//     {/* events grid */}
-//   </main>
-// );
-// }

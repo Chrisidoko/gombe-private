@@ -1,24 +1,24 @@
-// Send OTP
-
+// Send OTP -> specifically for form status check flow (can be reused for other flows later)
+// This used to send otp to change email of school account make shift process during the early onboarding faces
 import { NextResponse } from "next/server";
-import pool from "../../../lib/db";
+import pool from "@/lib/db";
 import nodemailer from "nodemailer";
 
 export async function POST(req: Request) {
   try {
-    const { tin, email } = await req.json();
+    const { school_id, email } = await req.json();
 
-    if (!tin || !email) {
+    if (!school_id) {
       return NextResponse.json(
-        { error: "TIN and email are required" },
+        { error: "School ID is required" },
         { status: 400 },
       );
     }
 
     // ✅ Query school info
     const result = await pool.query(
-      "SELECT id, name FROM schoolskano WHERE tin = $1 AND email = $2",
-      [tin, email],
+      "SELECT id, name FROM schoolskano WHERE school_id = $1",
+      [school_id],
     );
 
     if (result.rows.length === 0) {
@@ -31,7 +31,7 @@ export async function POST(req: Request) {
       `
       DELETE FROM otps
       WHERE expires_at < NOW()
-      OR school_id = $1
+      OR id = $1
     `,
       [school.id],
     );
