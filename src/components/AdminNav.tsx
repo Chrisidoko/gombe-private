@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
+import { Building2 } from "lucide-react";
 import LogoutButton from "@/components/ui/logoutbutton";
 
 interface NavigationProps {
@@ -91,6 +92,11 @@ const Navigation: React.FC<NavigationProps> = ({ collapsed, setCollapsed }) => {
           />
         </svg>
       ),
+    },
+    {
+      href: "/create-school",
+      label: "Create School",
+      icon: <Building2 className="w-4 h-4" />,
     },
   ];
 

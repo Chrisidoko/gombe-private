@@ -12,31 +12,40 @@ import {
 } from "lucide-react";
 import toast from "react-hot-toast";
 
+interface DocumentItem {
+  type: string;
+  url: string;
+}
+
 type FormData = {
   // General Information
 
   proprietorName: string;
-  chairmanName: string;
+  contact_person: string;
+  contact_person_phone: string;
+  contact_person_designation: string;
   ownershipType: string;
   address: string;
   lga: string;
   tin: string;
   lastTaxFiling: string;
+  category: string;
+  website: string;
 
   // Academic Information
   modeOfOperation: string[];
   avgFee: string;
   totalRevenue: string;
-  // academicSession: string;
+  academicSession: string;
   // weeksPerSemester: string;
-  // sessionStart: string;
-  // sessionEnd: string;
+  sessionStart: string;
+  sessionEnd: string;
   programmes: string[];
 
   // License Information
-  licenceStatus: string;
-  prevAmount: string;
-  prevDate: string;
+  license_status: string;
+  // licenseNumber: string;
+  // licenseExpiry: string;
 };
 
 const lgas = [
@@ -68,23 +77,27 @@ const lgas = [
 export default function SchoolProfileForm() {
   const [formData, setFormData] = useState<FormData>({
     proprietorName: "",
-    chairmanName: "",
+    contact_person: "",
+    contact_person_phone: "",
+    contact_person_designation: "",
     ownershipType: "Private Individual",
     address: "",
     lga: "",
     tin: "",
     lastTaxFiling: "",
+    category: "",
+    website: "",
     modeOfOperation: [],
     avgFee: "",
     totalRevenue: "",
-    // academicSession: "",
+    academicSession: "2025/2026",
     // weeksPerSemester: "",
-    // sessionStart: "",
-    // sessionEnd: "",
+    sessionStart: "",
+    sessionEnd: "",
     programmes: [],
-    licenceStatus: "",
-    prevAmount: "",
-    prevDate: "",
+    license_status: "",
+    // licenseNumber: "",
+    // licenseExpiry: "",
   });
 
   const [loading, setLoading] = useState(false);
@@ -130,7 +143,7 @@ export default function SchoolProfileForm() {
     } catch (error) {
       console.error("Error:", error);
       toast.error(
-        error instanceof Error ? error.message : "Failed to update profile"
+        error instanceof Error ? error.message : "Failed to update profile",
       );
     } finally {
       setLoading(false);
@@ -139,16 +152,16 @@ export default function SchoolProfileForm() {
 
   // Check completion status for each section
   const isGeneralComplete =
-    formData.proprietorName && formData.chairmanName && formData.tin;
+    formData.proprietorName && formData.contact_person && formData.category;
   const isAcademicComplete =
     formData.modeOfOperation.length > 0 && formData.programmes;
-  const isLicenseComplete = formData.licenceStatus;
+  const isLicenseComplete = formData.license_status;
 
   const completionPercentage = Math.round(
     ([isGeneralComplete, isAcademicComplete, isLicenseComplete].filter(Boolean)
       .length /
       3) *
-      100
+      100,
   );
 
   return (
@@ -274,9 +287,42 @@ export default function SchoolProfileForm() {
                   <input
                     type="text"
                     placeholder="School Contact Person"
-                    value={formData.chairmanName}
+                    value={formData.contact_person}
                     onChange={(e) =>
-                      handleChange("chairmanName", e.target.value)
+                      handleChange("contact_person", e.target.value)
+                    }
+                    className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    Contact Person Designation
+                    <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="(e.g., Principal, Director, Bursar)"
+                    value={formData.contact_person_designation}
+                    onChange={(e) =>
+                      handleChange("contact_person_designation", e.target.value)
+                    }
+                    className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    Contact Person Phone<span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="School Contact Person"
+                    value={formData.contact_person_phone}
+                    onChange={(e) =>
+                      handleChange("contact_person_phone", e.target.value)
                     }
                     className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all"
                     required
@@ -357,6 +403,53 @@ export default function SchoolProfileForm() {
                     onChange={(e) =>
                       handleChange("lastTaxFiling", e.target.value)
                     }
+                    className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all"
+                  />
+                </div>
+
+                <div className="md:col-span-2">
+                  <label className="block text-sm font-semibold text-gray-700 mb-3">
+                    Category <span className="text-red-500">*</span>
+                  </label>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    {[
+                      "College of Education",
+                      "Polytechnic",
+                      "University",
+                      "School of Health Technology",
+                    ].map((option) => (
+                      <label
+                        key={option}
+                        className={`flex items-center gap-3 p-3 border-2 rounded-lg cursor-pointer transition-all ${
+                          formData.category === option
+                            ? "border-green-500 bg-green-50"
+                            : "border-gray-200 hover:border-gray-300"
+                        }`}
+                      >
+                        <input
+                          type="radio"
+                          value={option}
+                          checked={formData.category === option}
+                          onChange={() => handleChange("category", option)}
+                          className="w-4 h-4 text-purple-600"
+                        />
+                        <span className="font-medium text-gray-900">
+                          {option}
+                        </span>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    School Website
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="www.yourschool.com"
+                    value={formData.website}
+                    onChange={(e) => handleChange("website", e.target.value)}
                     className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all"
                   />
                 </div>
@@ -442,7 +535,7 @@ export default function SchoolProfileForm() {
                           {mode}
                         </span>
                       </label>
-                    )
+                    ),
                   )}
                 </div>
               </div>
@@ -492,7 +585,7 @@ export default function SchoolProfileForm() {
 
               {/* Academic Calendar */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {/* <div>
+                <div>
                   <label className="block text-sm font-semibold text-gray-700 mb-2">
                     Current Academic Session{" "}
                     <span className="text-red-500">*</span>
@@ -506,7 +599,7 @@ export default function SchoolProfileForm() {
                     required
                   >
                     <option value="">Select Session</option>
-                    {Array.from({ length: 5 }).map((_, i) => {
+                    {Array.from({ length: 3 }).map((_, i) => {
                       const startYear = new Date().getFullYear() - i;
                       const endYear = startYear + 1;
                       const session = `${startYear}/${endYear}`;
@@ -517,7 +610,7 @@ export default function SchoolProfileForm() {
                       );
                     })}
                   </select>
-                </div> */}
+                </div>
 
                 {/* <div>
                   <label className="block text-sm font-semibold text-gray-700 mb-2">
@@ -535,9 +628,10 @@ export default function SchoolProfileForm() {
                   />
                 </div> */}
 
-                {/* <div>
+                <div>
                   <label className="block text-sm font-semibold text-gray-700 mb-2">
                     Session Start Date
+                    <span className="text-red-500">*</span>
                   </label>
                   <input
                     type="date"
@@ -546,20 +640,23 @@ export default function SchoolProfileForm() {
                       handleChange("sessionStart", e.target.value)
                     }
                     className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                    required
                   />
-                </div> */}
+                </div>
 
-                {/* <div>
+                <div>
                   <label className="block text-sm font-semibold text-gray-700 mb-2">
                     Expected End Date
+                    <span className="text-red-500">*</span>
                   </label>
                   <input
                     type="date"
                     value={formData.sessionEnd}
                     onChange={(e) => handleChange("sessionEnd", e.target.value)}
                     className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                    required
                   />
-                </div> */}
+                </div>
               </div>
 
               {/* Programmes */}
@@ -655,16 +752,11 @@ export default function SchoolProfileForm() {
                   Current License Status <span className="text-red-500">*</span>
                 </label>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                  {[
-                    "New Registration Pending",
-                    "Active Licence (Valid)",
-                    "Renewal Due",
-                    "Expired Licence",
-                  ].map((option) => (
+                  {["Active", "Expired"].map((option) => (
                     <label
                       key={option}
                       className={`flex items-center gap-3 p-3 border-2 rounded-lg cursor-pointer transition-all ${
-                        formData.licenceStatus === option
+                        formData.license_status === option
                           ? "border-purple-500 bg-purple-50"
                           : "border-gray-200 hover:border-gray-300"
                       }`}
@@ -672,8 +764,8 @@ export default function SchoolProfileForm() {
                       <input
                         type="radio"
                         value={option}
-                        checked={formData.licenceStatus === option}
-                        onChange={() => handleChange("licenceStatus", option)}
+                        checked={formData.license_status === option}
+                        onChange={() => handleChange("license_status", option)}
                         className="w-4 h-4 text-purple-600"
                       />
                       <span className="font-medium text-gray-900">
@@ -685,38 +777,46 @@ export default function SchoolProfileForm() {
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
-                <div>
+                {/* <div>
                   <label className="block text-sm font-semibold text-gray-700 mb-2">
-                    Previous Amount Paid
+                    License Number <span className="text-red-500">*</span>
                   </label>
-                  <div className="relative">
-                    <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500">
-                      ₦
-                    </span>
-                    <input
-                      type="number"
-                      pattern="[0-9]*"
-                      placeholder="0.00"
-                      value={formData.prevAmount}
-                      onChange={(e) =>
-                        handleChange("prevAmount", e.target.value)
-                      }
-                      className="w-full pl-8 pr-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
-                    />
-                  </div>
-                </div>
-
-                <div>
+                  <input
+                    type="text"
+                    placeholder="School License Number"
+                    value={formData.licenseNumber}
+                    onChange={(e) =>
+                      handleChange("licenseNumber", e.target.value)
+                    }
+                    className={`w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all ${formData.licenceStatus === "Expired" ? "bg-gray-100 text-gray-500" : ""}`}
+                    required
+                    disabled={formData.licenceStatus === "Expired"}
+                  />
+                </div> */}
+                {/* <div>
                   <label className="block text-sm font-semibold text-gray-700 mb-2">
-                    Payment Date
+                    License Expiry Date <span className="text-red-500">*</span>
                   </label>
                   <input
                     type="date"
-                    value={formData.prevDate}
-                    onChange={(e) => handleChange("prevDate", e.target.value)}
-                    className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
+                    placeholder="School License Expiry Date"
+                    value={formData.licenseExpiry}
+                    onChange={(e) =>
+                      handleChange("licenseExpiry", e.target.value)
+                    }
+                    className={`w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all ${formData.licenceStatus === "Expired" ? "bg-gray-100 text-gray-500" : ""}`}
+                    required
+                    disabled={formData.licenceStatus === "Expired"}
                   />
-                </div>
+                </div> */}
+              </div>
+
+              <div className="mt-6 text-sm text-gray-600">
+                <p>
+                  <span className="font-semibold text-red-500">Note:</span> If
+                  your license is currently active, you will be asked to upload
+                  it in the next step.
+                </p>
               </div>
             </div>
           )}

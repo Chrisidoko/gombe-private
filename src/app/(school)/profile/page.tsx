@@ -28,9 +28,9 @@ export default async function ProfilePage() {
     );
   }
 
-  const school: School = await res.json(); // Type it!
+  const school: School = await res.json(); // Type it with the imported School type
 
-  console.log(school);
+  // console.log(school);
 
   // Pass data to client component
   return <ProfilePageClient school={school} />;

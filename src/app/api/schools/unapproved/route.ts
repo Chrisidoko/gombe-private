@@ -7,7 +7,8 @@ export async function GET() {
       `SELECT id, school_id, name, email, license_number, created_at
        FROM schoolskano
        WHERE approval_status = 'unapproved'
-       ORDER BY created_at DESC`
+       AND form_status = 'complete'
+       ORDER BY created_at DESC`,
     );
 
     return NextResponse.json({ schools: result.rows });

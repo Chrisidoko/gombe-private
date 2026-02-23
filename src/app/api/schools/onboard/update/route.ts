@@ -112,7 +112,7 @@ export async function POST(req: Request) {
         SET email = $1,
             phone = $2,
             website = $3
-            form_status = 'complete
+            form_status = 'complete'
         WHERE school_id = $4
       `;
 

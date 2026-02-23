@@ -12,7 +12,7 @@ export async function POST(req: Request) {
        SET approval_status = 'approved'
        WHERE school_id = $1
        RETURNING email, name`,
-      [school_id]
+      [school_id],
     );
 
     if (result.rowCount === 0) {
@@ -21,7 +21,7 @@ export async function POST(req: Request) {
 
     const { email, name } = result.rows[0];
 
-    const signupLink = `https://kaptems.payprosolutionsltd.com/signup?school_id=${school_id}`;
+    // const signupLink = `https://kaptems.payprosolutionsltd.com/signup?school_id=${school_id}`;
 
     // ✅ Verify SMTP credentials
     if (!process.env.SMTP_USER || !process.env.SMTP_PASS) {
@@ -46,24 +46,38 @@ export async function POST(req: Request) {
       html: `
         <p>Dear <strong>${name}</strong>,</p>
         <p>Your institution has been successfully approved on the Kaduna Private University Portal.</p>
-        <p>You can now proceed to create your admin account and start onboarding:</p>
-       <p>Click below to sign up and complete your registration:</p>
-        <p>
-            <a href="${signupLink}" style="color:#28a745;font-weight:bold;">
-               Complete Registration
-           </a>
-        </p>
+        <p>You can now continue using the portal to handle your license management and school assessments.</p>
+
         <br />
         <p>Best Regards,<br>Kadirs School Assessment Team</p>
       `,
     });
+
+    // await transporter.sendMail({
+    //   from: `"CBS Portal" <${process.env.SMTP_USER}>`,
+    //   to: email,
+    //   subject: "Your School Registration Has Been Approved",
+    //   html: `
+    //     <p>Dear <strong>${name}</strong>,</p>
+    //     <p>Your institution has been successfully approved on the Kaduna Private University Portal.</p>
+    //     <p>You can now proceed to create your admin account and start onboarding:</p>
+    //    <p>Click below to sign up and complete your registration:</p>
+    //     <p>
+    //         <a href="${signupLink}" style="color:#28a745;font-weight:bold;">
+    //            Complete Registration
+    //        </a>
+    //     </p>
+    //     <br />
+    //     <p>Best Regards,<br>Kadirs School Assessment Team</p>
+    //   `,
+    // });
 
     return NextResponse.json({ message: "School approved & email sent ✅" });
   } catch (error) {
     console.error(error);
     return NextResponse.json(
       { error: "Failed to approve school" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

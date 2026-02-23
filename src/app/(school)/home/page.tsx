@@ -19,11 +19,11 @@ import { formatDate } from "@/lib/formatDate";
 
 // Sample stats - these would come from your API
 const complianceStats = {
-  totalNotices: 10,
-  paidNotices: 7,
-  complianceScore: 70,
-  overdueInvoices: 3,
-  upcomingDeadlines: 2,
+  totalNotices: 0,
+  paidNotices: 0,
+  complianceScore: 0,
+  overdueInvoices: 0,
+  upcomingDeadlines: 0,
 };
 
 function getDaysUntilExpiry(expiryDate: string) {

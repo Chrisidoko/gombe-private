@@ -29,7 +29,7 @@ export default function SchoolShell({
           `/api/schools/form-status?school_id=${institution}`,
         );
         const data = await res.json();
-        if (data.form_status !== "complete") {
+        if (data.email_updated !== true) {
           setShowModal(true);
         }
       } catch (err) {

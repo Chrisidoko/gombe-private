@@ -10,7 +10,7 @@ export async function POST(req: Request) {
     if (!user || !user.institution) {
       return NextResponse.json(
         { success: false, message: "Unauthorized" },
-        { status: 401 }
+        { status: 401 },
       );
     }
 
@@ -18,29 +18,32 @@ export async function POST(req: Request) {
 
     const {
       // General Information
-
       proprietorName,
-      chairmanName,
+      contact_person,
+      contact_person_phone,
+      contact_person_designation,
       ownershipType,
       tin,
       lastTaxFiling,
       address,
       lga,
+      category,
+      website,
 
       // Academic Information
       modeOfOperation,
       avgFee,
       totalRevenue,
-      // academicSession,
+      academicSession,
       // weeksPerSemester,
-      // sessionStart,
-      // sessionEnd,
+      sessionStart,
+      sessionEnd,
       programmes,
 
       // License Information
-      licenceStatus,
-      prevAmount,
-      prevDate,
+      license_status,
+      // license_number,
+      // license_expiry_date,
     } = data;
 
     // Update the school record
@@ -49,46 +52,56 @@ export async function POST(req: Request) {
        SET
        
         proprietor_name = COALESCE($2, proprietor_name),
-        chairman_name = COALESCE($3, chairman_name),
-        ownership = COALESCE($4, ownership),
-        tin = COALESCE($5, tin),
-        last_tax_filing = COALESCE($6, last_tax_filing),
-        address = COALESCE($7, address),
-        lga = COALESCE($8, lga),
-        mode_of_operation = COALESCE($9::jsonb, mode_of_operation),
-        avg_fee = COALESCE($10, avg_fee),
-        total_revenue = COALESCE($11, total_revenue),
-        programmes = COALESCE($12::jsonb, programmes),
-        licence_status = COALESCE($13, licence_status),
-        prev_amount = COALESCE($14, prev_amount),
-        prev_licence_date = COALESCE($15, prev_licence_date),
-        form_status = 'completed',
+        contact_person = COALESCE($3, contact_person),
+        contact_person_phone = COALESCE($4, contact_person_phone),
+        contact_person_designation = COALESCE($5, contact_person_designation),
+        ownership = COALESCE($6, ownership),
+        tin = COALESCE($7, tin),
+        last_tax_filing = COALESCE($8, last_tax_filing),
+        address = COALESCE($9, address),
+        lga = COALESCE($10, lga),
+        category = COALESCE($11, category),
+        website = COALESCE($12, website),
+        mode_of_operation = COALESCE($13::jsonb, mode_of_operation),
+        avg_fee = COALESCE($14, avg_fee),
+        total_revenue = COALESCE($15, total_revenue),
+        academic_session = COALESCE($16, academic_session),
+        session_start = COALESCE($17, session_start),
+        session_end = COALESCE($18, session_end),
+        programmes = COALESCE($19::jsonb, programmes),
+        license_status = COALESCE($20, license_status),
+        form_status = 'complete',
         updated_at = NOW()
        WHERE school_id = $1
        RETURNING *`,
       [
         user.institution,
         proprietorName || null,
-        chairmanName || null,
+        contact_person || null,
+        contact_person_phone || null,
+        contact_person_designation || null,
         ownershipType || null,
         tin || null,
         lastTaxFiling || null,
         address || null,
         lga || null,
+        category || null,
+        website || null,
         JSON.stringify(modeOfOperation || []), // ✅ Convert to JSON string
         avgFee || null,
         totalRevenue || null,
+        academicSession || null,
+        sessionStart || null,
+        sessionEnd || null,
         JSON.stringify(programmes || []), // ✅ Convert to JSON string
-        licenceStatus || null,
-        prevAmount || null,
-        prevDate || null,
-      ]
+        license_status || null,
+      ],
     );
 
     if (result.rowCount === 0) {
       return NextResponse.json(
         { success: false, message: "School not found" },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
@@ -105,7 +118,7 @@ export async function POST(req: Request) {
         message: "Internal server error",
         error: error instanceof Error ? error.message : "Unknown error",
       },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

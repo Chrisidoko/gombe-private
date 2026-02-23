@@ -79,7 +79,7 @@ export interface School {
   // Admin Info
   enumerator_name: string | null;
   enumerator_comments: string | null;
-  form_status: "pending" | "completed" | "rejected";
+  form_status: "pending" | "complete" | "rejected";
   approval_status: "pending" | "approved" | "rejected";
   registered_for_tax: boolean | null;
   category: string | null;

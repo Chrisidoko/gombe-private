@@ -3,7 +3,7 @@
 import { NextResponse } from "next/server";
 import pool from "@/lib/db";
 
-//If form_status !== "complete", the modal renders and blocks the entire UI (no close button intentionally)
+// If email_updated !== true, the modal renders and blocks the entire UI (no close button intentionally)
 export async function GET(req: Request) {
   try {
     const { searchParams } = new URL(req.url);
@@ -17,7 +17,7 @@ export async function GET(req: Request) {
     }
 
     const result = await pool.query(
-      "SELECT form_status FROM schoolskano WHERE school_id = $1",
+      "SELECT email_updated FROM schoolskano WHERE school_id = $1",
       [school_id],
     );
 
@@ -25,14 +25,15 @@ export async function GET(req: Request) {
       return NextResponse.json({ error: "School not found" }, { status: 404 });
     }
 
-    return NextResponse.json({ form_status: result.rows[0].form_status });
+    return NextResponse.json({ email_updated: result.rows[0].email_updated });
   } catch (error) {
-    console.error("form-status check failed:", error);
+    console.error("email_updated check failed:", error);
     return NextResponse.json({ error: "Server error" }, { status: 500 });
   }
 }
 
 //On success → hits PATCH to update the DB → modal shows success → page reloads and modal is gone for good
+// Please not that this only for email update. i am not using patch for check if licence has alrady been updated
 export async function PATCH(req: Request) {
   try {
     const { school_id, email } = await req.json();
@@ -48,7 +49,7 @@ export async function PATCH(req: Request) {
 
     try {
       await pool.query(
-        "UPDATE schoolskano SET form_status = 'complete', email = $2 WHERE school_id = $1",
+        "UPDATE schoolskano SET email_updated = true, email = $2 WHERE school_id = $1",
         [school_id, email],
       );
 
@@ -63,9 +64,9 @@ export async function PATCH(req: Request) {
       throw error;
     }
 
-    return NextResponse.json({ message: "Form status updated to complete" });
+    return NextResponse.json({ message: "Email update complete" });
   } catch (error) {
-    console.error("form-status update failed:", error);
+    console.error("email update failed:", error);
     return NextResponse.json({ error: "Server error" }, { status: 500 });
   }
 }

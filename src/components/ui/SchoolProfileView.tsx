@@ -40,8 +40,13 @@ export default function SchoolProfileView({
   // Map database fields to component fields
   const data = {
     proprietorName: schoolData?.proprietor_name || "Not provided",
-    chairmanName: schoolData?.chairman_name || "Not provided",
+    contactPerson: schoolData?.contact_person || "Not provided",
+    contactPersonDesignation:
+      schoolData?.contact_person_designation || "Not provided",
+    contactPersonPhone: schoolData?.contact_person_phone || "N/A",
     ownershipType: schoolData?.ownership || "Not specified",
+    category: schoolData?.category || "Not specified",
+    website: schoolData?.website || "N/A",
     tin: schoolData?.tin || "N/A",
     lastTaxFiling: schoolData?.last_tax_filing || null,
     modeOfOperation: Array.isArray(schoolData?.mode_of_operation)
@@ -50,19 +55,17 @@ export default function SchoolProfileView({
     avgFee: schoolData?.avg_fee || "0",
     totalRevenue: schoolData?.total_revenue || "0",
     academicSession: schoolData?.academic_session || "Not specified",
-    weeksPerSemester: schoolData?.weeks_per_semester || "0",
+
     sessionStart: schoolData?.session_start || null,
     sessionEnd: schoolData?.session_end || null,
     programmes: Array.isArray(schoolData?.programmes)
       ? schoolData.programmes
       : [],
-    licenceStatus:
-      schoolData?.licence_status ||
-      schoolData?.license_status ||
-      "Not specified",
+    licenseNumber: schoolData?.license_number || "N/A",
+    licenceStatus: schoolData?.license_status || "Not specified",
     prevAmount: schoolData?.prev_amount || "0",
     prevDate: schoolData?.prev_licence_date || null,
-    profileCompleted: schoolData?.form_status === "completed",
+    profileCompleted: schoolData?.form_status === "complete",
     lastUpdated: schoolData?.updated_at || new Date().toISOString(),
   };
 
@@ -173,9 +176,27 @@ export default function SchoolProfileView({
               </div>
 
               <div>
-                <p className="text-sm text-gray-500 mb-1">Chairman Name</p>
+                <p className="text-sm text-gray-500 mb-1">Contact Person</p>
                 <p className="font-semibold text-gray-900">
-                  {data.chairmanName}
+                  {data.contactPerson}
+                </p>
+              </div>
+
+              <div>
+                <p className="text-sm text-gray-500 mb-1">
+                  Contact Person Designation
+                </p>
+                <p className="font-semibold text-gray-900">
+                  {data.contactPersonDesignation}
+                </p>
+              </div>
+
+              <div>
+                <p className="text-sm text-gray-500 mb-1">
+                  Contact Person Phone
+                </p>
+                <p className="font-semibold text-gray-900">
+                  {data.contactPersonPhone}
                 </p>
               </div>
 
@@ -187,18 +208,16 @@ export default function SchoolProfileView({
               </div>
 
               <div>
-                <p className="text-sm text-gray-500 mb-1">
-                  Tax Identification Number
-                </p>
+                <p className="text-sm text-gray-500 mb-1">Category</p>
                 <p className="font-mono font-semibold text-gray-900">
-                  {data.tin}
+                  {data.category}
                 </p>
               </div>
 
               <div>
-                <p className="text-sm text-gray-500 mb-1">Last Tax Filing</p>
-                <p className="font-semibold text-gray-900">
-                  {formatDate(data.lastTaxFiling)}
+                <p className="text-sm text-gray-500 mb-1">Website</p>
+                <p className="font-base underline text-blue-500">
+                  {data.website}
                 </p>
               </div>
 
@@ -208,6 +227,35 @@ export default function SchoolProfileView({
                   <CheckCircle className="w-4 h-4" />
                   Complete
                 </span>
+              </div>
+            </div>
+          </div>
+          {/* Tax Compliance */}
+          <div className="md:col-span-2 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl border border-blue-200 p-6">
+            <div className="flex items-start gap-4">
+              <div className="w-12 h-12 bg-blue-600 rounded-lg flex items-center justify-center flex-shrink-0">
+                <FileText className="w-6 h-6 text-white" />
+              </div>
+              <div className="flex-1">
+                <h3 className="text-lg font-bold text-gray-900 mb-2">
+                  Tax Compliance Information
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <p className="text-sm text-gray-600 mb-1">TIN Number</p>
+                    <p className="font-mono font-bold text-gray-900">
+                      {data.tin}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-600 mb-1">
+                      Last Filing Date
+                    </p>
+                    <p className="font-bold text-gray-900">
+                      {formatDate(data.lastTaxFiling)}
+                    </p>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -302,12 +350,6 @@ export default function SchoolProfileView({
                   {formatDate(data.sessionEnd)}
                 </p>
               </div>
-              <div>
-                <p className="text-sm text-gray-500 mb-1">Weeks per Semester</p>
-                <p className="font-semibold text-gray-900">
-                  {data.weeksPerSemester} weeks
-                </p>
-              </div>
             </div>
           </div>
         </div>
@@ -328,7 +370,14 @@ export default function SchoolProfileView({
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="md:col-span-2">
+              <div>
+                <p className="text-sm text-gray-500 mb-1">License Number</p>
+                <p className="text-lg font-semibold text-gray-900">
+                  {data.licenseNumber}
+                </p>
+              </div>
+
+              <div>
                 <p className="text-sm text-gray-500 mb-2">Current Status</p>
                 <div className="flex items-center gap-2">
                   <span
@@ -336,8 +385,8 @@ export default function SchoolProfileView({
                       data.licenceStatus === "Active Licence (Valid)"
                         ? "bg-green-100 text-green-700"
                         : data.licenceStatus === "Renewal Due"
-                        ? "bg-yellow-100 text-yellow-700"
-                        : "bg-gray-100 text-gray-700"
+                          ? "bg-yellow-100 text-yellow-700"
+                          : "bg-gray-100 text-gray-700"
                     }`}
                   >
                     <CheckCircle className="w-5 h-5" />
@@ -347,9 +396,7 @@ export default function SchoolProfileView({
               </div>
 
               <div>
-                <p className="text-sm text-gray-500 mb-1">
-                  Previous Amount Paid
-                </p>
+                <p className="text-sm text-gray-500 mb-1">Amount Paid</p>
                 <p className="text-lg font-bold text-gray-900">
                   {formatCurrency(data.prevAmount)}
                 </p>
@@ -360,36 +407,6 @@ export default function SchoolProfileView({
                 <p className="text-lg font-bold text-gray-900">
                   {formatDate(data.prevDate)}
                 </p>
-              </div>
-            </div>
-          </div>
-
-          {/* Tax Compliance */}
-          <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl border border-blue-200 p-6">
-            <div className="flex items-start gap-4">
-              <div className="w-12 h-12 bg-blue-600 rounded-lg flex items-center justify-center flex-shrink-0">
-                <FileText className="w-6 h-6 text-white" />
-              </div>
-              <div className="flex-1">
-                <h3 className="text-lg font-bold text-gray-900 mb-2">
-                  Tax Compliance Information
-                </h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <p className="text-sm text-gray-600 mb-1">TIN Number</p>
-                    <p className="font-mono font-bold text-gray-900">
-                      {data.tin}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-gray-600 mb-1">
-                      Last Filing Date
-                    </p>
-                    <p className="font-bold text-gray-900">
-                      {formatDate(data.lastTaxFiling)}
-                    </p>
-                  </div>
-                </div>
               </div>
             </div>
           </div>

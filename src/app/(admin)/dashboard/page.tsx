@@ -1,5 +1,5 @@
 import React from "react";
-import pool from "@/lib/db";
+// import pool from "@/lib/db";
 import {
   School,
   CheckCircle2,
@@ -9,6 +9,7 @@ import {
   Building2,
   GraduationCap,
   BookOpen,
+  Stethoscope,
 } from "lucide-react";
 import { getUserFromCookie } from "@/lib/auth";
 
@@ -17,6 +18,10 @@ interface SchoolStats {
   activeSchools: number;
   pendingApprovals: number;
   totalLicenses: number;
+  totalPolytechnics: number;
+  totalUniversities: number;
+  totalCollegesOfEducation: number;
+  totalSchoolsOfHealthTechnology: number;
 }
 
 // Dummy data
@@ -193,21 +198,27 @@ export default async function AdminDashboard() {
           <div className="w-1/2 grid grid-cols-1 md:grid-cols-2 gap-6">
             <CategoryCard
               category="Polytechnics"
-              count={dashboardStats.schoolsByCategory.polytechnics}
+              count={stats.totalPolytechnics}
               icon={<Building2 size={20} />}
               color="#06b6d4"
             />
             <CategoryCard
               category="Universities"
-              count={dashboardStats.schoolsByCategory.universities}
+              count={stats.totalUniversities}
               icon={<GraduationCap size={20} />}
               color="#8b5cf6"
             />
             <CategoryCard
               category="Colleges"
-              count={dashboardStats.schoolsByCategory.colleges}
+              count={stats.totalCollegesOfEducation}
               icon={<BookOpen size={20} />}
               color="#ec4899"
+            />
+            <CategoryCard
+              category="Health Technology"
+              count={stats.totalSchoolsOfHealthTechnology}
+              icon={<Stethoscope size={20} />}
+              color="#f59e0b"
             />
           </div>
           <div></div>
