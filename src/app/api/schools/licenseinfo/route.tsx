@@ -7,17 +7,17 @@ import pool from "@/lib/db";
 export async function GET(req: Request) {
   try {
     const { searchParams } = new URL(req.url);
-    const tin = searchParams.get("tin");
+    const school_id = searchParams.get("school_id");
 
     let result;
 
-    if (tin) {
-      // ✅ Fetch a single school by TIN
+    if (school_id) {
+      // ✅ Fetch a single school by school_id
       result = await pool.query(
         `SELECT id, name, school_id, state, ownership, lga, address, email, phone, tin, license_number, license_status, last_license_renewal, license_expiry_date 
          FROM schoolskano 
-         WHERE tin = $1`,
-        [tin],
+         WHERE school_id = $1`,
+        [school_id],
       );
 
       if (result.rows.length === 0) {
@@ -27,7 +27,7 @@ export async function GET(req: Request) {
         );
       }
     } else {
-      // ✅ Fetch all schools if no TIN is provided
+      // ✅ Fetch all schools if no school_id is provided
       result = await pool.query(`
         SELECT id, name, school_id, state, ownership, lga, address, email, phone, tin, license_number, license_status, last_license_renewal, license_expiry_date 
         FROM schoolskano;

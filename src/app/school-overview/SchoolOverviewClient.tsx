@@ -15,11 +15,11 @@ interface SchoolLicense {
   state: string;
   lga: string;
   tin: string;
-  phone: number;
+
   email: string;
   address: string;
   license_number: string;
-  license_status: "Valid" | "Expired";
+  license_status: "Active" | "Expired";
   license_expiry_date: string;
   last_license_renewal: string;
 }
@@ -30,20 +30,20 @@ export default function SchoolOverviewClient() {
   const [cloading, setCloading] = useState(false);
 
   const searchParams = useSearchParams();
-  const tin = searchParams.get("tin");
+  const school_id = searchParams.get("school_id");
   const router = useRouter();
 
   useEffect(() => {
     const fetchSchool = async () => {
       try {
-        const url = tin
-          ? `/api/schools/licenseinfo?tin=${tin}`
+        const url = school_id
+          ? `/api/schools/licenseinfo?school_id=${school_id}`
           : "/api/schools/licenseinfo";
         const res = await fetch(url);
         const data = await res.json();
 
         if (res.ok) {
-          setSchool(tin ? data[0] : data);
+          setSchool(school_id ? data[0] : data);
         } else {
           console.error("Error:", data.error);
         }
@@ -55,7 +55,7 @@ export default function SchoolOverviewClient() {
     };
 
     fetchSchool();
-  }, [tin]);
+  }, [school_id]);
 
   const handleRenew = async () => {
     try {
@@ -103,7 +103,7 @@ export default function SchoolOverviewClient() {
   if (!school) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <p className="text-red-500">No school found for the provided TIN.</p>
+        <p className="text-red-500">No school found.</p>
       </div>
     );
   }
@@ -146,17 +146,17 @@ export default function SchoolOverviewClient() {
                   </h2>
                   <div
                     className={`flex items-center gap-2 mt-3 sm:mt-0 px-3 py-1 rounded-full text-sm font-medium ${
-                      school.license_status === "Valid"
+                      school.license_status === "Active"
                         ? "bg-green-100 text-green-700"
                         : "bg-red-100 text-red-700"
                     }`}
                   >
-                    {school.license_status === "Valid" ? (
+                    {school.license_status === "Active" ? (
                       <BadgeCheck className="w-4 h-4" />
                     ) : (
                       <XCircle className="w-4 h-4" />
                     )}
-                    {school.license_status === "Valid"
+                    {school.license_status === "Active"
                       ? "License Active"
                       : "License Expired"}
                   </div>
@@ -228,7 +228,9 @@ export default function SchoolOverviewClient() {
                 <p className="font-semibold text-xs uppercase text-black px-3 py-1 bg-[#fbbf23] rounded-sm inline-flex">
                   License Number
                 </p>
-                <p className="font-semibold text-lg">{school.license_number}</p>
+                <p className="font-semibold text-lg">
+                  {school.license_number ?? "N/A"}
+                </p>
               </div>
               <div className="space-y-2">
                 <p className="font-semibold text-xs uppercase text-black px-3 py-1 bg-[#fbbf23] rounded-sm inline-flex">
@@ -242,14 +244,9 @@ export default function SchoolOverviewClient() {
                 <p className="font-semibold text-xs uppercase text-black px-3 py-1 bg-[#fbbf23] rounded-sm inline-flex">
                   Tax Identification Number
                 </p>
-                <p className="font-semibold text-lg">{school.tin}</p>
+                <p className="font-semibold text-lg">{school.tin ?? "N/A"}</p>
               </div>
-              <div className="space-y-2">
-                <p className="font-semibold text-xs uppercase text-black px-3 py-1 bg-[#fbbf23] rounded-sm inline-flex">
-                  Phone
-                </p>
-                <p className="font-semibold text-lg">{school.phone}</p>
-              </div>
+
               <div className="space-y-2">
                 <p className="font-semibold text-xs uppercase text-black px-3 py-1 bg-[#fbbf23] rounded-sm inline-flex">
                   Official Email
