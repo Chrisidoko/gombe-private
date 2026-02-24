@@ -15,7 +15,7 @@ interface PageProps {
 export default async function CheckoutPage({ searchParams }: PageProps) {
   // Await searchParams
   const params = await searchParams;
-  const { id, ref, school_id, item } = params;
+  const { ref, school_id, item } = params;
 
   // Validate required params
   if (!school_id || !ref) {
@@ -35,7 +35,7 @@ export default async function CheckoutPage({ searchParams }: PageProps) {
     // Fetch school info from database
     const { rows: schoolRows } = await pool.query(
       "SELECT school_id, name, email, tin FROM schoolskano WHERE school_id = $1",
-      [school_id]
+      [school_id],
     );
 
     if (schoolRows.length === 0) {
@@ -58,7 +58,7 @@ export default async function CheckoutPage({ searchParams }: PageProps) {
       `SELECT id, invoice_number, school_id, amount, status, bill_reference 
        FROM schoolkano_invoices 
        WHERE invoice_number = $1 AND school_id = $2`,
-      [ref, school_id]
+      [ref, school_id],
     );
 
     if (invoiceRows.length === 0) {

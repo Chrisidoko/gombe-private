@@ -60,6 +60,7 @@ export interface School {
   session_start: string | null;
   session_end: string | null;
   programmes: string[];
+  courses: string[];
 
   // Payment Info
   method_of_collection: string[];

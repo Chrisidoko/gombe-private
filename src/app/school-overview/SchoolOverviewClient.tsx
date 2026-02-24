@@ -79,7 +79,7 @@ export default function SchoolOverviewClient() {
 
       const params = new URLSearchParams({
         ref: data.invoice_number,
-        item: "License",
+        item: "Consent Certificate",
         school_id: school.school_id,
       });
 

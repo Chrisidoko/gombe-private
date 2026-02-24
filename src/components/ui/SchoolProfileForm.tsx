@@ -11,11 +11,7 @@ import {
   X,
 } from "lucide-react";
 import toast from "react-hot-toast";
-
-interface DocumentItem {
-  type: string;
-  url: string;
-}
+import { School } from "@/lib/types";
 
 type FormData = {
   // General Information
@@ -41,6 +37,7 @@ type FormData = {
   sessionStart: string;
   sessionEnd: string;
   programmes: string[];
+  courses: string[];
 
   // License Information
   license_status: string;
@@ -74,36 +71,42 @@ const lgas = [
   "Zaria",
 ];
 
-export default function SchoolProfileForm() {
+export default function SchoolProfileForm({
+  schoolData,
+}: {
+  schoolData: School;
+}) {
   const [formData, setFormData] = useState<FormData>({
-    proprietorName: "",
-    contact_person: "",
-    contact_person_phone: "",
-    contact_person_designation: "",
-    ownershipType: "Private Individual",
-    address: "",
-    lga: "",
-    tin: "",
-    lastTaxFiling: "",
-    category: "",
-    website: "",
-    modeOfOperation: [],
-    avgFee: "",
-    totalRevenue: "",
-    academicSession: "2025/2026",
+    proprietorName: schoolData.proprietor_name ?? "",
+    contact_person: schoolData.contact_person ?? "",
+    contact_person_phone: schoolData.contact_person_phone ?? "",
+    contact_person_designation: schoolData.contact_person_designation ?? "",
+    ownershipType: schoolData.ownership ?? "Private Individual",
+    address: schoolData.address ?? "",
+    lga: schoolData.lga ?? "",
+    tin: schoolData.tin ?? "",
+    lastTaxFiling: schoolData.last_tax_filing ?? "",
+    category: schoolData.category ?? "",
+    website: schoolData.website ?? "",
+    modeOfOperation: schoolData.mode_of_operation ?? [],
+    avgFee: schoolData.avg_fee ?? "",
+    totalRevenue: schoolData.total_revenue ?? "",
+    academicSession: schoolData.academic_session ?? "2025/2026",
     // weeksPerSemester: "",
-    sessionStart: "",
-    sessionEnd: "",
-    programmes: [],
-    license_status: "",
+    sessionStart: schoolData.session_start ?? "",
+    sessionEnd: schoolData.session_end ?? "",
+    programmes: schoolData.programmes ?? [],
+    courses: schoolData.courses ?? [],
+    license_status: schoolData.license_status ?? "",
     // licenseNumber: "",
     // licenseExpiry: "",
   });
 
   const [loading, setLoading] = useState(false);
   const [activeSection, setActiveSection] = useState<string | null>(null);
+  const [courseInput, setCourseInput] = useState("");
 
-  const handleChange = (field: keyof FormData, value: string) => {
+  const handleChange = (field: keyof FormData, value: string | string[]) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
@@ -171,7 +174,7 @@ export default function SchoolProfileForm() {
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-2xl font-bold mb-2">
-              Complete Your School Profile
+              Update Your School Profile
             </h1>
             <p className="text-gray-600 ">
               Fill in your school information to access all features
@@ -381,7 +384,7 @@ export default function SchoolProfileForm() {
                 </div>
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 mb-2">
-                    TIN <span className="text-red-500">*</span>
+                    TIN
                   </label>
                   <input
                     type="text"
@@ -389,7 +392,6 @@ export default function SchoolProfileForm() {
                     value={formData.tin}
                     onChange={(e) => handleChange("tin", e.target.value)}
                     className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all"
-                    required
                   />
                 </div>
 
@@ -630,8 +632,7 @@ export default function SchoolProfileForm() {
 
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 mb-2">
-                    Session Start Date
-                    <span className="text-red-500">*</span>
+                    Session Start Date <span className="text-red-500">*</span>
                   </label>
                   <input
                     type="date"
@@ -646,8 +647,7 @@ export default function SchoolProfileForm() {
 
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 mb-2">
-                    Expected End Date
-                    <span className="text-red-500">*</span>
+                    Expected End Date <span className="text-red-500">*</span>
                   </label>
                   <input
                     type="date"
@@ -662,12 +662,13 @@ export default function SchoolProfileForm() {
               {/* Programmes */}
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-3">
-                  Programmes Offered
+                  Programmes Offered <span className="text-red-500">*</span>
                 </label>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                   {[
-                    "Bachelor's Degree",
-                    "Diploma Programmes / NCE",
+                    "Bachelor's Degree ",
+                    "Higher National Diploma (HND)",
+                    "National Diploma / NCE",
                     "Postgraduate Diploma (PGD)",
                     "Master's Degree",
                     "Doctorate Degree (Ph.D.)",
@@ -686,6 +687,7 @@ export default function SchoolProfileForm() {
                         checked={formData.programmes.includes(prog)}
                         onChange={() => toggleCheckbox("programmes", prog)}
                         className="w-4 h-4 text-blue-600"
+                        required
                       />
                       <span className="text-sm font-medium text-gray-900">
                         {prog}
@@ -693,6 +695,82 @@ export default function SchoolProfileForm() {
                     </label>
                   ))}
                 </div>
+              </div>
+
+              {/* Courses  */}
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  Courses
+                </label>
+
+                {/* Existing courses list */}
+                {formData.courses.length > 0 && (
+                  <div className="flex flex-wrap gap-2 mb-3">
+                    {formData.courses.map((course: string, index: number) => (
+                      <span
+                        key={index}
+                        className="inline-flex items-center gap-1.5 bg-blue-50 border border-blue-200 text-blue-700 text-sm px-3 py-1 rounded-full"
+                      >
+                        {course}
+                        <button
+                          type="button"
+                          onClick={() =>
+                            handleChange(
+                              "courses",
+                              formData.courses.filter(
+                                (_: string, i: number) => i !== index,
+                              ),
+                            )
+                          }
+                          className="text-blue-400 hover:text-red-500 transition font-bold leading-none"
+                        >
+                          ×
+                        </button>
+                      </span>
+                    ))}
+                  </div>
+                )}
+
+                {/* Add course input */}
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    placeholder="e.g., Medical Laboratory Science"
+                    value={courseInput}
+                    onChange={(e) => setCourseInput(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        e.preventDefault();
+                        if (courseInput.trim()) {
+                          handleChange("courses", [
+                            ...formData.courses,
+                            courseInput.trim(),
+                          ]);
+                          setCourseInput("");
+                        }
+                      }
+                    }}
+                    className="flex-1 px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (courseInput.trim()) {
+                        handleChange("courses", [
+                          ...formData.courses,
+                          courseInput.trim(),
+                        ]);
+                        setCourseInput("");
+                      }
+                    }}
+                    className="px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-lg transition-all"
+                  >
+                    + Add
+                  </button>
+                </div>
+                <p className="text-xs text-gray-400 mt-1.5">
+                  Press Enter or click Add to insert a course.
+                </p>
               </div>
             </div>
           )}

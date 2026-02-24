@@ -14,7 +14,6 @@ import {
   Phone,
   Hash,
   Shield,
-  Clock,
   ExternalLink,
   File,
 } from "lucide-react";
@@ -38,13 +37,14 @@ interface SchoolDetails {
   lga: string;
   address: string;
   email: string;
-  phone: string;
+  contact_person_phone: string;
   tin: string;
   website: string;
   license_number: string;
   license_status: string;
   last_license_renewal: string;
   license_expiry_date: string;
+  courses: string[]; // courses is an array of strings
 }
 
 interface SchoolDocument {
@@ -294,7 +294,7 @@ export default function Requests() {
                         <div className="flex items-start gap-2">
                           <Mail className="w-4 h-4 text-gray-500 mt-1" />
                           <div className="flex-1">
-                            <label className="text-sm font-medium text-gray-500 block mb-1">
+                            <label className="text-xs font-medium text-gray-500 block mb-1">
                               Email Address
                             </label>
                             <p className="text-gray-900">
@@ -308,11 +308,12 @@ export default function Requests() {
                         <div className="flex items-start gap-2">
                           <Phone className="w-4 h-4 text-gray-500 mt-1" />
                           <div className="flex-1">
-                            <label className="text-sm font-medium text-gray-500 block mb-1">
-                              Phone Number
+                            <label className="text-xs font-medium text-gray-500 block mb-1">
+                              Contact Person Phone
                             </label>
                             <p className="text-gray-900">
-                              {schoolDetails.phone || "Not provided"}
+                              {schoolDetails.contact_person_phone ||
+                                "Not provided"}
                             </p>
                           </div>
                         </div>
@@ -322,7 +323,7 @@ export default function Requests() {
                         <div className="flex items-start gap-2">
                           <Building2 className="w-4 h-4 text-gray-500 mt-1" />
                           <div className="flex-1">
-                            <label className="text-sm font-medium text-gray-500 block mb-1">
+                            <label className="text-xs font-medium text-gray-500 block mb-1">
                               Ownership Type
                             </label>
                             <p className="text-gray-900">
@@ -336,7 +337,7 @@ export default function Requests() {
                         <div className="flex items-start gap-2">
                           <Hash className="w-4 h-4 text-gray-500 mt-1" />
                           <div className="flex-1">
-                            <label className="text-sm font-medium text-gray-500 block mb-1">
+                            <label className="text-xs font-medium text-gray-500 block mb-1">
                               Tax Identification Number (TIN)
                             </label>
                             <p className="text-gray-900">
@@ -358,7 +359,7 @@ export default function Requests() {
                         <div className="flex items-start gap-2">
                           <MapPin className="w-4 h-4 text-gray-500 mt-1" />
                           <div className="flex-1">
-                            <label className="text-sm font-medium text-gray-500 block mb-1">
+                            <label className="text-xs font-medium text-gray-500 block mb-1">
                               Address
                             </label>
                             <p className="text-gray-900">
@@ -370,7 +371,7 @@ export default function Requests() {
 
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div className="bg-gray-50 rounded-lg p-4">
-                          <label className="text-sm font-medium text-gray-500 block mb-1">
+                          <label className="text-xs font-medium text-gray-500 block mb-1">
                             Website
                           </label>
                           <p className="text-gray-900">
@@ -379,12 +380,39 @@ export default function Requests() {
                         </div>
 
                         <div className="bg-gray-50 rounded-lg p-4">
-                          <label className="text-sm font-medium text-gray-500 block mb-1">
+                          <label className="text-xs font-medium text-gray-500 block mb-1">
                             Local Government Area (LGA)
                           </label>
                           <p className="text-gray-900">
                             {schoolDetails.lga || "Not specified"}
                           </p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Courses Offered*/}
+                  <div className="mb-6">
+                    <h4 className="text-lg font-semibold text-gray-900 mb-3">
+                      Courses Offered
+                    </h4>
+                    <div className="space-y-4">
+                      <div className="bg-gray-50 rounded-lg p-4">
+                        <div className="flex items-start gap-2">
+                          <Building2 className="w-4 h-4 text-gray-500 mt-1" />
+                          <div className="flex-1">
+                            <label className="text-xs font-medium text-gray-500 block mb-1">
+                              Course list
+                            </label>
+                            <ul className="text-gray-900">
+                              {schoolDetails.courses &&
+                              schoolDetails.courses.length > 0
+                                ? schoolDetails.courses.map((course, index) => (
+                                    <li key={index}>{course}</li>
+                                  ))
+                                : "Not provided"}
+                            </ul>
+                          </div>
                         </div>
                       </div>
                     </div>
@@ -400,7 +428,7 @@ export default function Requests() {
                         <div className="flex items-start gap-2">
                           <FileText className="w-4 h-4 text-gray-500 mt-1" />
                           <div className="flex-1">
-                            <label className="text-sm font-medium text-gray-500 block mb-1">
+                            <label className="text-xs font-medium text-gray-500 block mb-1">
                               License Number
                             </label>
                             <p className="text-gray-900">
@@ -414,7 +442,7 @@ export default function Requests() {
                         <div className="flex items-start gap-2">
                           <Shield className="w-4 h-4 text-gray-500 mt-1" />
                           <div className="flex-1">
-                            <label className="text-sm font-medium text-gray-500 block mb-1">
+                            <label className="text-xs font-medium text-gray-500 block mb-1">
                               License Status
                             </label>
                             <p className="text-gray-900">
@@ -426,31 +454,9 @@ export default function Requests() {
 
                       <div className="bg-gray-50 rounded-lg p-4">
                         <div className="flex items-start gap-2">
-                          <Clock className="w-4 h-4 text-gray-500 mt-1" />
-                          <div className="flex-1">
-                            <label className="text-sm font-medium text-gray-500 block mb-1">
-                              Last License Renewal
-                            </label>
-                            <p className="text-gray-900">
-                              {schoolDetails.last_license_renewal
-                                ? new Date(
-                                    schoolDetails.last_license_renewal,
-                                  ).toLocaleDateString("en-US", {
-                                    year: "numeric",
-                                    month: "long",
-                                    day: "numeric",
-                                  })
-                                : "Not available"}
-                            </p>
-                          </div>
-                        </div>
-                      </div>
-
-                      <div className="bg-gray-50 rounded-lg p-4">
-                        <div className="flex items-start gap-2">
                           <Calendar className="w-4 h-4 text-gray-500 mt-1" />
                           <div className="flex-1">
-                            <label className="text-sm font-medium text-gray-500 block mb-1">
+                            <label className="text-xs font-medium text-gray-500 block mb-1">
                               License Expiry Date
                             </label>
                             <p className="text-gray-900">

@@ -39,6 +39,7 @@ export async function POST(req: Request) {
       sessionStart,
       sessionEnd,
       programmes,
+      courses,
 
       // License Information
       license_status,
@@ -69,7 +70,8 @@ export async function POST(req: Request) {
         session_start = COALESCE($17, session_start),
         session_end = COALESCE($18, session_end),
         programmes = COALESCE($19::jsonb, programmes),
-        license_status = COALESCE($20, license_status),
+        courses = COALESCE($20::jsonb, courses),
+        license_status = COALESCE($21, license_status),
         form_status = 'complete',
         updated_at = NOW()
        WHERE school_id = $1
@@ -87,13 +89,14 @@ export async function POST(req: Request) {
         lga || null,
         category || null,
         website || null,
-        JSON.stringify(modeOfOperation || []), // ✅ Convert to JSON string
+        modeOfOperation != null ? JSON.stringify(modeOfOperation) : null,
         avgFee || null,
         totalRevenue || null,
         academicSession || null,
         sessionStart || null,
         sessionEnd || null,
-        JSON.stringify(programmes || []), // ✅ Convert to JSON string
+        programmes != null ? JSON.stringify(programmes) : null, // ✅ Convert to JSON string
+        courses != null ? JSON.stringify(courses) : null, // ✅ Convert to JSON string
         license_status || null,
       ],
     );

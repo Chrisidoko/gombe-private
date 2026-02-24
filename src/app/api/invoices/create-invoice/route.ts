@@ -28,12 +28,12 @@ export async function POST(req: Request) {
     const result = await client.query(query, values);
     const invoiceId = result.rows[0].id;
 
-    console.log("✅ Invoice created:", result.rows[0]);
+    // console.log("✅ Invoice created:", result.rows[0]);
 
     // Step 2: Fetch school info
     const schoolRes = await client.query(
       "SELECT email, name, phone, address FROM schoolskano WHERE school_id = $1",
-      [school_id]
+      [school_id],
     );
 
     if (schoolRes.rows.length === 0) {
@@ -67,7 +67,7 @@ export async function POST(req: Request) {
         esBillDetailsDto: [
           {
             amount: parseFloat(amount),
-            mdasId: parseInt(process.env.MDAS_ID || "3645"),
+            mdasId: parseInt(process.env.MDAS_ID || "3646"),
             narration: `School License Renewal - ${invoice_number}`,
           },
         ],
@@ -101,12 +101,12 @@ export async function POST(req: Request) {
 
       if (!billResponse.ok) {
         const errorData = await billResponse.text();
-        console.error("❌ 3rd party API error:", errorData);
+        console.error("3rd party API error:", errorData);
         throw new Error(`Bill creation failed: ${billResponse.statusText}`);
       }
 
       const billData = await billResponse.json();
-      console.log("✅ Bill created:", billData);
+      // console.log("✅ Bill created:", billData);
 
       // Extract billReference and status from response
       billReference = billData.bill?.billReference || invoice_number;
@@ -118,11 +118,11 @@ export async function POST(req: Request) {
         `UPDATE schoolkano_invoices 
          SET bill_reference = $1, status = $2, tpui = $3, updated_at = NOW() 
          WHERE id = $4`,
-        [billReference, billStatus, tpui, invoiceId]
+        [billReference, billStatus, tpui, invoiceId],
       );
-      console.log("✅ Invoice updated with bill reference");
+      // console.log("✅ Invoice updated with bill reference");
     } catch (billError) {
-      console.error("⚠️ Bill creation failed:", billError);
+      console.error("Bill creation failed:", billError);
       // Rollback transaction if bill creation fails
       await client.query("ROLLBACK");
       throw billError;
@@ -152,7 +152,7 @@ export async function POST(req: Request) {
         success: false,
         error: message,
       },
-      { status: 500 }
+      { status: 500 },
     );
   } finally {
     // Always release the client back to the pool

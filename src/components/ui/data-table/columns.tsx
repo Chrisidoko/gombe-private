@@ -44,8 +44,8 @@ export const getColumns = ({
             table.getIsAllPageRowsSelected()
               ? true
               : table.getIsSomeRowsSelected()
-              ? "indeterminate"
-              : false
+                ? "indeterminate"
+                : false
           }
           onCheckedChange={() => table.toggleAllPageRowsSelected()}
           className="translate-y-0.5"
@@ -119,7 +119,7 @@ export const getColumns = ({
       filterFn: "arrIncludesSome",
       cell: ({ row }) => {
         const schoolId = row.getValue("school_id") as string; // Explicitly cast to string
-        return schoolMapping[schoolId] || "Unknown"; // Default to "Unknown" if not found
+        return schoolMapping[schoolId] || schoolId; // Default to "Unknown" if not found
       },
     }),
 

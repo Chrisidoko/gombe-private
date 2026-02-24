@@ -19,7 +19,7 @@ export default function Transactions() {
     perPage: 20,
     page: 1,
     startDate: "2025-10-01",
-    endDate: "2025-12-31",
+    endDate: "2026-12-31",
   });
 
   //data drawer
@@ -42,7 +42,7 @@ export default function Transactions() {
     try {
       const { perPage, page, startDate, endDate } = filters;
       const res = await fetch(
-        `/api/transactions/all?per_page=${perPage}&page=${page}&start_date=${startDate}&end_date=${endDate}`
+        `/api/transactions/all?per_page=${perPage}&page=${page}&start_date=${startDate}&end_date=${endDate}`,
       );
       const data = await res.json();
 

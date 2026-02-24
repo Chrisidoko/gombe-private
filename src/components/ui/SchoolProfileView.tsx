@@ -61,6 +61,7 @@ export default function SchoolProfileView({
     programmes: Array.isArray(schoolData?.programmes)
       ? schoolData.programmes
       : [],
+    courses: Array.isArray(schoolData?.courses) ? schoolData.courses : [],
     licenseNumber: schoolData?.license_number || "N/A",
     licenceStatus: schoolData?.license_status || "Not specified",
     prevAmount: schoolData?.prev_amount || "0",
@@ -309,6 +310,36 @@ export default function SchoolProfileView({
                     className="flex items-center gap-2 p-3 bg-purple-50 text-sm rounded-lg border border-purple-200"
                   >
                     <CheckCircle className="w-5 h-5 text-purple-600 flex-shrink-0" />
+                    <span className="font-medium text-gray-900">{prog}</span>
+                  </div>
+                ))
+              ) : (
+                <p className="text-gray-500 text-sm col-span-2">
+                  No programmes specified
+                </p>
+              )}
+            </div>
+          </div>
+
+          {/* Courses Offered */}
+
+          <div className="bg-white rounded-xl border border-gray-200 p-6">
+            <div className="flex items-center gap-3 mb-4 pb-4 border-b border-gray-200">
+              <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center">
+                <Award className="w-5 h-5 text-purple-600" />
+              </div>
+              <h2 className="text-base font-bold text-gray-900">
+                Courses Offered
+              </h2>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              {data.courses.length > 0 ? (
+                data.courses.map((prog: string) => (
+                  <div
+                    key={prog}
+                    className="flex items-center gap-2 p-3 bg-orange-50 text-sm rounded-lg border border-orange-200"
+                  >
+                    <CheckCircle className="w-5 h-5 text-orange-600 flex-shrink-0" />
                     <span className="font-medium text-gray-900">{prog}</span>
                   </div>
                 ))

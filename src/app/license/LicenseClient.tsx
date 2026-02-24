@@ -595,21 +595,21 @@ export default function CheckoutClient({ invoiceData }: CheckoutClientProps) {
                             {invoiceData.school_name}
                           </p>
                         </div>
-                        <div className="bg-white p-2 rounded">
+                        {/* <div className="bg-white p-2 rounded">
                           <p className="text-gray-600">School ID</p>
                           <p className="font-semibold">
                             {invoiceData.school_id}
                           </p>
-                        </div>
+                        </div> */}
                         <div className="bg-white p-2 rounded">
-                          <p className="text-gray-600">License Type</p>
-                          <p className="font-semibold">Annual Renewal</p>
+                          <p className="text-gray-600">Type</p>
+                          <p className="font-semibold">Consent Certificate</p>
                         </div>
                         <div className="bg-white p-2 rounded">
                           <p className="text-gray-600">Valid Until</p>
                           <p className="font-semibold">
                             {formatDate(
-                              new Date(Date.now() + 365 * 24 * 60 * 60 * 1000),
+                              new Date(Date.now() + 365 * 24 * 60 * 60 * 3000),
                             )}
                           </p>
                         </div>

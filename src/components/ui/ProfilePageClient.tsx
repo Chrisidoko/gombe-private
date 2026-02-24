@@ -21,7 +21,7 @@ export default function ProfilePageClient({ school }: { school: School }) {
             ← Back to Profile View
           </button>
         )}
-        <SchoolProfileForm />
+        <SchoolProfileForm schoolData={school} />
       </div>
     );
   }
