@@ -106,7 +106,7 @@ export async function POST(request: NextRequest) {
       status: 200,
       headers: {
         "Content-Type": "application/pdf",
-        "Content-Disposition": `attachment; filename="license-${licenseData.license_number}.pdf"`,
+        "Content-Disposition": `attachment; filename="Certificate-${licenseData.license_number}.pdf"`,
       },
     });
   } catch (error) {

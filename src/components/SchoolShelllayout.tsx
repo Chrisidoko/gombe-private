@@ -26,7 +26,7 @@ export default function SchoolShell({
     async function checkFormStatus() {
       try {
         const res = await fetch(
-          `/api/schools/form-status?school_id=${institution}`,
+          `/api/schools/form-status?school_id=${encodeURIComponent(institution)}`,
         );
         const data = await res.json();
         if (data.email_updated !== true) {

@@ -3,6 +3,7 @@ import {
   ReceiptText,
   CircleCheckBig,
   Building,
+  FileDown,
 } from "lucide-react";
 
 import Link from "next/link";
@@ -43,6 +44,11 @@ export default function Rightside() {
               </div>
             </Link>
           </div>
+          <a href="/Application-form.pdf" download>
+            <div className="flex items-center gap-5 bg-white/20 text-white rounded-xl border border-white py-4 px-4 cursor-pointer hover:bg-white/30">
+              <FileDown /> Download Application Form
+            </div>
+          </a>
         </div>
       </div>
     </>
