@@ -83,7 +83,7 @@ export default async function CheckoutPage({ searchParams }: PageProps) {
       school_id: invoice.school_id,
       school_name: school.name,
       school_email: school.email,
-      item: item || "License Renewal",
+      item: item || "Consent Certificate",
       amount: parseFloat(invoice.amount),
       status: invoice.status,
       bill_reference: invoice.bill_reference,

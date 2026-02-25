@@ -69,7 +69,7 @@ export default function SchoolOverviewClient() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           school_id: school.school_id,
-          amount: 500, // License fee
+          amount: 300000, // License fee
         }),
       });
 

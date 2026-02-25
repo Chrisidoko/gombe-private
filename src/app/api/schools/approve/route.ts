@@ -49,11 +49,11 @@ export async function POST(req: Request) {
         to: email,
         subject: "Your School Registration Has Been Approved",
         html: `
-          <div style="font-family: Arial, sans-serif; line-height: 1.6;">
+          <div style="font-family: Arial, sans-serif; line-height: 1.6; max-width: 560px; margin: auto;">
             <h2 style="color: #16a34a;">Kaduna Private Tertiary Institution Portal</h2>
             <p>Dear <strong>${name}</strong>,</p>
             <p>Your institution has been successfully approved on the Kaduna Private Tertiary Institution Portal.</p>
-            <p>You can now continue using the portal to handle your license management and school assessments.</p>
+            <p>You can now continue using the portal to handle your certificate management and school assessments.</p>
             <br />
             <p>Best Regards,<br>KAPTEMS Assessment Team</p>
           </div>
@@ -64,18 +64,18 @@ export async function POST(req: Request) {
       await transporter.sendMail({
         from: `"KAPTEMS" <${process.env.SMTP_USER}>`,
         to: email,
-        subject: "Action Required: Purchase Your School License",
+        subject: "Action Required: Purchase Your Consent Certificate ",
         html: `
         <div style="font-family: Arial, sans-serif; line-height: 1.6; max-width: 560px; margin: auto;">
           <h2 style="color: #16a34a;">Kaduna Private Tertiary Institution Portal</h2>
             <p>Dear <strong>${name}</strong>,</p>
             <p>Your institution has been approved on the Kaduna Private Tertiary Institution Portal.</p>
-            <p>To fully access all portal features and remain compliant, please proceed to purchase your license:</p>
+            <p>To fully access all portal features and remain compliant, please proceed to purchase your Consent Certificate:</p>
 
             <div style="margin: 24px 0;">
               <a href="${purchaseLink}" 
                 style="display: inline-block; background-color: #16a34a; color: #ffffff; text-decoration: none; padding: 12px 28px; border-radius: 6px; font-weight: bold; font-size: 15px;">
-                Purchase License →
+                Purchase Certificate →
               </a>
             </div>
             <p style="color: #6b7280; font-size: 13px;">
@@ -92,7 +92,7 @@ export async function POST(req: Request) {
     return NextResponse.json({
       message: hasActiveLicense
         ? "School approved & approval email sent"
-        : "School approved & license purchase email sent",
+        : "School approved & Certificate purchase email sent",
     });
   } catch (error) {
     console.error(error);

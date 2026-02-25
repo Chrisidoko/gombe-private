@@ -66,10 +66,10 @@ export default function CheckoutClient({ invoiceData }: CheckoutClientProps) {
       document.body.removeChild(link);
       window.URL.revokeObjectURL(url);
 
-      toast.success("License downloaded successfully!");
+      toast.success("Certificate downloaded successfully!");
     } catch (error) {
       console.error("Download error:", error);
-      toast.error("Failed to download license. Please try again.");
+      toast.error("Failed to download certificate. Please try again.");
     } finally {
       setDownloadingLicense(false);
     }
@@ -151,7 +151,7 @@ export default function CheckoutClient({ invoiceData }: CheckoutClientProps) {
 
           setPaymentSuccess(true);
           toast.success(
-            `Payment confirmed! License ${updateData.data.license_number} has been issued.`,
+            `Payment confirmed! Certificate ${updateData.data.license_number} has been issued.`,
           );
 
           // Redirect to dashboard or success page after 3 seconds
@@ -159,9 +159,9 @@ export default function CheckoutClient({ invoiceData }: CheckoutClientProps) {
           //   router.push("/");
           // }, 3000);
         } catch (updateError) {
-          console.error("License update error:", updateError);
+          console.error("Certificate update error:", updateError);
           toast.error(
-            "Payment confirmed but failed to update license. Please contact support.",
+            "Payment confirmed but failed to update certificate. Please contact support.",
           );
         }
       } else {
@@ -200,10 +200,10 @@ export default function CheckoutClient({ invoiceData }: CheckoutClientProps) {
         {/* Header */}
         <div className="text-center mb-8">
           <h1 className="text-3xl font-bold text-gray-900">
-            License Renewal Checkout
+            Consent Cetificate Checkout
           </h1>
           <p className="mt-2 text-gray-600">
-            Complete your payment to renew your license
+            Complete your payment to renew your consent certificate
           </p>
         </div>
 
@@ -259,7 +259,7 @@ export default function CheckoutClient({ invoiceData }: CheckoutClientProps) {
                           d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
                         ></path>
                       </svg>
-                      Generating License...
+                      Generating Certificate...
                     </>
                   ) : (
                     <>
@@ -276,7 +276,7 @@ export default function CheckoutClient({ invoiceData }: CheckoutClientProps) {
                           d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
                         />
                       </svg>
-                      Download License
+                      Download Certificate
                     </>
                   )}
                 </button>
@@ -375,8 +375,8 @@ export default function CheckoutClient({ invoiceData }: CheckoutClientProps) {
                           clipRule="evenodd"
                         />
                       </svg>
-                      Your license will be made available for download
-                      immediately after payment{" "}
+                      Your consent certificate will be made available for
+                      download immediately after payment{" "}
                     </li>
                     <li className="flex items-start">
                       <svg
@@ -560,22 +560,22 @@ export default function CheckoutClient({ invoiceData }: CheckoutClientProps) {
             </div>
           </div>
 
-          {/* License Preview - Right Side */}
+          {/* Certificate Preview - Right Side */}
           <div>
             <div className="bg-white shadow-md rounded-lg overflow-hidden sticky top-8">
               <div className="bg-[#fbbf23] p-4 text-white">
                 <h3 className="text-lg text-black font-semibold">
-                  License Preview
+                  Certificate Preview
                 </h3>
               </div>
 
               <div className="p-6">
                 <div className="mb-4">
                   <p className="text-sm text-gray-600 mb-3">
-                    This is a sample of what your license will look like:
+                    This is a sample of what your certificate will look like:
                   </p>
 
-                  {/* License Preview Image/Mockup */}
+                  {/* Certificate Preview Image/Mockup */}
                   <div className="border-2 border-gray-300 rounded-lg overflow-hidden bg-white shadow-sm">
                     <div
                       className="aspect-[4.5/5] relative p-6"
@@ -587,7 +587,7 @@ export default function CheckoutClient({ invoiceData }: CheckoutClientProps) {
                         backgroundRepeat: "no-repeat",
                       }}
                     >
-                      {/* License Info */}
+                      {/* Certificate Info */}
                       <div className="mt-[28%] space-y-2 text-xs">
                         <div className="bg-white p-2 rounded">
                           <p className="text-gray-600">School Name</p>
@@ -643,11 +643,12 @@ export default function CheckoutClient({ invoiceData }: CheckoutClientProps) {
                 {showLicensePreview && (
                   <div className="mt-4 p-4 bg-gray-50 rounded-lg text-xs text-gray-600">
                     <p className="mb-2">
-                      <strong>Note:</strong> The actual license will include:
+                      <strong>Note:</strong> The actual certificate will
+                      include:
                     </p>
                     <ul className="list-disc list-inside space-y-1">
                       <li>Official school name</li>
-                      <li>Unique license number</li>
+                      <li>Unique certificate number</li>
                       <li>Digital signature</li>
                       <li>QR code for verification</li>
                       <li>Watermark and security features</li>
