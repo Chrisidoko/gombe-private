@@ -1,36 +1,23 @@
 // app/api/generate-license/route.ts
 import { NextRequest, NextResponse } from "next/server";
-// import { cookies } from "next/headers";
-// import { formatDate } from "@/lib/formatDate";
-import { PDFFont, RGB } from "pdf-lib";
+// import { PDFFont, RGB } from "pdf-lib";
 import pool from "@/lib/db";
 
 interface LicenseData {
   school_name: string;
   license_number: string;
   issue_date: string;
-  expiry_date: string;
-  state: string;
-  lga: string;
+  proprietor_name: string;
+  // expiry_date: string;
+  // lga: string;
+  serial_number: string;
   address: string;
-  ownership: string;
-  phone: string;
-  email: string;
+  courses?: string[]; // ← added
 }
 
+// ── POST — generate real license from DB ──────────────────────────────────────
 export async function POST(request: NextRequest) {
   try {
-    // Get auth token from cookies
-    // const cookieStore = await cookies();
-    // const authToken = cookieStore.get("auth_token")?.value;
-
-    // if (!authToken) {
-    //   return NextResponse.json(
-    //     { status: false, error: "Unauthorized" },
-    //     { status: 401 },
-    //   );
-    // }
-
     const body = await request.json();
     const { school_id } = body;
 
@@ -41,7 +28,6 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Fetch the most recent school information from database
     const result = await pool.query(
       `SELECT 
         school_id, 
@@ -52,9 +38,11 @@ export async function POST(request: NextRequest) {
         state,
         lga,
         address,
+        proprietor_name,
         ownership,
         phone,
-        email
+        email,
+        courses
        FROM schoolskano 
        WHERE school_id = $1`,
       [school_id],
@@ -69,34 +57,29 @@ export async function POST(request: NextRequest) {
 
     const schoolData = result.rows[0];
 
-    // Format dates
-    const formatDate = (date: string | Date) => {
-      return new Date(date).toLocaleDateString("en-US", {
+    const formatDate = (date: string | Date) =>
+      new Date(date).toLocaleDateString("en-US", {
         year: "numeric",
         month: "long",
         day: "numeric",
       });
-    };
 
     const licenseData: LicenseData = {
       school_name: schoolData.name,
       license_number: schoolData.license_number,
       issue_date: formatDate(schoolData.last_license_renewal),
-      expiry_date: formatDate(schoolData.license_expiry_date),
-      state: schoolData.state,
-      lga: schoolData.lga,
+      proprietor_name: schoolData.proprietor_name,
+      // expiry_date: formatDate(schoolData.license_expiry_date),
+      serial_number: `SN/H/${schoolData.license_number.split("-").slice(-1)[0]}`, // e.g. SN-0001
+      // lga: schoolData.lga,
       address: schoolData.address,
-      ownership: schoolData.ownership,
-      phone: schoolData.phone || "N/A",
-      email: schoolData.email || "N/A",
+      courses: schoolData.courses || [], // ← from DB
     };
 
-    // Generate QR code data URL
     const qrCodeData = await generateQRCode(
-      `License: ${licenseData.license_number}\nSchool: ${licenseData.school_name}\nValid Until: ${licenseData.expiry_date}`,
+      `License: ${licenseData.license_number}\nSchool: ${licenseData.school_name}\nIssue Date: ${licenseData.issue_date}`,
     );
 
-    // Generate PDF
     const pdfData = await createLicensePDF({
       ...licenseData,
       qrCode: qrCodeData,
@@ -118,185 +101,41 @@ export async function POST(request: NextRequest) {
   }
 }
 
-// Helper function to generate QR code
-async function generateQRCode(data: string): Promise<string> {
-  const QRCode = await import("qrcode");
-
-  try {
-    const qrDataUrl = await QRCode.toDataURL(data, {
-      width: 200,
-      margin: 1,
-      color: {
-        dark: "#000000",
-        light: "#FFFFFF",
-      },
-    });
-    return qrDataUrl;
-  } catch (err) {
-    console.error("QR code generation failed:", err);
-    return "";
-  }
-}
-
-// Helper function to create PDF with dynamic content
-async function createLicensePDF(
-  data: LicenseData & { qrCode: string },
-): Promise<Buffer> {
-  const { PDFDocument, rgb, StandardFonts } = await import("pdf-lib");
-  const fs = await import("fs");
-  const path = await import("path");
-
-  // Load your template PDF from public folder or server
-  const templatePath = path.join(
-    process.cwd(),
-    "public",
-    "license-template.pdf",
-  );
-  const existingPdfBytes = fs.readFileSync(templatePath);
-
-  // Load the PDF
-  const pdfDoc = await PDFDocument.load(existingPdfBytes);
-  const pages = pdfDoc.getPages();
-  const firstPage = pages[0];
-
-  // Get page dimensions
-  const { width, height } = firstPage.getSize();
-
-  const drawCenteredText = (
-    text: string,
-    y: number,
-    size: number,
-    font: PDFFont,
-    color: RGB = rgb(0, 0, 0),
-  ) => {
-    const textWidth = font.widthOfTextAtSize(text, size);
-    const x = (width - textWidth) / 2;
-    firstPage.drawText(text, { x, y, size, font, color });
-  };
-
-  // Embed fonts
-  const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
-  const boldFont = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
-
-  // Add School Name (adjust coordinates based on your template)
-  drawCenteredText(
-    data.school_name.toUpperCase(),
-    height - 370,
-    20,
-    boldFont,
-    rgb(0, 0, 0),
-  );
-
-  // Add License Number
-  firstPage.drawText(`LN:${data.license_number}`, {
-    x: width - 140,
-    y: height - 160,
-    size: 12,
-    font: boldFont,
-    color: rgb(0.2, 0.2, 0.8),
-  });
-
-  // Add Address
-  firstPage.drawText(`Address: ${data.address}`, {
-    x: 50,
-    y: height - 170,
-    size: 11,
-    font: font,
-    color: rgb(0.3, 0.3, 0.3),
-  });
-
-  // Add LGA and State
-  firstPage.drawText(`${data.lga}, ${data.state} State`, {
-    x: 50,
-    y: height - 190,
-    size: 12,
-    font: font,
-    color: rgb(0.3, 0.3, 0.3),
-  });
-
-  // Add Ownership Type
-  drawCenteredText(
-    `Ownership: ${data.ownership}`,
-    height - 440,
-    16,
-    boldFont,
-    rgb(0.2, 0.2, 0.8),
-  );
-
-  // Add Contact Information
-  firstPage.drawText(`Phone: ${data.phone} | Email: ${data.email}`, {
-    x: 150,
-    y: height - 400,
-    size: 10,
-    font: font,
-    color: rgb(0.4, 0.4, 0.4),
-  });
-
-  // Add Issue Date
-  firstPage.drawText(`Issued: ${data.issue_date}`, {
-    x: 50,
-    y: height - 210,
-    size: 10,
-    font: font,
-    color: rgb(0.4, 0.4, 0.4),
-  });
-
-  // Add Expiry Date
-  firstPage.drawText(`Valid Until: ${data.expiry_date}`, {
-    x: 50,
-    y: height - 230,
-    size: 10,
-    font: font,
-    color: rgb(0.4, 0.4, 0.4),
-  });
-
-  // Add QR Code (if data URL is available)
-  if (data.qrCode) {
-    const qrImageBytes = Buffer.from(data.qrCode.split(",")[1], "base64");
-    const qrImage = await pdfDoc.embedPng(qrImageBytes);
-
-    firstPage.drawImage(qrImage, {
-      x: width - 130,
-      y: height - 270,
-      width: 100,
-      height: 100,
-    });
-  }
-
-  // Save the PDF
-  const pdfBytes = await pdfDoc.save();
-  return Buffer.from(pdfBytes);
-}
-
-// GET endpoint to preview a sample license (optional)
+// ── GET — sample preview (preserved) ─────────────────────────────────────────
 export async function GET() {
   try {
     const sampleData: LicenseData = {
       school_name: "Marayam Abacha College of Health",
-      license_number: "KN-2026-001234",
+      license_number: "MOE/H/001234",
+      serial_number: "SN/H/0001",
+      proprietor_name: "Dr. Mariam Abacha",
       issue_date: new Date().toLocaleDateString("en-US", {
         year: "numeric",
         month: "short",
         day: "numeric",
       }),
-      expiry_date: new Date(
-        Date.now() + 365 * 24 * 60 * 60 * 1000,
-      ).toLocaleDateString("en-US", {
-        year: "numeric",
-        month: "short",
-        day: "numeric",
-      }),
-      state: "Kaduna",
-      lga: "Sample LGA",
+      // expiry_date: new Date(
+      //   Date.now() + 365 * 24 * 60 * 60 * 1000,
+      // ).toLocaleDateString("en-US", {
+      //   year: "numeric",
+      //   month: "short",
+      //   day: "numeric",
+      // }),
+
+      // lga: "Sample LGA",
       address: "123 Sample Street, Sample Area",
-      ownership: "Private",
-      phone: "+234 800 000 0000",
-      email: "sample@school.com",
+      courses: [
+        // ← sample courses for preview
+        "Bachelor of Science in Nursing",
+        "Diploma in Community Health",
+        "Certificate in Medical Laboratory Science",
+      ],
     };
 
     const qrCodeData = await generateQRCode(
-      `License: ${sampleData.license_number}\nSchool: ${sampleData.school_name}\nValid Until: ${sampleData.expiry_date}`,
+      `License: ${sampleData.license_number}\nSchool: ${sampleData.school_name}\nIssue Date: ${sampleData.issue_date}`,
     );
+
     const pdfData = await createLicensePDF({
       ...sampleData,
       qrCode: qrCodeData,
@@ -316,4 +155,227 @@ export async function GET() {
       { status: 500 },
     );
   }
+}
+
+// ── Helper: QR code ───────────────────────────────────────────────────────────
+async function generateQRCode(data: string): Promise<string> {
+  const QRCode = await import("qrcode");
+  try {
+    return await QRCode.toDataURL(data, {
+      width: 200,
+      margin: 1,
+      color: { dark: "#000000", light: "#FFFFFF" },
+    });
+  } catch (err) {
+    console.error("QR code generation failed:", err);
+    return "";
+  }
+}
+
+// ── Helper: PDF generator (both pages) ───────────────────────────────────────
+async function createLicensePDF(
+  data: LicenseData & { qrCode: string },
+): Promise<Buffer> {
+  const { PDFDocument, rgb } = await import("pdf-lib");
+  const fontkit = await import("@pdf-lib/fontkit");
+  const fs = await import("fs");
+  const path = await import("path");
+
+  const templatePath = path.join(
+    process.cwd(),
+    "public",
+    "consent-certificate.pdf",
+  );
+  const existingPdfBytes = fs.readFileSync(templatePath);
+
+  const pdfDoc = await PDFDocument.load(existingPdfBytes);
+  pdfDoc.registerFontkit(fontkit.default);
+  const pages = pdfDoc.getPages();
+  const firstPage = pages[0];
+  const secondPage = pages[1]; // page 2 of your template
+
+  const { width, height } = firstPage.getSize();
+
+  // REPLACE with these
+  const fontBytes = fs.readFileSync(
+    path.join(process.cwd(), "public", "fonts", "poppins-regular.ttf"),
+  );
+  const boldFontBytes = fs.readFileSync(
+    path.join(process.cwd(), "public", "fonts", "poppins-bold.ttf"),
+  );
+
+  const font = await pdfDoc.embedFont(fontBytes);
+  const boldFont = await pdfDoc.embedFont(boldFontBytes);
+
+  const drawCentered = (
+    page: typeof firstPage,
+    text: string,
+    y: number,
+    size: number,
+    f: typeof font,
+    color = rgb(0, 0, 0),
+  ) => {
+    const textWidth = f.widthOfTextAtSize(text, size);
+    page.drawText(text, {
+      x: (width - textWidth) / 2,
+      y,
+      size,
+      font: f,
+      color,
+    });
+  };
+
+  // ── Helper to wrap long text into two lines
+  const drawWrappedText = (
+    page: typeof firstPage,
+    text: string,
+    x: number,
+    y: number,
+    size: number,
+    f: typeof font,
+    color = rgb(0.3, 0.3, 0.3),
+    maxChars = 25, // ← adjust this to control where the split happens
+    lineHeight = 16,
+  ) => {
+    if (text.length <= maxChars) {
+      page.drawText(text, { x, y, size, font: f, color });
+    } else {
+      // Split at the last space before maxChars to avoid cutting a word
+      const splitIndex = text.lastIndexOf(" ", maxChars);
+      const line1 = text.substring(0, splitIndex);
+      const line2 = text.substring(splitIndex + 1);
+      page.drawText(line1, { x, y, size, font: f, color });
+      page.drawText(line2, { x, y: y - lineHeight, size, font: f, color });
+    }
+  };
+
+  // ── PAGE 1 ────────────────────────────────────────────────────────────────
+  // School name in the large blank gap (tweak y if needed after preview)
+  drawCentered(
+    firstPage,
+    data.school_name.toUpperCase(),
+    height - 440,
+    18,
+    boldFont,
+    rgb(0.1, 0.1, 0.1),
+  );
+
+  // License number — top right
+  firstPage.drawText(`${data.license_number}`, {
+    x: width - 130,
+    y: height - 180,
+    size: 11,
+    font: boldFont,
+    color: rgb(0.13, 0.37, 0.31),
+  });
+
+  // Address / location
+  drawWrappedText(
+    firstPage,
+    `${data.address}`,
+    50,
+    height - 250,
+    10,
+    boldFont,
+    rgb(0.2, 0.2, 0.2),
+  );
+
+  firstPage.drawText(`Issued ${data.issue_date}`, {
+    x: 50,
+    y: height - 200,
+    size: 10,
+    font,
+    color: rgb(0.4, 0.4, 0.4),
+  });
+
+  firstPage.drawText(`${data.serial_number}`, {
+    x: 50,
+    y: height - 226,
+    size: 10,
+    font: boldFont,
+    color: rgb(0.4, 0.4, 0.4),
+  });
+
+  // firstPage.drawText(`Valid Until: ${data.expiry_date}`, {
+  //   x: 50,
+  //   y: height - 490,
+  //   size: 9,
+  //   font,
+  //   color: rgb(0.4, 0.4, 0.4),
+  // });
+
+  // QR code
+  if (data.qrCode) {
+    const qrImageBytes = Buffer.from(data.qrCode.split(",")[1], "base64");
+    const qrImage = await pdfDoc.embedPng(qrImageBytes);
+    firstPage.drawImage(qrImage, {
+      x: width - 130,
+      y: height - 270,
+      width: 84,
+      height: 84,
+    });
+  }
+
+  // ── PAGE 2 ────────────────────────────────────────────────────────────────
+  if (secondPage) {
+    const courses =
+      data.courses && data.courses.length > 0
+        ? data.courses
+        : ["No courses listed"];
+
+    // Institution name above
+    secondPage.drawText(`${data.school_name}`, {
+      x: 30,
+      y: height - 210,
+      size: 10,
+      font: font,
+      color: rgb(0.1, 0.1, 0.1),
+    });
+    // Institution address
+    secondPage.drawText(`${data.address}`, {
+      x: 30,
+      y: height - 230,
+      size: 10,
+      font: font,
+      color: rgb(0.1, 0.1, 0.1),
+    });
+
+    // Numbered courses list in the blank gap
+    let courseY = height - 380;
+    const lineH = 18;
+    const maxCourseY = height - 500; // don't overflow into the body text below
+
+    courses.forEach((course, index) => {
+      if (courseY < maxCourseY) return;
+      secondPage.drawText(`${index + 1}.  ${course}`, {
+        x: 60,
+        y: courseY,
+        size: 11,
+        font: boldFont,
+        color: rgb(0.15, 0.15, 0.15),
+      });
+      courseY -= lineH;
+    });
+
+    // Reference number on page 2
+    secondPage.drawText(`Ref: ${data.license_number}`, {
+      x: width - 130,
+      y: height - 230,
+      size: 10,
+      font: boldFont,
+      color: rgb(0.13, 0.37, 0.31),
+    });
+
+    // Proprietor number on page 2
+    secondPage.drawText(`${data.proprietor_name}`, {
+      x: 30,
+      y: height - 190,
+      size: 10,
+      font: boldFont,
+      color: rgb(0.13, 0.37, 0.31),
+    });
+  }
+
+  const pdfBytes = await pdfDoc.save();
+  return Buffer.from(pdfBytes);
 }

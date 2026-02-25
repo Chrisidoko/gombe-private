@@ -29,15 +29,38 @@ export default function SchoolOverviewClient() {
   const [loading, setLoading] = useState(true);
   const [cloading, setCloading] = useState(false);
 
-  const searchParams = useSearchParams();
-  const school_id = searchParams.get("school_id");
+  // const searchParams = useSearchParams();
+  // const school_id = searchParams.get("school_id");
   const router = useRouter();
+
+  // ---please not the code below this line is a temp workaround to handle broken links with unencoded school IDs (e.g. MCCOHS&TB-001)---
+  const searchParams = useSearchParams();
+
+  // Standard case (encoded link): gives "MCCOHS&TB-001" ✅
+  // Broken case (old unencoded link): gives only "MCCOHS" ✗
+  const rawSchoolId = searchParams.get("school_id");
+
+  // Reconstruct broken IDs by checking if the next segment looks like a continuation
+  // Old URL: ?school_id=MCCOHS&TB-001 → params: { school_id: "MCCOHS", "TB-001": "" }
+  const school_id = (() => {
+    if (!rawSchoolId) return null;
+
+    // Look for any param key that looks like a school ID continuation (no value, just a key)
+    const allKeys = Array.from(searchParams.keys());
+    const continuation = allKeys.find(
+      (key) => key !== "school_id" && searchParams.get(key) === "",
+    );
+
+    return continuation ? `${rawSchoolId}&${continuation}` : rawSchoolId;
+  })();
+
+  //temp fix end, once the 2 affected shool make purschase i will revert to the normal code above
 
   useEffect(() => {
     const fetchSchool = async () => {
       try {
         const url = school_id
-          ? `/api/schools/licenseinfo?school_id=${school_id}`
+          ? `/api/schools/licenseinfo?school_id=${encodeURIComponent(school_id)}`
           : "/api/schools/licenseinfo";
         const res = await fetch(url);
         const data = await res.json();

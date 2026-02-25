@@ -61,7 +61,9 @@ export default function LoginPage() {
 
         if (data.valid) {
           toast.success("OTP verified successfully!");
-          router.push(`/school-overview?tin=${formData.tin}`);
+          router.push(
+            `/school-overview?school_id=${encodeURIComponent(data.school_id)}`,
+          );
         } else {
           throw new Error(data.message || "Invalid OTP");
         }

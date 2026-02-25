@@ -25,6 +25,7 @@ export async function POST(req: Request) {
 
     return NextResponse.json({
       valid: true,
+      school_id: result.rows[0].school_id,
       message: "OTP verified successfully",
     });
   } catch (error) {

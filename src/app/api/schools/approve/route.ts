@@ -24,7 +24,7 @@ export async function POST(req: Request) {
 
     // const purchaseLink = `https://kaptems.payprosolutionsltd.com/signup?school_id=${school_id}`;
 
-    const purchaseLink = `https://kaptems.payprosolutionsltd.com/school-overview?school_id=${school_id}`;
+    const purchaseLink = `https://kaptems.payprosolutionsltd.com/school-overview?school_id=${encodeURIComponent(school_id)}`;
 
     // ✅ Verify SMTP credentials
     if (!process.env.SMTP_USER || !process.env.SMTP_PASS) {
