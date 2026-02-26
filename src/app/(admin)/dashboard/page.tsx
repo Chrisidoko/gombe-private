@@ -161,14 +161,14 @@ export default async function AdminDashboard() {
       <div className="mb-8">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           <StatCard
-            title="Total Schools"
+            title="Total Institutions"
             value={stats.totalSchools}
             icon={<School size={20} />}
             color="#3b82f6"
-            subtitle="Registered institutions"
+            subtitle="Registered"
           />
           <StatCard
-            title="Active Schools"
+            title="Active Institutions"
             value={stats.activeSchools}
             icon={<CheckCircle2 size={20} />}
             color="#10b981"
@@ -182,11 +182,11 @@ export default async function AdminDashboard() {
             subtitle="Awaiting verification"
           />
           <StatCard
-            title="Total Licenses"
+            title="Total Certificates"
             value={stats.totalLicenses}
             icon={<Users size={20} />}
             color="#f59e0b"
-            subtitle="All licenses issued"
+            subtitle="All Consent Certificates"
           />
         </div>
       </div>
@@ -225,11 +225,9 @@ export default async function AdminDashboard() {
         </div>
       </div>
 
-      {/* License Details */}
+      {/* Consent Details */}
       <div className="mb-8">
-        <h2 className="text-lg font-semibold text-gray-800 mb-4">
-          License Management
-        </h2>
+        <h2 className="text-lg font-semibold text-gray-800 mb-4">Management</h2>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <div className="bg-white rounded-lg shadow-md p-6">
             <div className="flex items-center justify-between mb-4">
@@ -264,7 +262,7 @@ export default async function AdminDashboard() {
           <div className="bg-white rounded-lg shadow-md p-6">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-sm font-medium text-gray-600">
-                Available Licenses
+                Consent Certificates
               </h3>
               <div className="p-2 bg-blue-100 rounded-lg">
                 <FileCheck size={20} className="text-blue-600" />
@@ -273,7 +271,7 @@ export default async function AdminDashboard() {
             <p className="text-3xl font-bold text-gray-900">
               {stats.totalLicenses - dashboardStats.activeLicenses}
             </p>
-            <p className="text-xs text-gray-500 mt-1">Ready to assign</p>
+            <p className="text-xs text-gray-500 mt-1">Assigned and In-use</p>
           </div>
         </div>
       </div>

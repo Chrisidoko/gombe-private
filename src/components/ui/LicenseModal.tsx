@@ -164,10 +164,11 @@ export default function LicenseModal({
             </div>
             <div>
               <h2 className="text-lg font-semibold text-gray-800">
-                License Information Required
+                Certificate Information Required
               </h2>
               <p className="text-xs text-gray-400">
-                Please provide your school license details to continue
+                Please provide your institution&apos;s consent certificate
+                details to continue
               </p>
             </div>
           </div>
@@ -175,15 +176,15 @@ export default function LicenseModal({
 
         {/* Body */}
         <div className="px-6 py-6 space-y-6">
-          {/* License Number + Expiry */}
+          {/* Certificate Number + Expiry */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-2">
-                License Number <span className="text-red-500">*</span>
+                Certificate Number <span className="text-red-500">*</span>
               </label>
               <input
                 type="text"
-                placeholder="School License Number"
+                placeholder="School Certificate Number"
                 value={formData.license_number}
                 onChange={(e) => handleChange("license_number", e.target.value)}
                 className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all"
@@ -192,7 +193,7 @@ export default function LicenseModal({
             </div>
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-2">
-                License Expiry Date <span className="text-red-500">*</span>
+                Certificate Expiry Date <span className="text-red-500">*</span>
               </label>
               <input
                 type="date"
@@ -209,7 +210,7 @@ export default function LicenseModal({
           {/* Document Upload */}
           <div className="space-y-4">
             <h3 className="text-sm font-semibold text-gray-700">
-              Upload License Document
+              Upload Consent Certificate
             </h3>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -225,7 +226,7 @@ export default function LicenseModal({
                 >
                   <option value="">-- Select a document type --</option>
                   <option value="State Issued License">
-                    State Issued License
+                    State Issued Consent Certificate
                   </option>
                 </select>
               </div>
@@ -351,7 +352,7 @@ export default function LicenseModal({
             className="w-full bg-green-600 hover:bg-green-700 disabled:opacity-60 text-white font-medium py-2.5 rounded-xl transition flex items-center justify-center gap-2"
           >
             {loading && <Loader2 className="w-4 h-4 animate-spin" />}
-            {loading ? "Saving..." : "Submit License Information"}
+            {loading ? "Saving..." : "Submit Certificate Information"}
           </button>
         </div>
       </div>

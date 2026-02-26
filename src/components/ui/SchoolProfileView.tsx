@@ -148,7 +148,7 @@ export default function SchoolProfileView({
                   : "text-gray-900 hover:bg-white/10"
               }`}
             >
-              License & Tax
+              Consent Certificate & Tax
             </button>
           </div>
         </div>
@@ -396,13 +396,13 @@ export default function SchoolProfileView({
                 <FileText className="w-5 h-5 text-green-600" />
               </div>
               <h2 className="text-base font-bold text-gray-900">
-                License Status
+                Certificate Status
               </h2>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
-                <p className="text-sm text-gray-500 mb-1">License Number</p>
+                <p className="text-sm text-gray-500 mb-1">Certificate Number</p>
                 <p className="text-lg font-semibold text-gray-900">
                   {data.licenseNumber}
                 </p>

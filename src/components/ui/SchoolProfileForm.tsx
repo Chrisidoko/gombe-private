@@ -791,10 +791,10 @@ export default function SchoolProfileForm({
               </div>
               <div className="text-left">
                 <h2 className="text-base font-semibold text-gray-900">
-                  License Information
+                  Consent Certificate Information
                 </h2>
                 <p className="text-xs text-gray-600">
-                  License status and payment details
+                  Certificate status and payment details
                 </p>
               </div>
             </div>
@@ -827,7 +827,8 @@ export default function SchoolProfileForm({
             <div className="p-6">
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-3">
-                  Current License Status <span className="text-red-500">*</span>
+                  Current Certificate Status{" "}
+                  <span className="text-red-500">*</span>
                 </label>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                   {["Active", "Expired"].map((option) => (

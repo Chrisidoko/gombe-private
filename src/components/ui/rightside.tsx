@@ -18,12 +18,12 @@ export default function Rightside() {
         <div className="w-full mt-[4vh] flex gap-5 flex-col text-white font-semibold text-sm sm:text-lg ">
           <Link href="/renew">
             <div className="flex items-center gap-5 bg-white/20 rounded-xl border border-white py-4 px-4 cursor-pointer hover:bg-white/30">
-              <ReceiptText /> Renew License
+              <ReceiptText /> Renew Certificate
             </div>
           </Link>
           <Link href="/verify">
             <div className="flex items-center gap-5 bg-white/20 rounded-xl border border-white py-4 px-4 cursor-pointer hover:bg-white/30">
-              <CircleCheckBig /> Verify License
+              <CircleCheckBig /> Verify Certificate
             </div>
           </Link>
         </div>
