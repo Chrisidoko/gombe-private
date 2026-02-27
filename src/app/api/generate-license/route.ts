@@ -76,8 +76,10 @@ export async function POST(request: NextRequest) {
       courses: schoolData.courses || [], // ← from DB
     };
 
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+
     const qrCodeData = await generateQRCode(
-      `License: ${licenseData.license_number}\nSchool: ${licenseData.school_name}\nIssue Date: ${licenseData.issue_date}`,
+      `${baseUrl}/verify?license=${encodeURIComponent(licenseData.license_number)}`,
     );
 
     const pdfData = await createLicensePDF({
@@ -123,7 +125,7 @@ export async function GET() {
       // }),
 
       // lga: "Sample LGA",
-      address: "123 Sample Street, Sample Area",
+      address: "123 Road Giwa Street, Kaduna State",
       courses: [
         // ← sample courses for preview
         "Bachelor of Science in Nursing",
@@ -132,8 +134,10 @@ export async function GET() {
       ],
     };
 
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+
     const qrCodeData = await generateQRCode(
-      `License: ${sampleData.license_number}\nSchool: ${sampleData.school_name}\nIssue Date: ${sampleData.issue_date}`,
+      `${baseUrl}/verify?license=${encodeURIComponent(sampleData.license_number)}`,
     );
 
     const pdfData = await createLicensePDF({
