@@ -1,7 +1,7 @@
 // app/(school)/fees/page.tsx
+import FeeTable from "@/components/ui/feestable";
 import { getUserFromCookie } from "@/lib/auth";
 // import { Divider } from "@/components/Divider";
-import FeesTable from "@/components/ui/feestable"; // import the client component
 
 export default async function FeeDashboard() {
   const user = await getUserFromCookie();
@@ -14,10 +14,24 @@ export default async function FeeDashboard() {
     );
   }
 
+  // Fetch school data
+  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+  const res = await fetch(`${baseUrl}/api/schools/${user.institution}`, {
+    cache: "no-store",
+  });
+
+  const school = await res.json();
+
   return (
     <main>
       {/* Pass institution to the client component */}
-      <FeesTable schoolId={user.institution || ""} />
+
+      <FeeTable
+        programmes={school.programmes}
+        school_id={school.school_id}
+        license_status={school.license_status}
+        approval_status={school.approval_status}
+      />
     </main>
   );
 }

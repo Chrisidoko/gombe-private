@@ -8,7 +8,7 @@ export async function POST(req: Request) {
   try {
     await client.query("BEGIN"); // Start transaction
 
-    const { school_id, amount } = await req.json();
+    const { school_id, amount, narration } = await req.json();
 
     if (!school_id || !amount) {
       return NextResponse.json({ error: "Missing fields" }, { status: 400 });
@@ -68,7 +68,7 @@ export async function POST(req: Request) {
           {
             amount: parseFloat(amount),
             mdasId: parseInt(process.env.MDAS_ID || "3646"),
-            narration: `School License Renewal - ${invoice_number}`,
+            narration: `${narration} - Certificate Purchase/Renewal - ${invoice_number}`,
           },
         ],
       };

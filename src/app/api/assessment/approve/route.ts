@@ -24,7 +24,7 @@ export async function POST(req: Request) {
     // Step 1: Update assessment
     await client.query(
       "UPDATE schoolskano_assessments SET status = 'approved' WHERE id = $1",
-      [assessment_id]
+      [assessment_id],
     );
     console.log("✅ Assessment approved");
 
@@ -50,7 +50,7 @@ export async function POST(req: Request) {
     // Step 3: Fetch school info (for both bill creation and email)
     const schoolRes = await client.query(
       "SELECT email, name, phone, address FROM schoolskano WHERE school_id = $1",
-      [school_id]
+      [school_id],
     );
     const school = schoolRes.rows[0];
     console.log("🏫 School found:", school);
@@ -77,7 +77,7 @@ export async function POST(req: Request) {
           {
             amount: parseFloat(amount),
             mdasId: parseInt(process.env.MDAS_ID || "3645"), // Configure this in .env
-            narration: `School Assessment Payment - ${invoice_number}`,
+            narration: `Institution Payment - ${invoice_number}`,
           },
         ],
       };
@@ -131,7 +131,7 @@ export async function POST(req: Request) {
         `UPDATE schoolkano_invoices 
          SET bill_reference = $1, status = $2, tpui = $3, updated_at = NOW() 
          WHERE id = $4`,
-        [billReference, billStatus, tpui, invoiceId]
+        [billReference, billStatus, tpui, invoiceId],
       );
       console.log("✅ Invoice updated with bill reference");
     } catch (billError) {
@@ -195,7 +195,7 @@ export async function POST(req: Request) {
             : ""
         }
         <p><strong>Amount Due:</strong> ₦${parseFloat(
-          amount
+          amount,
         ).toLocaleString()}</p>
         <p><strong>Status:</strong> ${billStatus || "Unpaid"}</p>
         <p><strong>Payment Due Date:</strong> ${formattedDueDate}</p>

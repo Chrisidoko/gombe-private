@@ -10,12 +10,12 @@ export async function POST(req: Request) {
     const body = await req.json();
     const { invoice_id } = body;
 
-    console.log("🔹 Initiating checkout for invoice:", invoice_id);
+    // console.log("🔹 Initiating checkout for invoice:", invoice_id);
 
     if (!invoice_id) {
       return NextResponse.json(
         { error: "Missing invoice_id" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -24,7 +24,7 @@ export async function POST(req: Request) {
       `SELECT id, invoice_number, bill_reference, tpui, amount, status, school_id 
        FROM schoolkano_invoices 
        WHERE id = $1`,
-      [invoice_id]
+      [invoice_id],
     );
 
     if (invoiceRes.rows.length === 0) {
@@ -36,21 +36,21 @@ export async function POST(req: Request) {
     if (invoice.status !== "Unpaid") {
       return NextResponse.json(
         { error: "Invoice is already paid" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
     if (!invoice.bill_reference) {
       return NextResponse.json(
         { error: "Bill reference not found. Please contact support." },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
     if (!invoice.tpui) {
       return NextResponse.json(
         { error: "TPUI not found. Please contact support." },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -79,9 +79,9 @@ export async function POST(req: Request) {
     }
     const apiUrl = `${baseUrl}api/ESBills/CreateESTransaction`;
 
-    console.log("🔹 Creating checkout session...");
-    console.log("📍 API URL:", apiUrl);
-    console.log("📦 Payload:", checkoutPayload);
+    // console.log("🔹 Creating checkout session...");
+    // console.log("📍 API URL:", apiUrl);
+    // console.log("📦 Payload:", checkoutPayload);
 
     const checkoutResponse = await fetch(apiUrl, {
       method: "POST",
@@ -96,12 +96,12 @@ export async function POST(req: Request) {
       const errorData = await checkoutResponse.text();
       console.error("❌ PayKaduna API error:", errorData);
       throw new Error(
-        `Checkout creation failed: ${checkoutResponse.statusText}`
+        `Checkout creation failed: ${checkoutResponse.statusText}`,
       );
     }
 
     const checkoutData = await checkoutResponse.json();
-    console.log("✅ Checkout session created:", checkoutData);
+    // console.log("✅ Checkout session created:", checkoutData);
 
     const checkoutUrl = checkoutData.checkoutUrl;
 
@@ -109,7 +109,7 @@ export async function POST(req: Request) {
       throw new Error("No checkout URL received from PayKaduna");
     }
 
-    console.log("✅ Redirecting to checkout URL");
+    // console.log("✅ Redirecting to checkout URL");
 
     return NextResponse.json({
       success: true,

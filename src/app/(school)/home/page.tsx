@@ -1,7 +1,7 @@
 import {
   Building,
   // Calendar,
-  MapPin,
+  // MapPin,
   FileText,
   AlertCircle,
   CheckCircle,
@@ -10,6 +10,7 @@ import {
 import { getUserFromCookie } from "@/lib/auth";
 import Link from "next/link";
 import { formatDate } from "@/lib/formatDate";
+import ComplyCard from "@/components/ui/complyCard";
 // import dynamic from "next/dynamic";
 
 // const CompleteProfile = dynamic(() => import("@/components/profilecomplete"), {
@@ -81,13 +82,13 @@ export default async function SchoolOverviewDashboard({
               Welcome back, <span className="text-green-600">{user?.name}</span>
             </h1>
             <p className="text-gray-600 mt-1">
-              Here&lsquo;s your school&lsquo;s overview and compliance status
+              Here&lsquo;s your institution&lsquo;s overview and compliance
+              status
             </p>
 
             <div className="flex flex-wrap gap-4 mt-4">
               <div className="flex items-center gap-2 text-sm">
                 <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                <span className="text-gray-700">School Administrator</span>
               </div>
               <div className="flex items-center gap-2 text-sm">
                 <svg
@@ -103,7 +104,9 @@ export default async function SchoolOverviewDashboard({
                     d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
                   />
                 </svg>
-                <span className="text-gray-700">{user?.email}</span>
+                <span className="text-sm font-semibold text-gray-600">
+                  {user?.email}
+                </span>
               </div>
             </div>
           </div>
@@ -135,7 +138,7 @@ export default async function SchoolOverviewDashboard({
             </div>
           </div>
         </div>
-
+        {/* 
         <div className="p-6">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             <div className="space-y-2">
@@ -143,7 +146,9 @@ export default async function SchoolOverviewDashboard({
                 <MapPin className="w-4 h-4" />
                 <span className="font-medium">Address</span>
               </div>
-              <p className="text-gray-900 font-medium">{school?.address}</p>
+              <p className="text-gray-900 text-sm font-medium">
+                {school?.address}
+              </p>
             </div>
 
             <div className="space-y-2">
@@ -170,72 +175,13 @@ export default async function SchoolOverviewDashboard({
               <p className="text-gray-900 font-medium">{school?.ownership}</p>
             </div>
           </div>
-        </div>
+        </div> */}
       </div>
 
       {/* Compliance & License Section */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Compliance Score */}
-        <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">
-            Compliance Score
-          </h3>
-
-          <div className="flex flex-col items-center justify-center py-6">
-            <div className="relative w-32 h-32">
-              <svg className="w-32 h-32 transform -rotate-90">
-                <circle
-                  cx="64"
-                  cy="64"
-                  r="56"
-                  stroke="#e5e7eb"
-                  strokeWidth="8"
-                  fill="none"
-                />
-                <circle
-                  cx="64"
-                  cy="64"
-                  r="56"
-                  stroke="#10b981"
-                  strokeWidth="8"
-                  fill="none"
-                  strokeDasharray={`${2 * Math.PI * 56}`}
-                  strokeDashoffset={`${
-                    2 * Math.PI * 56 * (1 - stats.complianceScore / 100)
-                  }`}
-                  strokeLinecap="round"
-                  className="transition-all duration-1000"
-                />
-              </svg>
-              <div className="absolute inset-0 flex items-center justify-center">
-                <span className="text-3xl font-bold text-gray-900">
-                  {stats.complianceScore}%
-                </span>
-              </div>
-            </div>
-
-            <div className="w-full mt-6 space-y-3">
-              <div className="flex items-center justify-between text-sm">
-                <span className="text-gray-600">Notices Sent</span>
-                <span className="font-semibold text-gray-900">
-                  {stats.totalNotices}
-                </span>
-              </div>
-              <div className="flex items-center justify-between text-sm">
-                <span className="text-gray-600">Notices Paid</span>
-                <span className="font-semibold text-green-600">
-                  {stats.paidNotices}
-                </span>
-              </div>
-              <div className="flex items-center justify-between text-sm">
-                <span className="text-gray-600">Outstanding</span>
-                <span className="font-semibold text-red-600">
-                  {stats.totalNotices - stats.paidNotices}
-                </span>
-              </div>
-            </div>
-          </div>
-        </div>
+        <ComplyCard school_id={school.school_id} />
 
         {/* License Information */}
         <div className="lg:col-span-2 bg-gradient-to-br from-green-600 via-emerald-600 to-teal-600 rounded-xl shadow-lg overflow-hidden relative">
@@ -251,7 +197,7 @@ export default async function SchoolOverviewDashboard({
           <div className="relative p-6">
             <div className="flex items-center justify-between mb-6">
               <h3 className="text-xl font-bold text-white">
-                License Information
+                Certificate Information
               </h3>
               {isExpired ? (
                 <span className="bg-red-500 text-white px-3 py-1 rounded-full text-xs font-bold flex items-center gap-1">
@@ -274,7 +220,7 @@ export default async function SchoolOverviewDashboard({
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="bg-white/10 backdrop-blur-sm rounded-lg p-4 border border-white/20">
                 <p className="text-yellow-300 text-xs font-semibold uppercase mb-2">
-                  License Number
+                  Certificate Number
                 </p>
                 <p className="text-white text-lg font-bold">
                   {school?.license_number}
@@ -328,8 +274,9 @@ export default async function SchoolOverviewDashboard({
             {isExpiringSoon && !isExpired && (
               <div className="mt-6 bg-yellow-400/20 border border-yellow-400/50 rounded-lg p-4">
                 <p className="text-yellow-100 text-sm">
-                  <strong>Action Required:</strong> Your license will expire in{" "}
-                  {daysUntilExpiry} days. Please renew to maintain compliance.
+                  <strong>Action Required:</strong> Your certificate will expire
+                  in {daysUntilExpiry} days. Please renew to maintain
+                  compliance.
                 </p>
               </div>
             )}
@@ -337,8 +284,8 @@ export default async function SchoolOverviewDashboard({
             {isExpired && (
               <div className="mt-6 bg-red-500/20 border border-red-400/50 rounded-lg p-4">
                 <p className="text-red-100 text-sm">
-                  <strong>Urgent:</strong> Your license has expired. Immediate
-                  renewal is required to avoid penalties.
+                  <strong>Urgent:</strong> Your certificate has expired.
+                  Immediate renewal is required to avoid penalties.
                 </p>
               </div>
             )}
@@ -347,11 +294,11 @@ export default async function SchoolOverviewDashboard({
       </div>
 
       {/* Quick Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      {/* <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <div className="bg-white rounded-lg shadow border border-gray-200 p-4">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-gray-500 text-sm">Overdue Invoices</p>
+              <p className="text-gray-500 text-sm">Due Invoices</p>
               <p className="text-2xl font-bold text-red-600 mt-1">
                 {stats.overdueInvoices}
               </p>
@@ -403,7 +350,7 @@ export default async function SchoolOverviewDashboard({
             </div>
           </div>
         </div>
-      </div>
+      </div> */}
     </div>
   );
 }

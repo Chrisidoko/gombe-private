@@ -10,8 +10,10 @@ import {
   GraduationCap,
   BookOpen,
   Stethoscope,
+  Computer,
 } from "lucide-react";
 import { getUserFromCookie } from "@/lib/auth";
+import LGAChart from "@/components/ui/LGACharts";
 
 interface SchoolStats {
   totalSchools: number;
@@ -32,6 +34,8 @@ const dashboardStats = {
     polytechnics: 0,
     universities: 0,
     colleges: 0,
+    healthTech: 0,
+    examcenters: 0,
   },
 };
 
@@ -86,16 +90,16 @@ const CategoryCard: React.FC<CategoryCardProps> = ({
   color,
 }) => {
   return (
-    <div className="bg-white rounded-lg shadow-md px-4 py-2 hover:shadow-lg transition-all">
-      <div className="flex items-center gap-4">
+    <div className="bg-white h-32 rounded-lg shadow-md px-4 py-4 hover:shadow-lg transition-all">
+      <div className="flex flex-col items-start gap-4">
         <div
           className="p-2 rounded-full"
           style={{ backgroundColor: `${color}20` }}
         >
           <div style={{ color }}>{icon}</div>
         </div>
-        <div>
-          <p className="text-sm font-medium text-gray-600">{category}</p>
+        <div className="mt-1">
+          <p className="text-xs font-medium text-gray-500">{category}</p>
           <p className="text-xl font-semibold text-gray-900">{count}</p>
         </div>
       </div>
@@ -132,9 +136,9 @@ export default async function AdminDashboard() {
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between mb-6">
         <div className="w-full">
           <div className="mb-4 flex flex-col sm:flex-row justify-between items-center">
-            <h3 className="font-semibold text-gray-900 text-2xl">
+            {/* <h3 className="font-semibold text-gray-900 text-2xl">
               Dashboard Overview{" "}
-            </h3>
+            </h3> */}
             <div className="text-sm grid grid-cols-1 gap-2 mt-2">
               <div className="flex items-center gap-2">
                 <div className="text-base text-gray-500">
@@ -145,11 +149,11 @@ export default async function AdminDashboard() {
 
                 <div className="bg-green-500/20 rounded-md p-1 flex items-center justify-center">
                   <span className="mx-auto text-xs text-green-700 font-semibold">
-                    CBS Admin
+                    OPERATIONS
                   </span>
                 </div>
               </div>
-              <span className="text-center sm:text-right text-gray-600 text-xs">
+              <span className="text-center sm:text-left text-gray-600 text-xs">
                 {user?.email ?? "N/A"}
               </span>
             </div>
@@ -193,9 +197,9 @@ export default async function AdminDashboard() {
 
       {/* Schools by Category */}
       <div className="mb-8">
-        <h2 className="text-lg font-semibold text-gray-800 mb-4">Category</h2>
-        <div className="flex">
-          <div className="w-1/2 grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="flex flex-col lg:flex-row gap-3">
+          <LGAChart />
+          <div className="h-1/3 md:w-1/3 grid grid-cols-2 gap-4 md:ml-auto">
             <CategoryCard
               category="Polytechnics"
               count={stats.totalPolytechnics}
@@ -220,8 +224,13 @@ export default async function AdminDashboard() {
               icon={<Stethoscope size={20} />}
               color="#f59e0b"
             />
+            <CategoryCard
+              category="Exam Centers"
+              count={dashboardStats.schoolsByCategory.examcenters}
+              icon={<Computer size={20} />}
+              color="#f59e0b"
+            />
           </div>
-          <div></div>
         </div>
       </div>
 

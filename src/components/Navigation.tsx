@@ -55,6 +55,26 @@ const Navigation: React.FC<NavigationProps> = ({ collapsed, setCollapsed }) => {
     },
     {
       href: "/fees",
+      label: "Compliance Standing",
+      // badge: 3,
+      icon: (
+        <svg
+          className="w-5 h-5"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={2}
+            d="M9 14l6-6m-5.5.5h.01m4.99 5h.01M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16l3.5-2 3.5 2 3.5-2 3.5 2zM10 8.5a.5.5 0 11-1 0 .5.5 0 011 0zm5 5a.5.5 0 11-1 0 .5.5 0 011 0z"
+          />
+        </svg>
+      ),
+    },
+    {
+      href: "/Invoices",
       label: "Invoices",
       // badge: 3,
       icon: (
@@ -258,7 +278,7 @@ const Navigation: React.FC<NavigationProps> = ({ collapsed, setCollapsed }) => {
                   <Link href="/profile">
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-semibold text-gray-900 truncate">
-                        School Admin
+                        Institution Admin
                       </p>
                       <p className="text-xs text-gray-600 truncate">
                         Click to View Profile

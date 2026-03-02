@@ -16,7 +16,7 @@ export async function GET(req: Request) {
     if (!billReference) {
       return NextResponse.json(
         { error: "Missing bill_reference parameter" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -25,13 +25,13 @@ export async function GET(req: Request) {
       `SELECT id, invoice_number, bill_reference, amount, status, school_id 
        FROM schoolkano_invoices 
        WHERE bill_reference = $1`,
-      [billReference]
+      [billReference],
     );
 
     if (invoiceRes.rows.length === 0) {
       return NextResponse.json(
         { error: "Invoice not found with this bill reference" },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
@@ -62,9 +62,9 @@ export async function GET(req: Request) {
 
     const fullUrl = `${baseUrl}${apiPath}`;
 
-    console.log("🔹 Fetching payment status from PayKaduna...");
-    console.log("📍 Full URL:", fullUrl);
-    console.log("🔐 Signature:", signature);
+    // console.log("🔹 Fetching payment status from PayKaduna...");
+    // console.log("📍 Full URL:", fullUrl);
+    // console.log("🔐 Signature:", signature);
 
     const statusResponse = await fetch(fullUrl, {
       method: "GET",
@@ -77,12 +77,12 @@ export async function GET(req: Request) {
       const errorData = await statusResponse.text();
       console.error("❌ PayKaduna API error:", errorData);
       throw new Error(
-        `Failed to fetch payment status: ${statusResponse.statusText}`
+        `Failed to fetch payment status: ${statusResponse.statusText}`,
       );
     }
 
     const statusData = await statusResponse.json();
-    console.log("✅ Payment status received:", statusData);
+    console.log(" Payment status received:", statusData);
 
     const payStatus = statusData.bill?.payStatus?.toLowerCase();
     const paymentItem =
@@ -100,10 +100,10 @@ export async function GET(req: Request) {
         `UPDATE schoolkano_invoices 
          SET status = 'Paid'
          WHERE id = $1 AND status = 'Unpaid'`,
-        [invoice.id]
+        [invoice.id],
       );
 
-      console.log("✅ Invoice marked as paid");
+      console.log("Invoice marked as paid");
 
       // Step 4: Log transaction in transactions table
       await client.query(
@@ -119,10 +119,10 @@ export async function GET(req: Request) {
           paymentItem,
           invoice.invoice_number,
           invoice.school_id,
-        ]
+        ],
       );
 
-      console.log("✅ Transaction logged");
+      console.log(" Transaction logged");
     } else {
       // Log unsuccessful check
       await client.query(
@@ -138,10 +138,10 @@ export async function GET(req: Request) {
           paymentItem,
           invoice.invoice_number,
           invoice.school_id,
-        ]
+        ],
       );
 
-      console.log("⚠️ Payment still pending");
+      console.log("Payment still pending");
     }
 
     await client.query("COMMIT");

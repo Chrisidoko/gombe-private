@@ -6,6 +6,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { formatDate } from "@/lib/formatDate";
 import { useSearchParams, useRouter } from "next/navigation";
+import { calculateFee } from "@/lib/calculateFee";
 
 interface SchoolLicense {
   id: number;
@@ -15,7 +16,7 @@ interface SchoolLicense {
   state: string;
   lga: string;
   tin: string;
-
+  programmes?: string[]; // Optional array of programmes offered
   email: string;
   address: string;
   license_number: string;
@@ -86,13 +87,17 @@ export default function SchoolOverviewClient() {
 
       if (!school) return;
 
+      const programmes = school.programmes ?? [];
+      const fee = calculateFee(programmes);
+
       // Call API to create invoice first
       const res = await fetch("/api/invoices/create-invoice", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
+          narration: fee.label, //e.g Category 1: NCE / ND Institutions
           school_id: school.school_id,
-          amount: 300000, // License fee
+          amount: fee.amount, // Certificate fee based on calculated tier
         }),
       });
 
@@ -189,11 +194,12 @@ export default function SchoolOverviewClient() {
               <div className="ml-auto flex flex-col">
                 <button
                   onClick={handleRenew}
-                  disabled={cloading}
+                  // disabled={cloading || school.license_status === "Active"}
+                  disabled
                   className={`flex justify-center items-center gap-2 px-3 py-2 text-sm sm:text-lg text-white font-semibold bg-[#28a745] rounded-lg transition-transform duration-100 cursor-pointer ${
                     cloading
                       ? "opacity-70 cursor-not-allowed"
-                      : "hover:scale-105"
+                      : "hover:scale-104"
                   }`}
                 >
                   {cloading ? (
