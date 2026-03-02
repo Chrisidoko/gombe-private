@@ -4,7 +4,7 @@ import {
   School,
   CheckCircle2,
   FileCheck,
-  Clock,
+  // Clock,
   Users,
   Building2,
   GraduationCap,
@@ -235,7 +235,7 @@ export default async function AdminDashboard() {
       </div>
 
       {/* Consent Details */}
-      <div className="mb-8">
+      {/* <div className="mb-8">
         <h2 className="text-lg font-semibold text-gray-800 mb-4">Management</h2>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <div className="bg-white rounded-lg shadow-md p-6">
@@ -283,7 +283,7 @@ export default async function AdminDashboard() {
             <p className="text-xs text-gray-500 mt-1">Assigned and In-use</p>
           </div>
         </div>
-      </div>
+      </div> */}
 
       {/* Summary Card */}
       {/* <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg shadow-md p-6 border border-blue-200">
