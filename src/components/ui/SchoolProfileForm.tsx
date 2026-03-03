@@ -9,6 +9,7 @@ import {
   CheckCircle,
   Save,
   X,
+  Lock,
 } from "lucide-react";
 import toast from "react-hot-toast";
 import { School } from "@/lib/types";
@@ -101,6 +102,8 @@ export default function SchoolProfileForm({
     // licenseNumber: "",
     // licenseExpiry: "",
   });
+
+  const isApproved = schoolData?.approval_status === "approved";
 
   const [loading, setLoading] = useState(false);
   const [activeSection, setActiveSection] = useState<string | null>(null);
@@ -483,11 +486,18 @@ export default function SchoolProfileForm({
               </div>
             </div>
             <div className="flex items-center gap-3">
-              {isAcademicComplete && (
-                <span className="flex items-center gap-1 text-green-600 text-sm font-medium">
-                  <CheckCircle className="w-4 h-4" />
-                  Complete
+              {isApproved ? (
+                <span className="flex items-center gap-1 text-blue-600 text-sm font-medium">
+                  <Lock className="w-4 h-4" />
+                  Locked
                 </span>
+              ) : (
+                isAcademicComplete && (
+                  <span className="flex items-center gap-1 text-green-600 text-sm font-medium">
+                    <CheckCircle className="w-4 h-4" />
+                    Complete
+                  </span>
+                )
               )}
               <svg
                 className={`w-5 h-5 text-gray-400 transition-transform ${
@@ -509,6 +519,17 @@ export default function SchoolProfileForm({
 
           {activeSection === "academic" && (
             <div className="p-6 space-y-6">
+              {/* Locked notice */}
+              {isApproved && (
+                <div className="flex items-center gap-2 bg-blue-50 border border-blue-200 rounded-lg px-4 py-2.5">
+                  <Lock className="w-4 h-4 text-blue-500 shrink-0" />
+                  <p className="text-xs text-blue-700 font-medium">
+                    This section is locked after ministry approval. Contact the
+                    Ministry to request any changes.
+                  </p>
+                </div>
+              )}
+
               {/* Mode of Operation */}
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-3">
@@ -519,7 +540,11 @@ export default function SchoolProfileForm({
                     (mode) => (
                       <label
                         key={mode}
-                        className={`flex items-center gap-3 p-3 border-2 rounded-lg cursor-pointer transition-all ${
+                        className={`flex items-center gap-3 p-3 border-2 rounded-lg transition-all ${
+                          isApproved
+                            ? "cursor-not-allowed opacity-60"
+                            : "cursor-pointer"
+                        } ${
                           formData.modeOfOperation.includes(mode)
                             ? "border-blue-500 bg-blue-50"
                             : "border-gray-200 hover:border-gray-300"
@@ -529,9 +554,11 @@ export default function SchoolProfileForm({
                           type="checkbox"
                           checked={formData.modeOfOperation.includes(mode)}
                           onChange={() =>
+                            !isApproved &&
                             toggleCheckbox("modeOfOperation", mode)
                           }
-                          className="w-4 h-4 text-blue-600"
+                          disabled={isApproved}
+                          className="w-4 h-4 text-blue-600 disabled:cursor-not-allowed"
                         />
                         <span className="font-medium text-gray-900">
                           {mode}
@@ -558,7 +585,8 @@ export default function SchoolProfileForm({
                       placeholder="0.00"
                       value={formData.avgFee}
                       onChange={(e) => handleChange("avgFee", e.target.value)}
-                      className="w-full pl-8 pr-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                      disabled={isApproved}
+                      className="w-full pl-8 pr-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all disabled:bg-gray-50 disabled:text-gray-400 disabled:cursor-not-allowed"
                     />
                   </div>
                 </div>
@@ -579,7 +607,8 @@ export default function SchoolProfileForm({
                       onChange={(e) =>
                         handleChange("totalRevenue", e.target.value)
                       }
-                      className="w-full pl-8 pr-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                      disabled={isApproved}
+                      className="w-full pl-8 pr-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all disabled:bg-gray-50 disabled:text-gray-400 disabled:cursor-not-allowed"
                     />
                   </div>
                 </div>
@@ -597,7 +626,8 @@ export default function SchoolProfileForm({
                     onChange={(e) =>
                       handleChange("academicSession", e.target.value)
                     }
-                    className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                    disabled={isApproved}
+                    className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all disabled:bg-gray-50 disabled:text-gray-400 disabled:cursor-not-allowed"
                     required
                   >
                     <option value="">Select Session</option>
@@ -614,22 +644,6 @@ export default function SchoolProfileForm({
                   </select>
                 </div>
 
-                {/* <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">
-                    Weeks Per Semester
-                  </label>
-                  <input
-                    type="number"
-                    pattern="[0-9]*"
-                    placeholder="e.g., 15"
-                    value={formData.weeksPerSemester}
-                    onChange={(e) =>
-                      handleChange("weeksPerSemester", e.target.value)
-                    }
-                    className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-                  />
-                </div> */}
-
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 mb-2">
                     Session Start Date <span className="text-red-500">*</span>
@@ -640,7 +654,8 @@ export default function SchoolProfileForm({
                     onChange={(e) =>
                       handleChange("sessionStart", e.target.value)
                     }
-                    className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                    disabled={isApproved}
+                    className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all disabled:bg-gray-50 disabled:text-gray-400 disabled:cursor-not-allowed"
                     required
                   />
                 </div>
@@ -653,7 +668,8 @@ export default function SchoolProfileForm({
                     type="date"
                     value={formData.sessionEnd}
                     onChange={(e) => handleChange("sessionEnd", e.target.value)}
-                    className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                    disabled={isApproved}
+                    className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all disabled:bg-gray-50 disabled:text-gray-400 disabled:cursor-not-allowed"
                     required
                   />
                 </div>
@@ -676,7 +692,11 @@ export default function SchoolProfileForm({
                   ].map((prog) => (
                     <label
                       key={prog}
-                      className={`flex items-center gap-3 p-3 border-2 rounded-lg cursor-pointer transition-all ${
+                      className={`flex items-center gap-3 p-3 border-2 rounded-lg transition-all ${
+                        isApproved
+                          ? "cursor-not-allowed opacity-60"
+                          : "cursor-pointer"
+                      } ${
                         formData.programmes.includes(prog)
                           ? "border-blue-500 bg-blue-50"
                           : "border-gray-200 hover:border-gray-300"
@@ -685,8 +705,11 @@ export default function SchoolProfileForm({
                       <input
                         type="checkbox"
                         checked={formData.programmes.includes(prog)}
-                        onChange={() => toggleCheckbox("programmes", prog)}
-                        className="w-4 h-4 text-blue-600"
+                        onChange={() =>
+                          !isApproved && toggleCheckbox("programmes", prog)
+                        }
+                        disabled={isApproved}
+                        className="w-4 h-4 text-blue-600 disabled:cursor-not-allowed"
                         required
                       />
                       <span className="text-sm font-medium text-gray-900">
@@ -697,7 +720,7 @@ export default function SchoolProfileForm({
                 </div>
               </div>
 
-              {/* Courses  */}
+              {/* Courses */}
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-2">
                   Courses
@@ -712,65 +735,71 @@ export default function SchoolProfileForm({
                         className="inline-flex items-center gap-1.5 bg-blue-50 border border-blue-200 text-blue-700 text-sm px-3 py-1 rounded-full"
                       >
                         {course}
-                        <button
-                          type="button"
-                          onClick={() =>
-                            handleChange(
-                              "courses",
-                              formData.courses.filter(
-                                (_: string, i: number) => i !== index,
-                              ),
-                            )
-                          }
-                          className="text-blue-400 hover:text-red-500 transition font-bold leading-none"
-                        >
-                          ×
-                        </button>
+                        {!isApproved && (
+                          <button
+                            type="button"
+                            onClick={() =>
+                              handleChange(
+                                "courses",
+                                formData.courses.filter(
+                                  (_: string, i: number) => i !== index,
+                                ),
+                              )
+                            }
+                            className="text-blue-400 hover:text-red-500 transition font-bold leading-none"
+                          >
+                            ×
+                          </button>
+                        )}
                       </span>
                     ))}
                   </div>
                 )}
 
-                {/* Add course input */}
-                <div className="flex gap-2">
-                  <input
-                    type="text"
-                    placeholder="e.g., Medical Laboratory Science"
-                    value={courseInput}
-                    onChange={(e) => setCourseInput(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter") {
-                        e.preventDefault();
-                        if (courseInput.trim()) {
-                          handleChange("courses", [
-                            ...formData.courses,
-                            courseInput.trim(),
-                          ]);
-                          setCourseInput("");
-                        }
-                      }
-                    }}
-                    className="flex-1 px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => {
-                      if (courseInput.trim()) {
-                        handleChange("courses", [
-                          ...formData.courses,
-                          courseInput.trim(),
-                        ]);
-                        setCourseInput("");
-                      }
-                    }}
-                    className="px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-lg transition-all"
-                  >
-                    + Add
-                  </button>
-                </div>
-                <p className="text-xs text-gray-400 mt-1.5">
-                  Press Enter or click Add to insert a course.
-                </p>
+                {/* Add course input — hidden when approved */}
+                {!isApproved && (
+                  <>
+                    <div className="flex gap-2">
+                      <input
+                        type="text"
+                        placeholder="e.g., Medical Laboratory Science"
+                        value={courseInput}
+                        onChange={(e) => setCourseInput(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") {
+                            e.preventDefault();
+                            if (courseInput.trim()) {
+                              handleChange("courses", [
+                                ...formData.courses,
+                                courseInput.trim(),
+                              ]);
+                              setCourseInput("");
+                            }
+                          }
+                        }}
+                        className="flex-1 px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (courseInput.trim()) {
+                            handleChange("courses", [
+                              ...formData.courses,
+                              courseInput.trim(),
+                            ]);
+                            setCourseInput("");
+                          }
+                        }}
+                        className="px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-lg transition-all"
+                      >
+                        + Add
+                      </button>
+                    </div>
+                    <p className="text-xs text-gray-400 mt-1.5">
+                      Press Enter or click Add to insert a course.
+                    </p>
+                  </>
+                )}
               </div>
             </div>
           )}

@@ -26,7 +26,7 @@ const ALL_FEES = [
   // Stage 1 — Consent Letter (every school pays this first)
   {
     id: 6,
-    name: "Consent Letter Fee",
+    name: "Establishment Fee",
     description:
       "Ministry's approval of consent for establishment of your institution. Required by all institutions.",
     amount: 300000,
@@ -41,7 +41,7 @@ const ALL_FEES = [
     name: "Self Assessment Questionnaire",
     description:
       "One-time fee covering administrative processing of institution assessment/registration.",
-    amount: 50000,
+    amount: 20000,
     category: "Administrative Fees",
     document_url: "/application-form.docx",
     mandatory: true,
@@ -53,7 +53,7 @@ const ALL_FEES = [
     description: "Covers the cost of issued compliance guidelines document.",
     amount: 10000,
     category: "Administrative Fees",
-    document_url: "/compliance-guidelines.pdf",
+    document_url: "/guidelines.pdf",
     mandatory: true,
     stage: 2,
   },

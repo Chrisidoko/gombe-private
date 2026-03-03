@@ -76,10 +76,10 @@ export async function POST(request: NextRequest) {
       courses: schoolData.courses || [], // ← from DB
     };
 
-    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000/";
 
     const qrCodeData = await generateQRCode(
-      `${baseUrl}/verify?license=${encodeURIComponent(licenseData.license_number)}`,
+      `${baseUrl}verify?license=${encodeURIComponent(licenseData.license_number)}`,
     );
 
     const pdfData = await createLicensePDF({
@@ -137,7 +137,7 @@ export async function GET() {
     const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
 
     const qrCodeData = await generateQRCode(
-      `${baseUrl}/verify?license=${encodeURIComponent(sampleData.license_number)}`,
+      `${baseUrl}verify?license=${encodeURIComponent(sampleData.license_number)}`,
     );
 
     const pdfData = await createLicensePDF({
