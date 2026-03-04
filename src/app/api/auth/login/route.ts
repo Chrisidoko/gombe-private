@@ -10,7 +10,7 @@ export async function POST(req: Request) {
     if (!email || !password) {
       return NextResponse.json(
         { success: false, message: "Email and password are required" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -18,13 +18,13 @@ export async function POST(req: Request) {
     const userResult = await pool.query(
       `SELECT id, name, email, institution, password_hash, status 
        FROM userskano WHERE email = $1`,
-      [email]
+      [email],
     );
 
     if (userResult.rows.length === 0) {
       return NextResponse.json(
         { success: false, message: "Invalid email or password" },
-        { status: 401 }
+        { status: 401 },
       );
     }
 
@@ -35,7 +35,7 @@ export async function POST(req: Request) {
     if (!passwordMatch) {
       return NextResponse.json(
         { success: false, message: "Invalid email or password" },
-        { status: 401 }
+        { status: 401 },
       );
     }
 
@@ -47,18 +47,27 @@ export async function POST(req: Request) {
           message:
             "Your account is pending approval. Please wait for your institution to verify your account.",
         },
-        { status: 403 }
+        { status: 403 },
       );
     }
     // 👇 Convert secret to Uint8Array
     const secret = new TextEncoder().encode(process.env.JWT_SECRET!);
 
     // 4️⃣ Create JWT (using jose)
+
+    // ── Derive role from institution ──────────────────────────────────────
+    const role =
+      user.institution === "CBS_Admin"
+        ? "admin"
+        : user.institution === "CBS_Finance"
+          ? "finance"
+          : "school";
+
     const token = await new SignJWT({
       id: user.id,
       email: user.email,
       name: user.name,
-      role: user.institution === "CBS_Admin" ? "admin" : "school",
+      role: role,
       institution: user.institution,
     })
       .setProtectedHeader({ alg: "HS256" })
@@ -73,6 +82,7 @@ export async function POST(req: Request) {
         name: user.name,
         email: user.email,
         institution: user.institution,
+        role,
       },
     });
 
@@ -91,7 +101,7 @@ export async function POST(req: Request) {
     console.error("Error during login:", error);
     return NextResponse.json(
       { success: false, message: "Internal server error" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

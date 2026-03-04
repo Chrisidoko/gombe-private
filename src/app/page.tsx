@@ -47,8 +47,10 @@ const Page = () => {
       // ✅ Cookie is already set by backend — just redirect based on role
       if (data.user.role === "admin") {
         router.push("/dashboard"); // (admin)
-      } else {
+      } else if (data.user.role === "school") {
         router.push("/home"); // (school)
+      } else if (data.user.role === "finance") {
+        router.push("/collections"); // (finance)
       }
     } catch (err) {
       console.error(err);

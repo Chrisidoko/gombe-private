@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
-import { Building2 } from "lucide-react";
+// import { Building2 } from "lucide-react";
 import LogoutButton from "@/components/ui/logoutbutton";
 
 interface NavigationProps {
@@ -17,8 +17,8 @@ const Navigation: React.FC<NavigationProps> = ({ collapsed, setCollapsed }) => {
 
   const navItems = [
     {
-      href: "/dashboard",
-      label: "Overview",
+      href: "/collections",
+      label: "Collections",
       icon: (
         <svg
           className="w-5 h-5"
@@ -36,8 +36,8 @@ const Navigation: React.FC<NavigationProps> = ({ collapsed, setCollapsed }) => {
       ),
     },
     {
-      href: "/assessments",
-      label: "Assessment",
+      href: "/finance",
+      label: "Finance",
       icon: (
         <svg
           className="w-5 h-5"
@@ -54,10 +54,10 @@ const Navigation: React.FC<NavigationProps> = ({ collapsed, setCollapsed }) => {
         </svg>
       ),
     },
-
     {
-      href: "/requests",
-      label: "Requests",
+      href: "/transactions",
+      label: "Transactions",
+      // badge: 3,
       icon: (
         <svg
           className="w-5 h-5"
@@ -69,15 +69,10 @@ const Navigation: React.FC<NavigationProps> = ({ collapsed, setCollapsed }) => {
             strokeLinecap="round"
             strokeLinejoin="round"
             strokeWidth={2}
-            d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+            d="M9 14l6-6m-5.5.5h.01m4.99 5h.01M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16l3.5-2 3.5 2 3.5-2 3.5 2zM10 8.5a.5.5 0 11-1 0 .5.5 0 011 0zm5 5a.5.5 0 11-1 0 .5.5 0 011 0z"
           />
         </svg>
       ),
-    },
-    {
-      href: "/create-school",
-      label: "Create School",
-      icon: <Building2 className="w-4 h-4" />,
     },
   ];
 
@@ -244,7 +239,7 @@ const Navigation: React.FC<NavigationProps> = ({ collapsed, setCollapsed }) => {
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-semibold text-gray-900 truncate">
-                      CBS Admin
+                      Finance Admin
                     </p>
                     <p className="text-xs text-gray-600 truncate">
                       Click to View Profile

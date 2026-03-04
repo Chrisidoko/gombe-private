@@ -136,10 +136,10 @@ export default function LicenseModal({
             <ShieldCheck className="w-8 h-8 text-green-600" />
           </div>
           <h2 className="text-xl font-semibold text-gray-800 mb-2">
-            License Saved!
+            Certificate Saved!
           </h2>
           <p className="text-gray-500 text-sm mb-6">
-            Your license information has been recorded successfully.
+            Your certificate information has been recorded successfully.
           </p>
           <button
             onClick={() => window.location.reload()}

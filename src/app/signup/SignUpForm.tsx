@@ -41,7 +41,7 @@ export default function SignUpForm() {
         // We only need the record for this specific school
         try {
           const res = await fetch(
-            `/api/schools/forsignup?school_id=${magicSchoolId}`
+            `/api/schools/forsignup?school_id=${magicSchoolId}`,
           );
           const data = await res.json();
           if (data && data.name) {
@@ -79,7 +79,7 @@ export default function SignUpForm() {
   }, [magicSchoolId]);
 
   const handleChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
+    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>,
   ) => setFormData((prev) => ({ ...prev, [e.target.name]: e.target.value }));
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -168,6 +168,7 @@ export default function SignUpForm() {
               >
                 <option value="">Select Institution</option>
                 <option value="CBS_Admin">CBS Admin</option>
+                <option value="CBS_Finance">Finance Admin</option>
                 {/* {institutions.map((school) => (
                   <option key={school.id} value={school.school_id}>
                     {school.name}
