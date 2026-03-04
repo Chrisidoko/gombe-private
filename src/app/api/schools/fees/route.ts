@@ -2,6 +2,7 @@
 
 import { NextResponse } from "next/server";
 import pool from "@/lib/db";
+import crypto from "crypto";
 
 type Fee = {
   id: number;
@@ -12,6 +13,9 @@ type Fee = {
   mandatory: boolean;
   stage: number;
   status: "paid" | "unpaid" | "pending";
+  reference?: string | null; // ← add
+  tpui?: string | null; // ← add
+  db_id?: number | null;
 };
 
 type FeeGroup = {
@@ -31,6 +35,7 @@ const ALL_FEES = [
       "Ministry's approval of consent for establishment of your institution. Required by all institutions.",
     amount: 300000,
     category: "Consent Letter",
+    mdasId: 3646,
     mandatory: true,
     stage: 1,
   },
@@ -43,6 +48,7 @@ const ALL_FEES = [
       "One-time fee covering administrative processing of institution assessment/registration.",
     amount: 20000,
     category: "Administrative Fees",
+    mdasId: 3646,
     document_url: "/application-form.docx",
     mandatory: true,
     stage: 2,
@@ -53,6 +59,7 @@ const ALL_FEES = [
     description: "Covers the cost of issued compliance guidelines document.",
     amount: 10000,
     category: "Administrative Fees",
+    mdasId: 3646,
     document_url: "/guidelines.pdf",
     mandatory: true,
     stage: 2,
@@ -65,6 +72,7 @@ const ALL_FEES = [
     description: "Certificate fee for NCE / National Diploma institutions.",
     amount: 300000,
     category: "Certificate Fee",
+    mdasId: 3646,
     mandatory: true,
     stage: 3,
   },
@@ -74,6 +82,7 @@ const ALL_FEES = [
     description: "Certificate fee for HND / Bachelor's Degree institutions.",
     amount: 350000,
     category: "Certificate Fee",
+    mdasId: 3646,
     mandatory: true,
     stage: 3,
   },
@@ -83,6 +92,7 @@ const ALL_FEES = [
     description: "Certificate fee for Master's Degree / PhD institutions.",
     amount: 1000000,
     category: "Certificate Fee",
+    mdasId: 3646,
     mandatory: true,
     stage: 3,
   },
@@ -139,24 +149,120 @@ export async function GET(req: Request) {
     // Fetch existing payment statuses from DB
     const paymentMap: Record<number, "paid" | "unpaid" | "pending"> = {};
     const docApprovalMap: Record<number, string> = {}; // ← add this
+    const referenceMap: Record<number, string | null> = {}; // ← add
+    const tpuiMap: Record<number, string | null> = {};
+    const dbIdMap: Record<number, number> = {}; // fee_id → table row id
     if (school_id) {
       const existing = await pool.query(
-        `SELECT fee_id, status, doc_approval FROM schoolkano_payments WHERE school_id = $1`,
+        `SELECT id, fee_id, status, doc_approval FROM schoolkano_payments WHERE school_id = $1`,
         [school_id],
       );
       existing.rows.forEach((row) => {
         paymentMap[row.fee_id] = row.status;
         docApprovalMap[row.fee_id] = row.doc_approval ?? "not_required"; // ← add this
+        referenceMap[row.fee_id] = row.reference ?? null; // ← add
+        tpuiMap[row.fee_id] = row.tpui ?? null; // ← add
+        dbIdMap[row.fee_id] = row.id; // ← add this
       });
 
-      // Upsert unpaid records for any new fees not yet in DB
+      // Upsert unpaid records and generate bill reference if not already created
       for (const fee of applicableFees) {
+        // Step 1 — insert if not exists
         await pool.query(
           `INSERT INTO schoolkano_payments (school_id, fee_id, fee_name, amount, status)
-           VALUES ($1, $2, $3, $4, 'unpaid')
-           ON CONFLICT (school_id, fee_id) DO NOTHING`,
+     VALUES ($1, $2, $3, $4, 'unpaid')
+     ON CONFLICT (school_id, fee_id) DO NOTHING`,
           [school_id, fee.id, fee.name, fee.amount],
         );
+
+        // Step 2 — check if this row already has a reference
+        const existing = await pool.query(
+          `SELECT reference FROM schoolkano_payments 
+            WHERE school_id = $1 AND fee_id = $2`,
+          [school_id, fee.id],
+        );
+
+        const alreadyHasReference = existing.rows[0]?.reference;
+        if (alreadyHasReference) continue; // ← skip, reference already exists
+
+        // Step 3 — fetch school info for bill payload
+        const schoolRes = await pool.query(
+          `SELECT email, name, phone, address FROM schoolskano WHERE school_id = $1`,
+          [school_id],
+        );
+        if (schoolRes.rows.length === 0) continue;
+        const school = schoolRes.rows[0];
+
+        // Step 4 — build and send bill to PayKaduna
+        try {
+          const nameParts = school.name.split(" ");
+          const firstName = nameParts[0] || school.name;
+          const middleName = nameParts[1] || "";
+          const lastName =
+            nameParts.length > 2 ? nameParts.slice(2).join(" ") : nameParts[0];
+
+          const billPayload = {
+            engineCode: process.env.PAYKADUNA_ENGINE_CODE,
+            identifier: `${school_id}-${fee.id}-${Date.now()}`, // unique per fee
+            firstName,
+            middleName,
+            lastName,
+            address: school.address || "Kaduna, Nigeria",
+            telephone: school.phone || "08000000000",
+            esBillDetailsDto: [
+              {
+                amount: fee.amount,
+                mdasId: fee.mdasId,
+                narration: `${fee.name} - ${school.name}`,
+              },
+            ],
+          };
+
+          const jsonPayload = JSON.stringify(billPayload);
+          const signature = crypto
+            .createHmac("sha256", process.env.PAYKADUNA_API_KEY!)
+            .update(jsonPayload)
+            .digest("base64");
+
+          const billResponse = await fetch(
+            `${process.env.NEXT_PUBLIC_PAYKADUNA_URL}api/ESBills/CreateESBill`,
+            {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                "X-Api-Signature": signature,
+              },
+              body: jsonPayload,
+            },
+          );
+
+          if (billResponse.ok) {
+            const billData = await billResponse.json();
+            const billReference = billData.bill?.billReference || null;
+            const tpui = billData.bill?.tpui || null;
+
+            // Step 5 — store reference back to this specific fee row
+            if (billReference) {
+              await pool.query(
+                `UPDATE schoolkano_payments 
+           SET reference = $1, tpui = $2
+           WHERE school_id = $3 AND fee_id = $4`,
+                [billReference, tpui, school_id, fee.id],
+              );
+
+              // Update paymentMap so the response reflects the new reference
+              paymentMap[fee.id] = paymentMap[fee.id] ?? "unpaid";
+            }
+          } else {
+            console.error(
+              `Bill creation failed for fee ${fee.id}:`,
+              await billResponse.text(),
+            );
+          }
+        } catch (billErr) {
+          // Don't crash the whole fees fetch if bill creation fails for one fee
+          console.error(`Bill error for fee ${fee.id}:`, billErr);
+        }
       }
     }
 
@@ -187,6 +293,9 @@ export async function GET(req: Request) {
               | "pending",
 
             doc_approval: docApprovalMap[f.id] ?? "not_required", // ← add this
+            reference: referenceMap[f.id] ?? null, // ← add
+            tpui: tpuiMap[f.id] ?? null, // ← add
+            db_id: dbIdMap[f.id] ?? null, // ← add this
           }));
 
         if (!fees.length) return null;

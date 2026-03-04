@@ -11,7 +11,7 @@ export async function GET(req: Request) {
     const { searchParams } = new URL(req.url);
     const billReference = searchParams.get("bill_reference");
 
-    console.log("🔹 Checking payment status for:", billReference);
+    // console.log("🔹 Checking payment status for:", billReference);
 
     if (!billReference) {
       return NextResponse.json(
@@ -86,7 +86,7 @@ export async function GET(req: Request) {
 
     const payStatus = statusData.bill?.payStatus?.toLowerCase();
     const paymentItem =
-      statusData.billItems?.[0]?.revenueHead || "School Assessment Payment";
+      statusData.billItems?.[0]?.revenueHead || "Assessment Payment";
 
     if (!payStatus) {
       throw new Error("Invalid response format from PayKaduna");

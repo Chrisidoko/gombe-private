@@ -22,9 +22,7 @@ export async function POST(req: Request) {
     const { email, name, license_status } = result.rows[0];
     const hasActiveLicense = license_status === "Active";
 
-    // const purchaseLink = `https://kaptems.payprosolutionsltd.com/signup?school_id=${school_id}`;
-
-    const purchaseLink = `https://kaptems.payprosolutionsltd.com/school-overview?school_id=${encodeURIComponent(school_id)}`;
+    // const purchaseLink = `https://kaptems.payprosolutionsltd.com/school-overview?school_id=${encodeURIComponent(school_id)}`;
 
     // ✅ Verify SMTP credentials
     if (!process.env.SMTP_USER || !process.env.SMTP_PASS) {
@@ -70,18 +68,7 @@ export async function POST(req: Request) {
           <h2 style="color: #16a34a;">Kaduna Private Tertiary Institution Portal</h2>
             <p>Dear <strong>${name}</strong>,</p>
             <p>Your institution has been approved on the Kaduna Private Tertiary Institution Portal.</p>
-            <p>To fully access all portal features and remain compliant, please proceed to purchase your Consent Certificate:</p>
-
-            <div style="margin: 24px 0;">
-              <a href="${purchaseLink}" 
-                style="display: inline-block; background-color: #16a34a; color: #ffffff; text-decoration: none; padding: 12px 28px; border-radius: 6px; font-weight: bold; font-size: 15px;">
-                Purchase Certificate →
-              </a>
-            </div>
-            <p style="color: #6b7280; font-size: 13px;">
-              If the button doesn't work, copy and paste this link into your browser:<br/>
-              <span style="color: #16a34a;">${purchaseLink}</span>
-            </p>
+            <p>To fully access all portal features and remain compliant, please login and navigate to compliance standing to purchase your Consent Certificate</p>
             <br />
             <p>Best Regards,<br>KAPTEMS Assessment Team</p>
           </div>

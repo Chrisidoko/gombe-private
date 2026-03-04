@@ -2,231 +2,140 @@
 import { NextResponse } from "next/server";
 import pool from "@/lib/db";
 import crypto from "crypto";
-import nodemailer from "nodemailer";
 
 export async function POST(req: Request) {
   const client = await pool.connect();
 
   try {
-    // Step 1: Get the signature from headers
+    // Step 1: Verify signature header exists
     const signature = req.headers.get("X-Signature");
-
     if (!signature) {
-      console.error("❌ Missing X-Signature header");
+      console.error("Missing X-Signature header");
       return NextResponse.json(
         { status: "error", message: "Missing signature" },
-        { status: 401 }
+        { status: 401 },
       );
     }
 
-    // Step 2: Get the raw body
+    // Step 2: Parse body
     const body = await req.json();
-    console.log("🔹 Webhook received:", body);
+    console.log("Webhook received:", body);
 
     const { billReference, paymentGateway, status, paidat } = body;
 
     if (!billReference || !status) {
-      console.error("❌ Missing required fields");
+      console.error("Missing required fields");
       return NextResponse.json(
         { status: "error", message: "Missing required fields" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
-    // Step 3: Verify signature
+    // Step 3: Verify HMAC signature
     const apiKey = process.env.PAYKADUNA_WEBHOOK_API_KEY;
     if (!apiKey) {
       throw new Error("PayKaduna API key not configured");
     }
-    const jsonPayload = JSON.stringify(body);
 
+    const jsonPayload = JSON.stringify(body);
     const expectedSignature = crypto
       .createHmac("sha256", apiKey)
       .update(jsonPayload)
       .digest("base64");
 
     if (signature !== expectedSignature) {
-      console.error("❌ Invalid signature");
-      console.error("Expected:", expectedSignature);
-      console.error("Received:", signature);
+      console.error(
+        "Invalid signature — Expected:",
+        expectedSignature,
+        "Received:",
+        signature,
+      );
       return NextResponse.json(
         { status: "error", error: "Invalid signature" },
-        { status: 403 }
+        { status: 403 },
       );
     }
 
-    console.log("✅ Signature verified");
+    console.log("Signature verified");
 
     await client.query("BEGIN");
 
-    // Step 4: Find invoice by bill reference
-    const invoiceRes = await client.query(
-      `SELECT id, invoice_number, bill_reference, amount, status, school_id 
-       FROM schoolkano_invoices 
-       WHERE bill_reference = $1`,
-      [billReference]
+    // Step 4: Find the fee payment row by bill reference
+    const paymentRes = await client.query(
+      `SELECT id, school_id, fee_id, fee_name, amount, status, reference
+       FROM schoolkano_payments
+       WHERE reference = $1`,
+      [billReference],
     );
 
-    if (invoiceRes.rows.length === 0) {
+    // If not found in schoolkano_payments — genuine 404, return 200 to avoid retries
+    if (paymentRes.rows.length === 0) {
       await client.query("ROLLBACK");
-      console.error("❌ Invoice not found for bill reference:", billReference);
+      console.error(
+        "No payment record found for bill reference:",
+        billReference,
+      );
       return NextResponse.json(
-        { status: "error", message: "Invoice not found" },
-        { status: 404 }
+        { status: "success", message: "No matching payment record found" },
+        { status: 200 },
       );
     }
 
-    const invoice = invoiceRes.rows[0];
+    const payment = paymentRes.rows[0];
+    console.log("Payment record found:", payment);
 
-    // Step 5: Update invoice status if paid
-    if (status.toLowerCase() === "paid") {
-      await client.query(
-        `UPDATE schoolkano_invoices 
-         SET status = 'Paid'
-         WHERE id = $1 AND status = 'Unpaid'`,
-        [invoice.id]
-      );
+    // Step 5: Update schoolkano_payments status
+    await client.query(
+      `UPDATE schoolkano_payments
+       SET status = $2, paid_at = $3
+       WHERE reference = $1`,
+      [
+        billReference,
+        status.toLowerCase(),
+        status.toLowerCase() === "paid" ? paidat || new Date() : null,
+      ],
+    );
+    console.log("payments updated — status:", status.toLowerCase());
 
-      console.log("✅ Invoice marked as paid");
+    // Step 6: Log to transactionskano
+    await client.query(
+      `INSERT INTO transactionskano
+         (reference, amount, status, payment_method, gateway_response, payment_item, paid_at, created_at, school_id)
+       VALUES ($1, $2, $3, 'paykaduna', $4, $5, $6, NOW(), $7)
+       ON CONFLICT (reference)
+       DO UPDATE SET
+         status           = $3,
+         gateway_response = $4,
+         paid_at          = $6,
+         created_at       = NOW()`,
+      [
+        billReference,
+        payment.amount,
+        status.toLowerCase() === "paid" ? "Paid" : status,
+        paymentGateway || "Unknown",
+        payment.fee_name, // ← from schoolkano_payments
+        status.toLowerCase() === "paid" ? paidat || new Date() : null,
+        payment.school_id,
+      ],
+    );
+    console.log("Transaction logged for fee:", payment.fee_name);
 
-      // Step 6: Log transaction
-      const paidAtDate = paidat;
+    await client.query("COMMIT");
 
-      await client.query(
-        `INSERT INTO transactionskano 
-         (invoice_number, reference, amount, status, payment_method, gateway_response, payment_item, paid_at, created_at, school_id)
-         VALUES ($1, $2, $3, 'Paid', 'paykaduna', $4, 'Assessment Payment', $5, NOW(), $6)
-         ON CONFLICT (reference) 
-         DO UPDATE SET 
-           status = 'Paid', 
-           gateway_response = $4,
-           paid_at = $5,
-           created_at = NOW()`,
-        [
-          invoice.invoice_number,
-          billReference,
-          invoice.amount,
-          paymentGateway || "Unknown",
-          paidAtDate,
-          invoice.school_id,
-        ]
-      );
-      console.log("📝 Inserting transaction:", {
-        invoice_number: invoice.invoice_number,
-        reference: billReference,
-        amount: invoice.amount,
-        status: "Paid",
-        payment_method: "paykaduna",
-        gateway_response: paymentGateway || "Unknown",
-        payment_item: "Assessment Payment",
-        paid_at: paidAtDate,
-        school_id: invoice.school_id,
-      });
-
-      console.log("✅ Transaction logged");
-
-      // Step 7: Send confirmation email to school
-      const schoolRes = await client.query(
-        "SELECT email, name FROM schoolskano WHERE school_id = $1",
-        [invoice.school_id]
-      );
-
-      if (schoolRes.rows.length > 0) {
-        const school = schoolRes.rows[0];
-
-        try {
-          if (!process.env.SMTP_USER || !process.env.SMTP_PASS) {
-            throw new Error("SMTP credentials not configured");
-          }
-
-          const transporter = nodemailer.createTransport({
-            host: "paypro-solutions.com",
-            port: 465,
-            secure: true,
-            auth: {
-              user: process.env.SMTP_USER,
-              pass: process.env.SMTP_PASS.replace("%40", "@"),
-            },
-          });
-
-          await transporter.sendMail({
-            from: `"CBS Portal" <${process.env.SMTP_USER}>`,
-            to: school.email,
-            subject: `Payment Confirmation - ${school.name}`,
-            html: `
-              <h2>Payment Confirmation</h2>
-              <p>Dear ${school.name},</p>
-              <p>We have received your payment successfully.</p>
-              <p><strong>Invoice Number:</strong> ${invoice.invoice_number}</p>
-              <p><strong>Bill Reference:</strong> ${billReference}</p>
-              <p><strong>Amount Paid:</strong> ₦${parseFloat(
-                invoice.amount
-              ).toLocaleString()}</p>
-              <p><strong>Payment Date:</strong> ${new Date(
-                paidat || Date.now()
-              ).toLocaleDateString("en-NG", {
-                year: "numeric",
-                month: "long",
-                day: "numeric",
-                hour: "2-digit",
-                minute: "2-digit",
-              })}</p>
-              <br/>
-              <p>Thank you for your payment.</p>
-              <br/>
-
-            `,
-          });
-
-          console.log("✅ Confirmation email sent");
-        } catch (emailError) {
-          console.error("⚠️ Failed to send confirmation email:", emailError);
-          // Don't fail the webhook if email fails
-        }
-      }
-
-      await client.query("COMMIT");
-
-      return NextResponse.json({
-        status: "success",
-        message: "Payment processed successfully",
-        billReference: invoice.bill_reference,
-      });
-    } else {
-      // Payment not successful - log attempt
-      await client.query(
-        `INSERT INTO transactionskano 
-         (invoice_id, reference, amount, status, payment_method, gateway_response, payment_item, created_at)
-         VALUES ($1, $2, $3, $4, 'paykaduna', $5, 'Assessment Payment', NOW())
-         ON CONFLICT (reference) 
-         DO UPDATE SET status = $4`,
-        [
-          invoice.id,
-          billReference,
-          invoice.amount,
-          status,
-          paymentGateway || "Unknown",
-        ]
-      );
-
-      await client.query("COMMIT");
-
-      return NextResponse.json({
-        success: true,
-        message: "Payment status updated",
-        status: status,
-      });
-    }
+    return NextResponse.json({
+      status: "success",
+      message: "Payment processed successfully",
+    });
   } catch (error: unknown) {
     await client.query("ROLLBACK");
-    console.error("🔥 Webhook processing error:", error);
+    console.error("Webhook processing error:", error);
 
     const errorMessage =
       error instanceof Error ? error.message : "An unknown error occurred";
 
     return NextResponse.json(
       { status: "error", error: errorMessage },
-      { status: 500 }
+      { status: 500 },
     );
   } finally {
     client.release();

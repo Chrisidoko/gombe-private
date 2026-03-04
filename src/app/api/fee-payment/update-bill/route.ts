@@ -1,4 +1,4 @@
-// app/api/update-invoice/route.ts
+// app/api/fee-payment/update-bill/route.ts
 import { NextResponse } from "next/server";
 import pool from "@/lib/db";
 
@@ -11,7 +11,7 @@ export async function POST(req: Request) {
     if (!invoice_number || !amount || !status) {
       return NextResponse.json(
         { error: "Missing required fields" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -19,9 +19,9 @@ export async function POST(req: Request) {
 
     // Update the invoice table
     const updateQuery = `
-      UPDATE schoolkano_invoices
+      UPDATE schoolkano_payments
       SET status = $1,
-          payment_reference = $2,
+          reference = $2,
           paid_at = NOW(),
           amount = $3
       WHERE invoice_number = $4
@@ -60,7 +60,7 @@ export async function POST(req: Request) {
     console.error("Invoice update error:", message);
     return NextResponse.json(
       { error: "Failed to update invoice", details: message },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

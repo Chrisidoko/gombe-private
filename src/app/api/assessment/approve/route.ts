@@ -181,7 +181,7 @@ export async function POST(req: Request) {
     });
 
     await transporter.sendMail({
-      from: `"CBS Portal" <${process.env.SMTP_USER}>`,
+      from: `"KAPTEMS" <${process.env.SMTP_USER}>`,
       to: school.email,
       subject: `Invoice for School Assessment (${school.name})`,
       html: `
@@ -200,7 +200,7 @@ export async function POST(req: Request) {
         <p><strong>Status:</strong> ${billStatus || "Unpaid"}</p>
         <p><strong>Payment Due Date:</strong> ${formattedDueDate}</p>
         <br/>
-        <a href="https://privateuni.payprosolutionsltd.com/"
+        <a href="https://kaptems.payprosolutionsltd.com/"
            style="background-color:#28a745;color:white;padding:10px 20px;text-decoration:none;border-radius:8px;">Go to Dashboard</a>
       `,
     });

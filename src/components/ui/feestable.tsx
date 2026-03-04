@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
+// import { useRouter } from "next/navigation";
+import PaymentModal from "@/components/ui/paymentmodal";
 import {
   ListChecks,
   CheckCircle2,
@@ -12,6 +14,7 @@ import {
   Download,
   Upload,
   CreditCard,
+  // CreditCard,
 } from "lucide-react";
 
 type Fee = {
@@ -23,8 +26,11 @@ type Fee = {
   mandatory: boolean;
   status: "paid" | "unpaid" | "pending";
   stage: number;
+  reference?: string | null;
+  tpui?: string | null;
   document_url?: string;
   doc_approval?: "pending" | "approved" | "rejected";
+  db_id?: number | null;
 };
 
 type FeeGroup = {
@@ -49,6 +55,13 @@ export default function FeeTable({
   const [uploading, setUploading] = useState<number | null>(null); // tracks which fee_id is uploading
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [checkoutLoading, setCheckoutLoading] = useState(false);
+  const [checkingStatus, setCheckingStatus] = useState(false);
+  const [paymentSuccess, setPaymentSuccess] = useState(false);
+  const [paymentUrl, setPaymentUrl] = useState("");
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
+
+  // const router = useRouter();
 
   const showCertificateFee =
     license_status !== "Active" && approval_status === "approved";
@@ -129,8 +142,54 @@ export default function FeeTable({
     }
   }
 
-  function handleMakePayment(fee: Fee) {
-    // router.push(`/payment?fee_id=${fee.id}&amount=${fee.amount}&school_id=${school_id}&fee_name=${encodeURIComponent(fee.name)}`);
+  async function handleMakePayment(fee: Fee) {
+    console.log("fee.id (definition):", fee.id);
+    console.log("fee.db_id (table row):", fee.db_id);
+    console.log("fee.reference:", fee.reference);
+    console.log("fee.tpui:", fee.tpui);
+    setCheckoutLoading(true);
+
+    try {
+      const response = await fetch("/api/fee-payment/pay-bill", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          db_id: fee.db_id, // ← use db_id which is the actual payment record ID from route file
+          school_id: school_id,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || "Failed to create checkout session");
+      }
+
+      // Open payment URL in modal
+      setPaymentUrl(data.checkoutUrl);
+      setShowPaymentModal(true);
+    } catch (error) {
+      console.error("Checkout error:", error);
+      toast.error(
+        error instanceof Error ? error.message : "Failed to initiate checkout",
+      );
+    } finally {
+      setCheckoutLoading(false);
+    }
+  }
+
+  async function closePaymentModal() {
+    setShowPaymentModal(false);
+    setPaymentUrl("");
+
+    toast.loading("Verifying payment...", { duration: 5000 });
+
+    await new Promise((resolve) => setTimeout(resolve, 5000));
+    window.location.reload();
+    // router.refresh();
+    // // ← re-fetches server data without full page reload is of the use of "window.location.reload();"
   }
 
   if (loading) {
@@ -341,11 +400,79 @@ export default function FeeTable({
                   {/* Make Payment button */}
                   {fee.status === "unpaid" && !group.locked && (
                     <button
-                      onClick={() => handleMakePayment(fee)}
+                      onClick={() => handleMakePayment(fee)} // ← pass full fee not just fee.id
+                      disabled={
+                        checkoutLoading || checkingStatus || paymentSuccess
+                      }
                       className="mt-3 flex items-center gap-1.5 text-xs font-semibold text-white bg-green-600 hover:bg-green-700 px-3 py-1.5 rounded-lg transition ml-auto"
                     >
-                      <CreditCard className="w-3.5 h-3.5" />
-                      Make Payment
+                      {checkoutLoading ? (
+                        <>
+                          <svg
+                            className="animate-spin h-5 w-5"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                          >
+                            <circle
+                              className="opacity-25"
+                              cx="12"
+                              cy="12"
+                              r="10"
+                              stroke="currentColor"
+                              strokeWidth="4"
+                            ></circle>
+                            <path
+                              className="opacity-75"
+                              fill="currentColor"
+                              d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                            ></path>
+                          </svg>
+                          <span>Processing...</span>
+                        </>
+                      ) : checkingStatus ? (
+                        <>
+                          <svg
+                            className="animate-spin h-5 w-5"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                          >
+                            <circle
+                              className="opacity-25"
+                              cx="12"
+                              cy="12"
+                              r="10"
+                              stroke="currentColor"
+                              strokeWidth="4"
+                            ></circle>
+                            <path
+                              className="opacity-75"
+                              fill="currentColor"
+                              d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                            ></path>
+                          </svg>
+                          <span>Verifying Payment...</span>
+                        </>
+                      ) : paymentSuccess ? (
+                        <>
+                          <svg
+                            className="w-6 h-6"
+                            fill="currentColor"
+                            viewBox="0 0 20 20"
+                          >
+                            <path
+                              fillRule="evenodd"
+                              d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                              clipRule="evenodd"
+                            />
+                          </svg>
+                          <span>Payment Confirmed</span>
+                        </>
+                      ) : (
+                        <>
+                          <CreditCard className="w-3.5 h-3.5" />
+                          <span>Make Payment</span>
+                        </>
+                      )}
                     </button>
                   )}
 
@@ -384,6 +511,30 @@ export default function FeeTable({
           </div>
         </div>
       </div>
+
+      {/* Payment Modal */}
+      <PaymentModal
+        isOpen={showPaymentModal}
+        onClose={() => closePaymentModal()} // will come back to review payment status when modal closes
+        paymentUrl={paymentUrl}
+      />
+
+      <style jsx>{`
+        @keyframes fade-in {
+          0% {
+            opacity: 0;
+            transform: translateY(-10px);
+          }
+          100% {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+
+        .animate-fade-in {
+          animation: fade-in 0.3s ease-out;
+        }
+      `}</style>
     </div>
   );
 }

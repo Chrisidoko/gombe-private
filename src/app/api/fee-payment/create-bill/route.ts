@@ -1,4 +1,4 @@
-// app/api/invoices/create-invoice/route.ts
+// app/api/fee-payment/create-bill/route.ts
 import { NextResponse } from "next/server";
 import pool from "@/lib/db";
 import crypto from "crypto";
@@ -14,23 +14,9 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Missing fields" }, { status: 400 });
     }
 
-    const invoice_number = `INV-${school_id}-${Date.now()}`;
-
-    // Step 1: Create invoice in database
-    const query = `
-      INSERT INTO schoolkano_invoices 
-      (school_id, invoice_number, amount, status, issue_date, due_date)
-      VALUES ($1, $2, $3, 'Unpaid', NOW(), NOW() + INTERVAL '14 days')
-      RETURNING id, invoice_number, due_date;
-    `;
-
-    const values = [school_id, invoice_number, amount];
-    const result = await client.query(query, values);
-    const invoiceId = result.rows[0].id;
-
     // console.log("✅ Invoice created:", result.rows[0]);
 
-    // Step 2: Fetch school info
+    // Step 1: Fetch school info
     const schoolRes = await client.query(
       "SELECT email, name, phone, address FROM schoolskano WHERE school_id = $1",
       [school_id],
@@ -41,9 +27,9 @@ export async function POST(req: Request) {
     }
 
     const school = schoolRes.rows[0];
-    console.log("🏫 School found:", school);
+    // console.log("🏫 School found:", school);
 
-    // Step 3: Create bill with 3rd party API
+    // Step 2: Create bill with 3rd party API
     let billReference = null;
     let billStatus = null;
     let tpui = null;
@@ -58,7 +44,7 @@ export async function POST(req: Request) {
 
       const billPayload = {
         engineCode: process.env.PAYKADUNA_ENGINE_CODE,
-        identifier: invoice_number,
+        identifier: `${school_id}-${Date.now()}`, // Unique identifier for this bill
         firstName: firstName,
         middleName: middleName,
         lastName: lastName,
@@ -68,7 +54,7 @@ export async function POST(req: Request) {
           {
             amount: parseFloat(amount),
             mdasId: parseInt(process.env.MDAS_ID || "3646"),
-            narration: `${narration} - Certificate Purchase/Renewal - ${invoice_number}`,
+            narration: `${narration} - Invoice for ${school.name}`,
           },
         ],
       };
@@ -109,16 +95,16 @@ export async function POST(req: Request) {
       // console.log("✅ Bill created:", billData);
 
       // Extract billReference and status from response
-      billReference = billData.bill?.billReference || invoice_number;
-      billStatus = billData.bill?.payStatus || "Unpaid";
+      billReference = billData.bill?.billReference || null;
+      billStatus = billData.bill?.payStatus?.toLowerCase() || "unpaid";
       tpui = billData.bill?.tpui || "";
 
-      // Step 4: Update invoice with bill reference
+      // Step 3: Update fee-payment with bill reference
       await client.query(
-        `UPDATE schoolkano_invoices 
-         SET bill_reference = $1, status = $2, tpui = $3, updated_at = NOW() 
-         WHERE id = $4`,
-        [billReference, billStatus, tpui, invoiceId],
+        `UPDATE schoolkano_payments 
+         SET reference = $1, status = $2, tpui = $3, paid_at = NOW() 
+         WHERE school_id = $4`,
+        [billReference, billStatus, tpui, school_id],
       );
       // console.log("✅ Invoice updated with bill reference");
     } catch (billError) {
@@ -133,9 +119,6 @@ export async function POST(req: Request) {
 
     return NextResponse.json({
       success: true,
-      invoice_id: result.rows[0].id,
-      invoice_number: result.rows[0].invoice_number,
-      due_date: result.rows[0].due_date,
       bill_reference: billReference,
       status: billStatus,
     });
