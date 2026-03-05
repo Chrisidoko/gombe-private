@@ -145,7 +145,7 @@ function AssessmentCard({
 
   const totalStudents = categories.reduce(
     (sum, cat) => sum + (cat.population || 0),
-    0
+    0,
   );
   const isLoading = loading.id === assessment.id;
 
@@ -487,7 +487,7 @@ export default function Requests() {
     school_id: string,
     amount: string,
     action: "approve" | "reject",
-    reason: string
+    reason: string,
   ) {
     setActionLoading({ id: assessment_id, action });
 
@@ -508,7 +508,7 @@ export default function Requests() {
       toast.success(
         action === "approve"
           ? "Invoice generated and email sent successfully!"
-          : "Assessment rejected successfully!"
+          : "Assessment rejected successfully!",
       );
 
       // Remove from list after successful action
@@ -578,7 +578,7 @@ export default function Requests() {
                   assessment.school_id,
                   assessment.commission_amount,
                   "approve",
-                  ""
+                  "",
                 )
               }
               onReject={(reason) =>
@@ -587,7 +587,7 @@ export default function Requests() {
                   assessment.school_id,
                   assessment.commission_amount,
                   "reject",
-                  reason
+                  reason,
                 )
               }
             />

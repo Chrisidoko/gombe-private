@@ -59,6 +59,26 @@ export async function GET() {
 
     const row = result.rows[0];
 
+    // Add this query inside your GET, before the return
+    const topPaymentsResult = await pool.query(`
+      SELECT
+        payment_item,
+        COUNT(*)        AS transaction_count,
+        SUM(amount::numeric) AS total_amount
+      FROM transactionskano
+      WHERE status = 'Paid'
+        AND payment_item IS NOT NULL
+      GROUP BY payment_item
+      ORDER BY total_amount DESC
+      LIMIT 6
+    `);
+
+    const topPayments = topPaymentsResult.rows.map((row) => ({
+      name: row.payment_item,
+      count: Number(row.transaction_count),
+      total: Number(row.total_amount),
+    }));
+
     return NextResponse.json({
       today: {
         count: Number(row.today_count),
@@ -76,6 +96,7 @@ export async function GET() {
         count: Number(row.year_count),
         total: Number(row.year_total),
       },
+      topPayments,
     });
   } catch (error) {
     console.error("Summaries fetch failed:", error);

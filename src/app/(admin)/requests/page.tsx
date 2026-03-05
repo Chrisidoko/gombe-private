@@ -175,13 +175,13 @@ export default function Requests() {
   }
 
   return (
-    <main className="max-w-7xl mx-auto px-4 py-8">
+    <main className="max-w-7xl mx-auto px-4 py-4">
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">
+        <h1 className="text-2xl font-bold text-gray-900 mb-2">
           School Onboarding & Registrations
         </h1>
-        <p className="text-gray-600">
-          Review and approve institution registration requests
+        <p className="text-gray-500 text-sm">
+          Review and approve institution&apos;s registration requests
         </p>
       </div>
 

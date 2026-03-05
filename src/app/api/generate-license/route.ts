@@ -131,6 +131,14 @@ export async function GET() {
         "Bachelor of Science in Nursing",
         "Diploma in Community Health",
         "Certificate in Medical Laboratory Science",
+        "Certificate in Medical Laboratory Science",
+        "Certificate in Medical Laboratory Science",
+        "Certificate in Medical Laboratory Science",
+        "Certificate in Medical Laboratory Science",
+        "Certificate in Medical Laboratory Science",
+        "Certificate in Medical Laboratory Science",
+        "Certificate in Medical Laboratory Science",
+        "Certificate in Medical Laboratory Science",
       ],
     };
 
@@ -253,15 +261,61 @@ async function createLicensePDF(
     }
   };
 
+  // Helper to draw centered wrapped text
+  const drawCenteredWrapped = (
+    page: typeof firstPage,
+    text: string,
+    startY: number,
+    size: number,
+    f: typeof font,
+    color = rgb(0, 0, 0),
+    maxWidth = 400, // ← adjust this to control wrap width
+    lineHeight = 24,
+  ) => {
+    const words = text.split(" ");
+    const lines: string[] = [];
+    let currentLine = "";
+
+    // Build lines that fit within maxWidth
+    words.forEach((word) => {
+      const testLine = currentLine ? `${currentLine} ${word}` : word;
+      const testWidth = f.widthOfTextAtSize(testLine, size);
+
+      if (testWidth > maxWidth && currentLine) {
+        lines.push(currentLine);
+        currentLine = word;
+      } else {
+        currentLine = testLine;
+      }
+    });
+
+    if (currentLine) lines.push(currentLine); // push last line
+
+    // Draw each line centered
+    lines.forEach((line, i) => {
+      const lineWidth = f.widthOfTextAtSize(line, size);
+      const x = (width - lineWidth) / 2;
+      page.drawText(line, {
+        x,
+        y: startY - i * lineHeight,
+        size,
+        font: f,
+        color,
+      });
+    });
+  };
+
   // ── PAGE 1 ────────────────────────────────────────────────────────────────
   // School name in the large blank gap (tweak y if needed after preview)
-  drawCentered(
+  drawCenteredWrapped(
     firstPage,
     data.school_name.toUpperCase(),
-    height - 440,
+    height - 430,
     18,
     boldFont,
     rgb(0.1, 0.1, 0.1),
+    400, // maxWidth — tweak this
+    24, // lineHeight between wrapped lines
   );
 
   // License number — top right
@@ -286,19 +340,19 @@ async function createLicensePDF(
 
   firstPage.drawText(`Issued ${data.issue_date}`, {
     x: 50,
-    y: height - 200,
+    y: height - 226,
     size: 10,
     font,
     color: rgb(0.4, 0.4, 0.4),
   });
 
-  firstPage.drawText(`${data.serial_number}`, {
-    x: 50,
-    y: height - 226,
-    size: 10,
-    font: boldFont,
-    color: rgb(0.4, 0.4, 0.4),
-  });
+  // firstPage.drawText(`${data.serial_number}`, {
+  //   x: 50,
+  //   y: height - 226,
+  //   size: 10,
+  //   font: boldFont,
+  //   color: rgb(0.4, 0.4, 0.4),
+  // });
 
   // firstPage.drawText(`Valid Until: ${data.expiry_date}`, {
   //   x: 50,
@@ -329,7 +383,7 @@ async function createLicensePDF(
 
     // Institution name above
     secondPage.drawText(`${data.school_name}`, {
-      x: 30,
+      x: 40,
       y: height - 210,
       size: 10,
       font: font,
@@ -337,29 +391,45 @@ async function createLicensePDF(
     });
     // Institution address
     secondPage.drawText(`${data.address}`, {
-      x: 30,
+      x: 40,
       y: height - 230,
       size: 10,
       font: font,
       color: rgb(0.1, 0.1, 0.1),
     });
 
-    // Numbered courses list in the blank gap
     let courseY = height - 380;
     const lineH = 18;
-    const maxCourseY = height - 500; // don't overflow into the body text below
+    const maxCourseY = height - 480;
+    const maxVisible = Math.floor((courseY - maxCourseY) / lineH);
 
-    courses.forEach((course, index) => {
-      if (courseY < maxCourseY) return;
+    const visibleCourses = courses.slice(0, maxVisible);
+    const remaining = courses.length - maxVisible;
+
+    visibleCourses.forEach((course, index) => {
       secondPage.drawText(`${index + 1}.  ${course}`, {
-        x: 60,
+        x: 50,
         y: courseY,
-        size: 11,
+        size: 10,
         font: boldFont,
         color: rgb(0.15, 0.15, 0.15),
       });
       courseY -= lineH;
     });
+
+    // Show overflow count if courses were cut
+    if (remaining > 0) {
+      secondPage.drawText(
+        `... and ${remaining} more course${remaining > 1 ? "s" : ""} scan QR for full list`,
+        {
+          x: 50,
+          y: courseY,
+          size: 9,
+          font,
+          color: rgb(0.5, 0.5, 0.5),
+        },
+      );
+    }
 
     // Reference number on page 2
     secondPage.drawText(`Ref: ${data.license_number}`, {
@@ -372,7 +442,7 @@ async function createLicensePDF(
 
     // Proprietor number on page 2
     secondPage.drawText(`${data.proprietor_name}`, {
-      x: 30,
+      x: 40,
       y: height - 190,
       size: 10,
       font: boldFont,

@@ -1,18 +1,20 @@
 import React from "react";
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  // Tooltip,
+  ResponsiveContainer,
+} from "recharts";
 // import {
 //   School,
 //   CheckCircle2,
-//   FileCheck,
-//   // Clock,
-//   Users,
-//   Building2,
-//   GraduationCap,
-//   BookOpen,
-//   Stethoscope,
 //   Computer,
 // } from "lucide-react";
 import { getUserFromCookie } from "@/lib/auth";
-// import LGAChart from "@/components/ui/LGACharts";
+import TopPaymentsChart from "@/components/ui/TopPaymentsChart";
 
 interface SummariesResponse {
   today: {
@@ -31,6 +33,12 @@ interface SummariesResponse {
     count: number;
     total: number;
   };
+
+  topPayments: {
+    name: string;
+    count: number;
+    total: number;
+  }[];
 }
 
 interface StatCardProps {
@@ -49,12 +57,12 @@ const StatCard: React.FC<StatCardProps> = ({
   subtitle,
 }) => {
   return (
-    <div className="bg-white rounded-lg shadow-md p-5 transition-all">
+    <div className="bg-white rounded-lg shadow-md p-6 transition-all">
       <div className="flex items-start justify-between">
         <div className="flex-1">
           <p className="text-xs font-medium text-gray-400 mb-1">{title}</p>
-          <p className="text-3xl font-bold text-gray-800">₦ {value}</p>
-          <div className="flex items-center gap-2">
+          <p className="text-2xl font-bold text-gray-800">₦ {value}</p>
+          <div className="flex items-end gap-1">
             <div
               className="px-1 rounded-sm"
               style={{ backgroundColor: `${color}20` }}
@@ -75,9 +83,7 @@ const StatCard: React.FC<StatCardProps> = ({
 
 async function getSummariesStats(): Promise<SummariesResponse> {
   const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
-  const res = await fetch(`${baseUrl}/api/dashboard/summaries`, {
-    next: { revalidate: 60 },
-  });
+  const res = await fetch(`${baseUrl}/api/dashboard/summaries`, {});
 
   if (!res.ok) throw new Error("Failed to fetch stats");
 
@@ -106,10 +112,15 @@ export default async function FinanceDashboard() {
     <main className="px-6">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between mb-6">
         <div className="w-full">
-          <div className="mb-4 flex flex-col sm:flex-row justify-between items-center">
-            <h3 className="font-bold text-gray-900 text-3xl">
-              Financial summaries{" "}
-            </h3>
+          <div className="mb-4 flex flex-col sm:flex-row justify-between items-start">
+            <div className="flex flex-col gap-2 mb-2">
+              <h3 className="font-bold text-gray-800 text-2xl">
+                Financial summaries{" "}
+              </h3>
+              <p className="text-sm text-gray-500">
+                Financial performance, position, and totals
+              </p>
+            </div>
             <div className="text-sm grid grid-cols-1 gap-2 mt-2">
               <div className="flex items-center gap-2">
                 <div className="text-base text-gray-500">
@@ -131,7 +142,6 @@ export default async function FinanceDashboard() {
           </div>
         </div>
       </div>
-
       <div className="mb-8">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           <StatCard
@@ -163,6 +173,19 @@ export default async function FinanceDashboard() {
             subtitle="Transactions"
           />
         </div>
+      </div>
+      <div className="mb-6 bg-white rounded-lg shadow-sm p-6">
+        <div className="mb-4 flex flex-col sm:flex-row justify-between items-start">
+          <div className="flex flex-col gap-2 mb-2">
+            <h3 className="font-semibold text-gray-800 text-xl">
+              Top Payments
+            </h3>
+            <p className="text-xs text-gray-500">
+              Highest payment sources by total amount collected
+            </p>
+          </div>
+        </div>
+        <TopPaymentsChart data={data.topPayments} />
       </div>
     </main>
   );
