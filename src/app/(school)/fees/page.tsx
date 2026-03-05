@@ -21,6 +21,7 @@ export default async function FeeDashboard() {
   });
 
   const school = await res.json();
+  // console.log("Fetched school data:", school);
 
   return (
     <main>

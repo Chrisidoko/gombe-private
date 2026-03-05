@@ -81,7 +81,7 @@ export async function GET(req: Request) {
     // ── Build milestone list for UI ───────────────────────────────────────
     const milestones = [
       {
-        label: "Consent Letter Fee",
+        label: "Establishment Fee",
         // detail: "₦300,000",
         completed: consentPaid,
         score: 40,

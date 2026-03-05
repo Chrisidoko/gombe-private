@@ -87,7 +87,7 @@ export default function ComplyCard({ school_id }: { school_id: string }) {
               <AlertTriangle className="w-5 h-5 text-red-600" />
             </div>
             <p className="text-sm font-bold text-red-700 mb-1">
-              Consent Letter Fee Unpaid
+              Establishment Fee Unpaid
             </p>
             {/* <p className="text-xs text-red-500 leading-relaxed">
               Please visit the Consent Letter fee payment page to
