@@ -57,7 +57,10 @@ const StatCard: React.FC<StatCardProps> = ({
   subtitle,
 }) => {
   return (
-    <div className="bg-white rounded-lg shadow-md p-6 transition-all">
+    <div
+      className="bg-white rounded-lg shadow-md p-5 border-t-4 transition-all hover:shadow-lg"
+      style={{ borderTopColor: color }}
+    >
       <div className="flex items-start justify-between">
         <div className="flex-1">
           <p className="text-xs font-medium text-gray-400 mb-1">{title}</p>
