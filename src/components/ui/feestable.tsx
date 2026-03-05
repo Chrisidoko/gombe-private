@@ -349,7 +349,13 @@ export default function FeeTable({
                         {/* Upload inside document actions */}
                         {fee.id === 4 && (
                           <>
-                            {fee.doc_approval === "pending" ? (
+                            {fee.doc_approval === "approved" ? (
+                              // Doc approved by ministry
+                              <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-green-600">
+                                <CheckCircle2 className="w-3.5 h-3.5" />
+                                Accepted
+                              </span>
+                            ) : fee.doc_approval === "pending" ? (
                               // Doc uploaded — awaiting ministry approval
                               <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-yellow-600">
                                 <Loader2 className="w-3.5 h-3.5 animate-spin" />
