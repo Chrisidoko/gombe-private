@@ -128,9 +128,9 @@ export default function InvoiceTable({ schoolId }: { schoolId: string }) {
       <div className="px-6 pb-6">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
-            <h2 className="text-2xl font-bold text-gray-900">Invoices</h2>
+            <h2 className="text-2xl font-bold text-gray-900">Demand Notices</h2>
             <p className="text-sm text-gray-600 mt-1">
-              Manage and track your Institution&apos;s invoices
+              Manage and track your Institution&apos;s demand notices
             </p>
           </div>
 

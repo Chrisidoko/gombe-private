@@ -75,7 +75,7 @@ const Navigation: React.FC<NavigationProps> = ({ collapsed, setCollapsed }) => {
     },
     {
       href: "/Invoices",
-      label: "Invoices",
+      label: "Demand Notices",
       // badge: 3,
       icon: (
         <svg
