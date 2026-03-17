@@ -41,8 +41,8 @@ export default async function AssesmentDashboard() {
             Assessments Currently Unavailable
           </h3>
           <p className="text-sm text-gray-500 leading-relaxed">
-            Assessments are currently not available at the moment. A formal
-            notification will be made available to proceed with assessments.
+            A formal notification will be made available to proceed with
+            assessments.
           </p>
         </div>
       </div>

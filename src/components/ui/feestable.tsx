@@ -38,6 +38,7 @@ type FeeGroup = {
   stage: number;
   fees: Fee[];
   locked: boolean;
+  lockReason?: "active_license" | "assessment_pending" | "stage_incomplete";
 };
 
 export default function FeeTable({
@@ -74,6 +75,7 @@ export default function FeeTable({
           params.set("programmes", JSON.stringify(programmes));
         params.set("school_id", school_id);
         if (showCertificateFee) params.set("show_certificate", "true");
+        if (license_status) params.set("license_status", license_status);
 
         const res = await fetch(`/api/schools/fees?${params.toString()}`);
         if (!res.ok) throw new Error("Failed to fetch fees");
@@ -276,12 +278,25 @@ export default function FeeTable({
             {/* Lock explanation for certificate fee */}
             {group.locked && group.category === "Certificate Fee" && (
               <div className="mx-6 my-3 flex items-start gap-3 bg-gray-50 border border-dashed border-gray-300 rounded-xl px-4 py-3">
-                <Lock className="w-4 h-4 text-gray-400 mt-0.5 shrink-0" />
-                <p className="text-xs text-gray-500 leading-relaxed">
-                  This fee will become available once your assessment
-                  questionnaire has been submitted, reviewed, and approved by
-                  the Ministry.
-                </p>
+                {group.lockReason === "active_license" ? (
+                  <>
+                    <CheckCircle2 className="w-4 h-4 text-green-500 mt-0.5 shrink-0" />
+                    <p className="text-xs text-green-700 leading-relaxed font-medium">
+                      Your institution currently holds an active certificate. No
+                      payment is required at this time. This will become
+                      available when your certificate is due for renewal.
+                    </p>
+                  </>
+                ) : (
+                  <>
+                    <Lock className="w-4 h-4 text-gray-400 mt-0.5 shrink-0" />
+                    <p className="text-xs text-gray-500 leading-relaxed">
+                      This fee will become available once your assessment
+                      questionnaire has been submitted, reviewed, and approved
+                      by the Ministry.
+                    </p>
+                  </>
+                )}
               </div>
             )}
 

@@ -62,7 +62,7 @@ export async function POST(req: Request) {
 
     // Step 4: Find the fee payment row by bill reference
     const paymentRes = await client.query(
-      `SELECT id, school_id, fee_id, fee_name, amount, status, reference
+      `SELECT id, school_id, fee_id, fee_name, amount, status, lga, reference
        FROM schoolkano_payments
        WHERE reference = $1`,
       [billReference],
@@ -76,7 +76,7 @@ export async function POST(req: Request) {
         billReference,
       );
       return NextResponse.json(
-        { status: "success", message: "No matching payment record found" },
+        { status: "success", message: "Payment record found" },
         { status: 200 },
       );
     }
@@ -100,14 +100,17 @@ export async function POST(req: Request) {
     // Step 6: Log to transactionskano
     await client.query(
       `INSERT INTO transactionskano
-         (reference, amount, status, payment_method, gateway_response, payment_item, paid_at, created_at, school_id)
-       VALUES ($1, $2, $3, 'paykaduna', $4, $5, $6, NOW(), $7)
+         (reference, amount, status, payment_method, gateway_response, payment_item, paid_at, created_at, school_id, lga)
+       VALUES ($1, $2, $3, 'paykaduna', $4, $5, $6, NOW(), $7, $8)
        ON CONFLICT (reference)
        DO UPDATE SET
          status           = $3,
          gateway_response = $4,
          paid_at          = $6,
-         created_at       = NOW()`,
+         created_at       = NOW(),
+         lga = $8
+         `,
+
       [
         billReference,
         payment.amount,
@@ -116,6 +119,7 @@ export async function POST(req: Request) {
         payment.fee_name, // ← from schoolkano_payments
         status.toLowerCase() === "paid" ? paidat || new Date() : null,
         payment.school_id,
+        payment.lga,
       ],
     );
     console.log("Transaction logged for fee:", payment.fee_name);

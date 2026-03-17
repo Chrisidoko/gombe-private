@@ -35,8 +35,15 @@ export async function GET(req: Request) {
        WHERE school_id = $1`,
       [school_id],
     );
-
+    // ── Fetch school license status ───────────────────────────────────────
+    const schoolResult = await pool.query(
+      `SELECT form_status, approval_status, license_status
+   FROM schoolskano
+   WHERE school_id = $1`,
+      [school_id],
+    );
     const fees = paymentsResult.rows;
+    const school = schoolResult.rows[0] ?? {};
 
     // ── Individual checks ─────────────────────────────────────────────────
     const consentPaid = fees.find((f) => f.fee_id === 6)?.status === "paid";
@@ -47,7 +54,9 @@ export async function GET(req: Request) {
       applicationFee?.doc_approval === "pending" ||
       applicationFee?.doc_approval === "approved";
     const certificateFee = fees.find((f) => [1, 2, 3].includes(f.fee_id));
-    const certificatePaid = certificateFee?.status === "paid";
+    // ── Certificate is satisfied if fee is paid OR license is already Active
+    const certificatePaid =
+      certificateFee?.status === "paid" || school.license_status === "Active";
 
     // ── Score calculation (ministry progression) ──────────────────────────
     let complianceScore = 0;

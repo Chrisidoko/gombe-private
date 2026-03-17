@@ -4,6 +4,16 @@ import { NextResponse } from "next/server";
 import pool from "@/lib/db";
 import crypto from "crypto";
 
+/*
+3-stage fee progression:
+Stage 1 — Consent Letter Fee (₦300,000) — every school pays this first, regardless of category. This is the entry-level fee that's been owed since inception. Show this to all schools always.
+Stage 2 — Administrative Fees — processing, inspection etc. These show after or alongside Stage 1. Still visible to all schools.
+Stage 3 — Certificate Fee (₦300k / ₦350k / ₦1,000,000) — this only becomes visible when BOTH conditions are met:
+* license_status !== "Active" — they don't already have an active license
+* approval_status === "approved" — the ministry has reviewed and approved their assessment form
+So the certificate fee is essentially locked/hidden until the school has fulfilled the earlier stages and received ministry approval. This prevents schools from seeing or attempting to pay the final fee before they're eligible.
+*/
+
 type Fee = {
   id: number;
   name: string;
@@ -23,6 +33,7 @@ type FeeGroup = {
   stage: number;
   fees: Fee[];
   locked: boolean;
+  lockReason?: "active_license" | "assessment_pending" | "stage_incomplete";
 };
 
 // ── Fee definitions ────────────────────────────────────────────────────────────
@@ -35,7 +46,7 @@ const ALL_FEES = [
       "Ministry's approval of consent for establishment of your institution. Required by all institutions.",
     amount: 300000,
     category: "Consent Letter",
-    mdasId: 3646,
+    mdasId: 3651,
     mandatory: true,
     stage: 1,
   },
@@ -48,7 +59,7 @@ const ALL_FEES = [
       "One-time fee covering administrative processing of institution assessment/registration.",
     amount: 20000,
     category: "Administrative Fees",
-    mdasId: 3646,
+    mdasId: 3649,
     document_url: "/application-form.docx",
     mandatory: true,
     stage: 2,
@@ -59,7 +70,7 @@ const ALL_FEES = [
     description: "Covers the cost of issued compliance guidelines document.",
     amount: 10000,
     category: "Administrative Fees",
-    mdasId: 3646,
+    mdasId: 3650,
     document_url: "/guidelines.pdf",
     mandatory: true,
     stage: 2,
@@ -72,7 +83,7 @@ const ALL_FEES = [
     description: "Certificate fee for NCE / National Diploma institutions.",
     amount: 300000,
     category: "Certificate Fee",
-    mdasId: 3646,
+    mdasId: 3652,
     mandatory: true,
     stage: 3,
   },
@@ -82,7 +93,7 @@ const ALL_FEES = [
     description: "Certificate fee for HND / Bachelor's Degree institutions.",
     amount: 350000,
     category: "Certificate Fee",
-    mdasId: 3646,
+    mdasId: 3652,
     mandatory: true,
     stage: 3,
   },
@@ -92,7 +103,7 @@ const ALL_FEES = [
     description: "Certificate fee for Master's Degree / PhD institutions.",
     amount: 1000000,
     category: "Certificate Fee",
-    mdasId: 3646,
+    mdasId: 3652,
     mandatory: true,
     stage: 3,
   },
@@ -187,7 +198,7 @@ export async function GET(req: Request) {
 
         // Step 3 — fetch school info for bill payload
         const schoolRes = await pool.query(
-          `SELECT email, name, phone, address FROM schoolskano WHERE school_id = $1`,
+          `SELECT email, name, phone, lga, address FROM schoolskano WHERE school_id = $1`,
           [school_id],
         );
         if (schoolRes.rows.length === 0) continue;
@@ -203,7 +214,8 @@ export async function GET(req: Request) {
 
           const billPayload = {
             engineCode: process.env.PAYKADUNA_ENGINE_CODE,
-            identifier: `${school_id}-${fee.id}-${Date.now()}`, // unique per fee
+            // identifier: `${school_id}-${fee.id}-${Date.now()}`, // unique per fee
+            identifier: `${school_id}`, // stable per school, remains the same all through, allows idempotency
             firstName,
             middleName,
             lastName,
@@ -245,9 +257,9 @@ export async function GET(req: Request) {
             if (billReference) {
               await pool.query(
                 `UPDATE schoolkano_payments 
-           SET reference = $1, tpui = $2
-           WHERE school_id = $3 AND fee_id = $4`,
-                [billReference, tpui, school_id, fee.id],
+           SET reference = $1, tpui = $2, lga = $3
+           WHERE school_id = $4 AND fee_id = $5`,
+                [billReference, tpui, school.lga, school_id, fee.id],
               );
 
               // Update paymentMap so the response reflects the new reference
@@ -304,10 +316,26 @@ export async function GET(req: Request) {
 
         // Determine if this group is locked
         let locked = false;
+        let lockReason:
+          | "active_license"
+          | "assessment_pending"
+          | "stage_incomplete"
+          | undefined;
         if (stage === 2) locked = !stage1Paid;
-        if (stage === 3) locked = !stage2Paid || !showCertificate;
+        if (stage === 3) {
+          const licenseStatus = searchParams.get("license_status");
+          if (licenseStatus === "Active") {
+            locked = true;
+            lockReason = "active_license";
+          } else {
+            locked = !stage2Paid || !showCertificate;
+            lockReason = !showCertificate
+              ? "assessment_pending"
+              : "stage_incomplete";
+          }
+        }
 
-        return { category, stage, fees, locked };
+        return { category, stage, fees, locked, lockReason };
       })
       .filter(Boolean) as FeeGroup[];
 

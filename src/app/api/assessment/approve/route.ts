@@ -65,7 +65,7 @@ export async function POST(req: Request) {
     try {
       const billPayload = {
         engineCode: process.env.PAYKADUNA_ENGINE_CODE,
-        identifier: invoice_number, // Using invoice_number as identifier
+        identifier: school.school_id, // Using school_id as identifier
         firstName: school.name.split(" ")[0] || school.name,
         middleName: school.name.split(" ")[1] || "",
         lastName:
@@ -76,7 +76,7 @@ export async function POST(req: Request) {
         esBillDetailsDto: [
           {
             amount: parseFloat(amount),
-            mdasId: parseInt(process.env.MDAS_ID || "3645"), // Configure this in .env
+            mdasId: parseInt(process.env.MDAS_ID || "3654"), // Configure this in .env
             narration: `Institution Payment - ${invoice_number}`,
           },
         ],
