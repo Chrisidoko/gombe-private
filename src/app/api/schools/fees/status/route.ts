@@ -99,13 +99,13 @@ export async function GET(req: Request) {
         label: "Compliance Guidelines Fee",
         // detail: "₦10,000",
         completed: guidelinesPaid,
-        score: 44,
+        score: 4,
       },
       {
         label: "Self Assessment Questionnaire",
         // detail: "₦50,000",
         completed: applicationPaid,
-        score: 50,
+        score: 6,
       },
       //   {
       //     label: "Questionnaire Uploaded",
@@ -117,13 +117,13 @@ export async function GET(req: Request) {
         label: "Ministry Approval",
         // detail: "Admin review complete",
         completed: questionnaireUploaded, // Show as completed once uploaded, since admin approval is internal
-        score: 60,
+        score: 10,
       },
       {
         label: "Certificate Fee Paid",
         // detail: "₦300,000 – ₦1,000,000",
         completed: certificatePaid,
-        score: 100,
+        score: 40,
       },
     ];
 

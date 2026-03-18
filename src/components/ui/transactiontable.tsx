@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Layers } from "lucide-react";
+// import { Layers } from "lucide-react";
 import * as XLSX from "xlsx";
 
 interface TransactionType {
@@ -133,7 +133,7 @@ export default function TransactionsTable({ schoolId }: { schoolId: string }) {
   const [transactions, setTransactions] = useState<TransactionType[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<"all" | "Paid" | "Unpaid" | "pending">(
-    "all"
+    "all",
   );
   const [searchTerm, setSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
@@ -178,17 +178,17 @@ export default function TransactionsTable({ schoolId }: { schoolId: string }) {
   const totalPages = Math.ceil(filteredTransactions.length / itemsPerPage);
   const paginatedTransactions = filteredTransactions.slice(
     (currentPage - 1) * itemsPerPage,
-    currentPage * itemsPerPage
+    currentPage * itemsPerPage,
   );
 
-  const stats = {
-    total: transactions.reduce((sum, txn) => sum + Number(txn.amount), 0),
-    success: transactions
-      .filter((t) => t.status === "Paid")
-      .reduce((sum, txn) => sum + Number(txn.amount), 0),
-    failed: transactions.filter((t) => t.status === "Unpaid").length,
-    pending: transactions.filter((t) => t.status === "pending").length,
-  };
+  // const stats = {
+  //   total: transactions.reduce((sum, txn) => sum + Number(txn.amount), 0),
+  //   success: transactions
+  //     .filter((t) => t.status === "Paid")
+  //     .reduce((sum, txn) => sum + Number(txn.amount), 0),
+  //   failed: transactions.filter((t) => t.status === "Unpaid").length,
+  //   pending: transactions.filter((t) => t.status === "pending").length,
+  // };
 
   const exportToExcel = () => {
     const exportData = filteredTransactions.map((txn) => ({
@@ -214,7 +214,7 @@ export default function TransactionsTable({ schoolId }: { schoolId: string }) {
 
     XLSX.writeFile(
       wb,
-      `transactions_${schoolId}_${new Date().toISOString().split("T")[0]}.xlsx`
+      `transactions_${schoolId}_${new Date().toISOString().split("T")[0]}.xlsx`,
     );
   };
 
@@ -240,9 +240,9 @@ export default function TransactionsTable({ schoolId }: { schoolId: string }) {
   }
 
   return (
-    <div className="rounded-xl border border-gray-100 overflow-hidden">
+    <div className="overflow-hidden">
       {/* Header */}
-      <div className="p-6 ">
+      <div className="px-6 pb-6">
         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
           <div>
             <h2 className="text-2xl font-bold text-gray-900">
@@ -275,7 +275,7 @@ export default function TransactionsTable({ schoolId }: { schoolId: string }) {
         </div>
 
         {/* Stats Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-6">
+        {/* <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-6">
           <div className="bg-white rounded-lg p-4 shadow-sm border border-gray-100">
             <div className="flex items-center justify-between">
               <div>
@@ -371,117 +371,121 @@ export default function TransactionsTable({ schoolId }: { schoolId: string }) {
               </div>
             </div>
           </div>
-        </div>
+        </div> */}
       </div>
 
-      {/* Filters and Search */}
-      <div className="p-6 border-b border-gray-200 space-y-4">
-        <div className="flex flex-col md:flex-row gap-4">
-          {/* Search */}
-          <div className="flex-1 relative">
-            <svg
-              className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-              />
-            </svg>
-            <input
-              type="text"
-              placeholder="Search by reference, invoice, or payment item..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 bg-white border border-gray-300 text-sm rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            />
-          </div>
-
-          {/* Status Filter */}
-          <div className="flex gap-2 flex-wrap">
-            {(["all", "Paid", "Unpaid", "pending"] as const).map((status) => (
-              <button
-                key={status}
-                onClick={() => {
-                  setFilter(status);
-                  setCurrentPage(1);
-                }}
-                className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
-                  filter === status
-                    ? "bg-green-600 text-white shadow-md"
-                    : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-                }`}
+      <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-3 mb-3">
+        {/* Filters and Search */}
+        <div className="p-6 border-b border-gray-200 space-y-4">
+          <div className="flex flex-col md:flex-row gap-4">
+            {/* Search */}
+            <div className="flex-1 relative">
+              <svg
+                className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
               >
-                {status.charAt(0).toUpperCase() + status.slice(1)}
-                <span className="ml-2 px-2 py-0.5 text-xs rounded-full bg-white/30 bg-opacity-30">
-                  {status === "all"
-                    ? transactions.length
-                    : transactions.filter((t) => t.status === status).length}
-                </span>
-              </button>
-            ))}
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                />
+              </svg>
+              <input
+                type="text"
+                placeholder="Search by reference, invoice, or payment item..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full pl-10 pr-4 py-2 bg-white border border-gray-300 text-sm rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              />
+            </div>
+
+            {/* Status Filter */}
+            <div className="flex gap-2 flex-wrap">
+              {(["all", "Paid", "Unpaid", "pending"] as const).map((status) => (
+                <button
+                  key={status}
+                  onClick={() => {
+                    setFilter(status);
+                    setCurrentPage(1);
+                  }}
+                  className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
+                    filter === status
+                      ? "bg-green-600 text-white shadow-md"
+                      : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                  }`}
+                >
+                  {status.charAt(0).toUpperCase() + status.slice(1)}
+                  <span className="ml-2 px-2 py-0.5 text-xs rounded-full bg-white/30 bg-opacity-30">
+                    {status === "all"
+                      ? transactions.length
+                      : transactions.filter((t) => t.status === status).length}
+                  </span>
+                </button>
+              ))}
+            </div>
           </div>
         </div>
-      </div>
 
-      {/* Table */}
-      <div className="overflow-x-auto">
-        {paginatedTransactions.length === 0 ? (
-          <div className="text-center py-12 px-6">
-            <svg
-              className="mx-auto h-12 w-12 text-gray-400"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-              />
-            </svg>
-            <p className="mt-4 text-gray-500 font-medium">
-              No transactions found
-            </p>
-            <p className="text-sm text-gray-400 mt-1">
-              Try adjusting your search or filters
-            </p>
-          </div>
-        ) : (
-          <table className="w-full">
-            <thead className="bg-gray-50 border-b border-gray-200">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                  Transaction
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                  Amount
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                  Payment Item
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                  Invoice
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                  Status
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                  Date & Time
-                </th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-100 bg-white">
-              {paginatedTransactions.map((txn) => (
-                <tr key={txn.id} className="hover:bg-gray-50 transition-colors">
-                  <td className="px-6 py-4">
-                    <div className="flex items-center gap-3">
-                      {/* <div className="flex-shrink-0 w-10 h-10 bg-gradient-to-br from-purple-100 to-indigo-100 rounded-lg flex items-center justify-center">
+        {/* Table */}
+        <div className="overflow-x-auto">
+          {paginatedTransactions.length === 0 ? (
+            <div className="text-center py-12 px-6">
+              <svg
+                className="mx-auto h-12 w-12 text-gray-400"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                />
+              </svg>
+              <p className="mt-4 text-gray-500 font-medium">
+                No transactions found
+              </p>
+              <p className="text-sm text-gray-400 mt-1">
+                Try adjusting your search or filters
+              </p>
+            </div>
+          ) : (
+            <table className="w-full">
+              <thead className="bg-gray-50 border-b border-gray-200">
+                <tr>
+                  <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                    Tx Reference
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                    Amount
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                    Payment Item
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                    Invoice
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                    Status
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                    Date & Time
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-100 bg-white">
+                {paginatedTransactions.map((txn) => (
+                  <tr
+                    key={txn.id}
+                    className="hover:bg-gray-50 transition-colors"
+                  >
+                    <td className="px-6 py-4">
+                      <div className="flex items-center gap-3">
+                        {/* <div className="flex-shrink-0 w-10 h-10 bg-gradient-to-br from-purple-100 to-indigo-100 rounded-lg flex items-center justify-center">
                         <svg
                           className="w-5 h-5 text-purple-600"
                           fill="none"
@@ -496,114 +500,117 @@ export default function TransactionsTable({ schoolId }: { schoolId: string }) {
                           />
                         </svg>
                       </div> */}
-                      <div className="min-w-0">
-                        <p className="font-mono text-sm font-semibold text-gray-900 truncate">
-                          {txn.reference}
-                        </p>
-                        {/* <p className="text-xs text-gray-500">ID: {txn.id}</p> */}
+                        <div className="min-w-0">
+                          <p className="text-sm font-semibold text-gray-900 truncate">
+                            {txn.reference}
+                          </p>
+                          {/* <p className="text-xs text-gray-500">ID: {txn.id}</p> */}
+                        </div>
                       </div>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4">
-                    <p className="text-lg font-bold text-gray-900">
-                      ₦{Number(txn.amount).toLocaleString()}
-                    </p>
-                  </td>
-                  <td className="px-6 py-4">
-                    <p className="text-sm text-gray-700">{txn.payment_item}</p>
-                  </td>
-                  <td className="px-6 py-4">
-                    {txn.invoice_number ? (
-                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-medium bg-blue-50 text-blue-700 border border-blue-200">
-                        {txn.invoice_number}
+                    </td>
+                    <td className="px-6 py-4">
+                      <p className="text-base font-bold text-gray-900">
+                        ₦{Number(txn.amount).toLocaleString()}
+                      </p>
+                    </td>
+                    <td className="px-6 py-4">
+                      <p className="text-sm text-gray-700">
+                        {txn.payment_item}
+                      </p>
+                    </td>
+                    <td className="px-6 py-4">
+                      {txn.invoice_number ? (
+                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-medium bg-blue-50 text-blue-700 border border-blue-200">
+                          {txn.invoice_number}
+                        </span>
+                      ) : (
+                        <span className="text-sm text-gray-400">—</span>
+                      )}
+                    </td>
+                    <td className="px-6 py-4">
+                      <span
+                        className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold border ${getStatusColor(
+                          txn.status,
+                        )}`}
+                      >
+                        {getStatusIcon(txn.status)}
+                        {txn.status.toUpperCase()}
                       </span>
-                    ) : (
-                      <span className="text-sm text-gray-400">—</span>
-                    )}
-                  </td>
-                  <td className="px-6 py-4">
-                    <span
-                      className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold border ${getStatusColor(
-                        txn.status
-                      )}`}
-                    >
-                      {getStatusIcon(txn.status)}
-                      {txn.status.toUpperCase()}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4">
-                    <p className="text-sm text-gray-700 whitespace-nowrap">
-                      {formatDate(txn.updated_at)}
-                    </p>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        )}
-      </div>
-
-      {/* Pagination */}
-      {totalPages > 1 && (
-        <div className="px-6 py-4 bg-gray-50 border-t border-gray-200">
-          <div className="flex items-center justify-between">
-            <p className="text-sm text-gray-600">
-              Showing{" "}
-              <span className="font-semibold">
-                {(currentPage - 1) * itemsPerPage + 1}
-              </span>{" "}
-              to{" "}
-              <span className="font-semibold">
-                {Math.min(
-                  currentPage * itemsPerPage,
-                  filteredTransactions.length
-                )}
-              </span>{" "}
-              of{" "}
-              <span className="font-semibold">
-                {filteredTransactions.length}
-              </span>{" "}
-              transactions
-            </p>
-
-            <div className="flex gap-2">
-              <button
-                onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-                disabled={currentPage === 1}
-                className="px-3 py-1 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-              >
-                Previous
-              </button>
-
-              <div className="flex gap-1">
-                {[...Array(totalPages)].map((_, i) => (
-                  <button
-                    key={i}
-                    onClick={() => setCurrentPage(i + 1)}
-                    className={`px-3 py-1 text-sm font-medium rounded-lg transition-colors ${
-                      currentPage === i + 1
-                        ? "bg-blue-600 text-white"
-                        : "text-gray-700 bg-white border border-gray-300 hover:bg-gray-50"
-                    }`}
-                  >
-                    {i + 1}
-                  </button>
+                    </td>
+                    <td className="px-6 py-4">
+                      <p className="text-sm text-gray-700 whitespace-nowrap">
+                        {formatDate(txn.updated_at)}
+                      </p>
+                    </td>
+                  </tr>
                 ))}
-              </div>
+              </tbody>
+            </table>
+          )}
+        </div>
 
-              <button
-                onClick={() =>
-                  setCurrentPage((p) => Math.min(totalPages, p + 1))
-                }
-                disabled={currentPage === totalPages}
-                className="px-3 py-1 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-              >
-                Next
-              </button>
+        {/* Pagination */}
+        {totalPages > 1 && (
+          <div className="px-6 py-4 bg-gray-50 border-t border-gray-200">
+            <div className="flex items-center justify-between">
+              <p className="text-sm text-gray-600">
+                Showing{" "}
+                <span className="font-semibold">
+                  {(currentPage - 1) * itemsPerPage + 1}
+                </span>{" "}
+                to{" "}
+                <span className="font-semibold">
+                  {Math.min(
+                    currentPage * itemsPerPage,
+                    filteredTransactions.length,
+                  )}
+                </span>{" "}
+                of{" "}
+                <span className="font-semibold">
+                  {filteredTransactions.length}
+                </span>{" "}
+                transactions
+              </p>
+
+              <div className="flex gap-2">
+                <button
+                  onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                  disabled={currentPage === 1}
+                  className="px-3 py-1 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                >
+                  Previous
+                </button>
+
+                <div className="flex gap-1">
+                  {[...Array(totalPages)].map((_, i) => (
+                    <button
+                      key={i}
+                      onClick={() => setCurrentPage(i + 1)}
+                      className={`px-3 py-1 text-sm font-medium rounded-lg transition-colors ${
+                        currentPage === i + 1
+                          ? "bg-blue-600 text-white"
+                          : "text-gray-700 bg-white border border-gray-300 hover:bg-gray-50"
+                      }`}
+                    >
+                      {i + 1}
+                    </button>
+                  ))}
+                </div>
+
+                <button
+                  onClick={() =>
+                    setCurrentPage((p) => Math.min(totalPages, p + 1))
+                  }
+                  disabled={currentPage === totalPages}
+                  className="px-3 py-1 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                >
+                  Next
+                </button>
+              </div>
             </div>
           </div>
-        </div>
-      )}
+        )}
+      </div>
     </div>
   );
 }

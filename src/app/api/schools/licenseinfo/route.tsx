@@ -46,13 +46,23 @@ export async function GET(req: Request) {
 
 export async function PATCH(req: Request) {
   try {
-    const { school_id, license_number, license_expiry_date } = await req.json();
+    const {
+      school_id,
+      license_number,
+      license_expiry_date,
+      last_license_renewal,
+    } = await req.json();
 
-    if (!school_id || !license_number || !license_expiry_date) {
+    if (
+      !school_id ||
+      !license_number ||
+      !license_expiry_date ||
+      !last_license_renewal
+    ) {
       return NextResponse.json(
         {
           error:
-            "school_id, license_number, and license_expiry_date are required",
+            "school_id, license number, license expiry date, and license Issue date are required",
         },
         { status: 400 },
       );
@@ -61,10 +71,10 @@ export async function PATCH(req: Request) {
     await pool.query(
       `UPDATE schoolskano
        SET license_number      = $2,
-           license_expiry_date = $3
-           
+           license_expiry_date = $3,
+           last_license_renewal = $4
        WHERE school_id = $1`,
-      [school_id, license_number, license_expiry_date],
+      [school_id, license_number, license_expiry_date, last_license_renewal],
     );
 
     return NextResponse.json({

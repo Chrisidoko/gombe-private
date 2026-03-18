@@ -157,6 +157,7 @@ export default function ComplyCard({ school_id }: { school_id: string }) {
               <span
                 className={`text-[10px] font-bold shrink-0 ${m.completed ? "text-green-600" : "text-gray-300"}`}
               >
+                {"+"}
                 {m.score}%
               </span>
             </div>

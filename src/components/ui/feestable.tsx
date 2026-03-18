@@ -5,7 +5,6 @@ import toast from "react-hot-toast";
 // import { useRouter } from "next/navigation";
 import PaymentModal from "@/components/ui/paymentmodal";
 import {
-  ListChecks,
   CheckCircle2,
   Loader2,
   Info,
@@ -215,9 +214,6 @@ export default function FeeTable({
       {/* Header */}
       <div className="bg-green-600 px-6 py-5 flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <div className="flex items-center justify-center w-9 h-9 rounded-xl bg-white/10">
-            <ListChecks className="w-6 h-6 text-white" />
-          </div>
           <div>
             <h3 className="text-base font-bold text-white">
               Compliance Standing Schedule

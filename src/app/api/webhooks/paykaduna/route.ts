@@ -2,6 +2,7 @@
 import { NextResponse } from "next/server";
 import pool from "@/lib/db";
 import crypto from "crypto";
+import { activateLicense } from "@/lib/activateLicense";
 
 export async function POST(req: Request) {
   const client = await pool.connect();
@@ -97,7 +98,23 @@ export async function POST(req: Request) {
     );
     console.log("payments updated — status:", status.toLowerCase());
 
-    // Step 6: Log to transactionskano
+    // Step 6
+    // ── Check if this is a certificate fee payment ──────────────────────
+    const paymentRow = await client.query(
+      `SELECT fee_id, school_id FROM schoolkano_payments
+     WHERE reference = $1`,
+      [billReference],
+    );
+
+    const feeId = paymentRow.rows[0]?.fee_id;
+    const schoolId = paymentRow.rows[0]?.school_id;
+
+    // Certificate fee ids are 1, 2, 3
+    if ([1, 2, 3].includes(feeId) && schoolId) {
+      await activateLicense(client, schoolId);
+    }
+
+    // Step 7: Log to transactionskano
     await client.query(
       `INSERT INTO transactionskano
          (reference, amount, status, payment_method, gateway_response, payment_item, paid_at, created_at, school_id, lga)

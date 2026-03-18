@@ -9,6 +9,7 @@ type DocumentItem = { type: string; url: string; public_id?: string };
 type FormData = {
   license_number: string;
   license_expiry_date: string;
+  last_license_renewal: string;
   documents: DocumentItem[];
 };
 
@@ -24,6 +25,7 @@ export default function LicenseModal({
   const [formData, setFormData] = useState<FormData>({
     license_number: "",
     license_expiry_date: "",
+    last_license_renewal: "",
     documents: [],
   });
 
@@ -80,6 +82,8 @@ export default function LicenseModal({
       return toast.error("License number is required.");
     if (!formData.license_expiry_date)
       return toast.error("License expiry date is required.");
+    if (!formData.last_license_renewal)
+      return toast.error("Last license renewal date is required.");
     if (!pendingDocument && formData.documents.length === 0)
       return toast.error("Please upload your State Issued License document.");
 
@@ -111,6 +115,7 @@ export default function LicenseModal({
           school_id: schoolId,
           license_number: formData.license_number,
           license_expiry_date: formData.license_expiry_date,
+          last_license_renewal: formData.last_license_renewal,
           //   document_url: uploadedUrl || formData.documents[0]?.url,
         }),
       });
@@ -191,6 +196,22 @@ export default function LicenseModal({
                 required
               />
             </div>
+
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
+                Certificate Issue Date <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="date"
+                value={formData.last_license_renewal}
+                onChange={(e) =>
+                  handleChange("last_license_renewal", e.target.value)
+                }
+                className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all"
+                required
+              />
+            </div>
+
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-2">
                 Certificate Expiry Date <span className="text-red-500">*</span>
