@@ -77,7 +77,10 @@ export async function POST(req: Request) {
         billReference,
       );
       return NextResponse.json(
-        { status: "success", message: "Payment record found" },
+        {
+          status: "success",
+          message: "No payment record found for bill reference",
+        },
         { status: 200 },
       );
     }

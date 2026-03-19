@@ -18,6 +18,8 @@ export async function middleware(req: NextRequest) {
     url.startsWith("/api") ||
     url.startsWith("/verify") || // ← public
     url.startsWith("/school-overview") || // ← public
+    url.startsWith("/forgot-password") || // ← public
+    url.startsWith("/reset-password") || // ← public
     url === "/"
   ) {
     return NextResponse.next();

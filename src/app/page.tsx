@@ -64,7 +64,7 @@ const Page = () => {
     <div className="w-full flex flex-col sm:flex-row ">
       {/* Left Section */}
       <div className="w-[100%] sm:w-[45%] h-[100vh] bg-[#ffffff] relative top-0 left-0 flex flex-col justify-between sm:order-1 order-1">
-        <div className="w-4/5 sm:w-3/5 mx-auto my-auto flex flex-col gap-4 px-6 sm:px-0">
+        <div className="w-4/5 sm:w-3/5 mx-auto my-auto flex flex-col gap-2 px-6 sm:px-0">
           <Image
             src="/KD_logo.png"
             alt="kaduna state"
@@ -74,13 +74,13 @@ const Page = () => {
           />
           <h2 className="text-xl font-bold mx-auto">Sign-In</h2>
           <p className="text-gray-500 text-xs">
-            Access the Dashboard using your email and password.
+            Access your dashboard using your email and password.
           </p>
 
           {error && <p className="text-red-600 text-sm">{error}</p>}
           {success && <p className="text-green-600 text-sm">{success}</p>}
 
-          <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+          <form onSubmit={handleSubmit} className="flex flex-col mt-3 gap-4">
             <label className="text-sm font-medium">Email</label>
             <input
               type="email"
@@ -107,10 +107,17 @@ const Page = () => {
                 {passwordVisible ? <EyeClosed size={14} /> : <Eye size={14} />}
               </button>
             </div>
+            <Link
+              href="/forgot-password"
+              className="ml-auto text-xs font-semibold text-green-600 hover:underline"
+            >
+              Forgot password?
+            </Link>
+
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-[#28a745] mt-2 text-white font-semibold py-3 rounded-md text-sm transition cursor-pointer flex items-center justify-center"
+              className="w-full bg-[#28a745] text-white font-semibold py-3 rounded-md text-sm transition cursor-pointer flex items-center justify-center"
             >
               {loading ? (
                 <>
@@ -132,6 +139,7 @@ const Page = () => {
               Create an account
             </Link>
           </p>
+
           <div className="mt-16 flex gap-3 sm:gap-8 text-xs font-medium text-blue-700">
             <a href="#">Terms & Condition</a> <a href="#">Privacy Policy</a>{" "}
             <a href="#">Support</a>

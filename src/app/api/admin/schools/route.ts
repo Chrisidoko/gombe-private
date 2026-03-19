@@ -21,7 +21,7 @@ export async function GET(req: Request) {
 
     if (search) {
       conditions.push(
-        `(name ILIKE $${paramIndex} OR email ILIKE $${paramIndex})`,
+        `(name ILIKE $${paramIndex} OR school_id ILIKE $${paramIndex} OR email ILIKE $${paramIndex})`,
       );
       values.push(`%${search}%`);
       paramIndex++;
