@@ -12,10 +12,10 @@ type TopPayment = {
 
 const COLORS = [
   "#15803d",
-  "#16a34a",
+  "#f59e0b",
+  "#3b82f6",
   "#22c55e",
-  "#4ade80",
-  "#86efac",
+  "#8b5cf6",
   "#bbf7d0",
 ];
 

@@ -59,8 +59,8 @@ const StatCard: React.FC<StatCardProps> = ({
 }) => {
   return (
     <div
-      className="bg-white rounded-lg shadow-md p-5 border-t-4 transition-all hover:shadow-lg"
-      style={{ borderTopColor: color }}
+      className="bg-white rounded-lg shadow-md p-5 border-b-4 transition-all hover:shadow-lg"
+      style={{ borderBottomColor: color }}
     >
       <div className="flex items-start justify-between">
         <div className="flex-1">
@@ -114,7 +114,7 @@ export default async function FinanceDashboard() {
 
   return (
     <main className="px-6">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between mb-6">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between mb-1">
         <div className="w-full">
           <div className="mb-4 flex flex-col sm:flex-row justify-between items-start">
             <div className="flex flex-col gap-2 mb-2">
