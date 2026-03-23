@@ -1,10 +1,10 @@
 import React from "react";
 import {
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  CartesianGrid,
+  // BarChart,
+  // Bar,
+  // XAxis,
+  // YAxis,
+  // CartesianGrid,
   // Tooltip,
   ResponsiveContainer,
 } from "recharts";
@@ -15,6 +15,7 @@ import {
 // } from "lucide-react";
 import { getUserFromCookie } from "@/lib/auth";
 import TopPaymentsChart from "@/components/ui/TopPaymentsChart";
+import LGARevenueChart from "@/components/ui/Lgarevenuechart";
 
 interface SummariesResponse {
   today: {
@@ -177,18 +178,13 @@ export default async function FinanceDashboard() {
           />
         </div>
       </div>
-      <div className="mb-6 bg-white rounded-lg shadow-sm p-6">
-        <div className="mb-4 flex flex-col sm:flex-row justify-between items-start">
-          <div className="flex flex-col gap-2 mb-2">
-            <h3 className="font-semibold text-gray-800 text-xl">
-              Top Payments
-            </h3>
-            <p className="text-xs text-gray-500">
-              Highest payment sources by total amount collected
-            </p>
-          </div>
+      <div className="flex w-full h-[72vh] gap-2 flex-col sm:flex-row">
+        <div className="w-full md:w-2/3">
+          <LGARevenueChart />
         </div>
-        <TopPaymentsChart data={data.topPayments} />
+        <div className="w-full md:w-1/3 ">
+          <TopPaymentsChart data={data.topPayments} />
+        </div>
       </div>
     </main>
   );
