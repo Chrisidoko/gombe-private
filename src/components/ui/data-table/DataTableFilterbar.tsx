@@ -40,7 +40,7 @@ export function Filterbar<TData>({ table }: DataTableToolbarProps<TData>) {
   const [searchTerm, setSearchTerm] = useState<string>("");
 
   const debouncedSetFilterValue = useDebouncedCallback((value) => {
-    table.getColumn("payment_item")?.setFilterValue(value);
+    table.getColumn("reference")?.setFilterValue(value);
   }, 300);
 
   const statuses: { label: string; value: string }[] = [
@@ -127,10 +127,10 @@ export function Filterbar<TData>({ table }: DataTableToolbarProps<TData>) {
             formatter={formatters.currency}
           />
         )}
-        {table.getColumn("payment_item")?.getIsVisible() && (
+        {table.getColumn("reference")?.getIsVisible() && (
           <Searchbar
             type="search"
-            placeholder="Payment Item"
+            placeholder="Bill Reference"
             value={searchTerm}
             onChange={handleSearchChange}
             className="w-full sm:max-w-[250px] sm:[&>input]:h-[30px]"

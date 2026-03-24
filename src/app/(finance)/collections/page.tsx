@@ -1,13 +1,5 @@
 import React from "react";
-import {
-  // BarChart,
-  // Bar,
-  // XAxis,
-  // YAxis,
-  // CartesianGrid,
-  // Tooltip,
-  ResponsiveContainer,
-} from "recharts";
+
 // import {
 //   School,
 //   CheckCircle2,
@@ -65,7 +57,7 @@ const StatCard: React.FC<StatCardProps> = ({
       <div className="flex items-start justify-between">
         <div className="flex-1">
           <p className="text-xs font-medium text-gray-400 mb-1">{title}</p>
-          <p className="text-2xl font-bold text-gray-800">₦ {value}</p>
+          <p className="text-2xl font-bold text-gray-800"> ₦ {value}</p>
           <div className="flex items-end gap-1">
             <div
               className="px-1 rounded-sm"
