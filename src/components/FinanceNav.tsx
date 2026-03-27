@@ -18,7 +18,7 @@ const Navigation: React.FC<NavigationProps> = ({ collapsed, setCollapsed }) => {
   const navItems = [
     {
       href: "/collections",
-      label: "Collections",
+      label: "Summaries",
       icon: (
         <svg
           className="w-5 h-5"
@@ -37,7 +37,7 @@ const Navigation: React.FC<NavigationProps> = ({ collapsed, setCollapsed }) => {
     },
     {
       href: "/finance",
-      label: "Finance",
+      label: "Revenue Performance",
       icon: (
         <svg
           className="w-5 h-5"

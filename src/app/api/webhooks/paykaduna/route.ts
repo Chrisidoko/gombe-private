@@ -61,7 +61,7 @@ export async function POST(req: Request) {
 
     await client.query("BEGIN");
 
-    // Step 4: Find the fee payment row by bill reference
+    // Step 4: Check both tables for the bill reference
     const paymentRes = await client.query(
       `SELECT id, school_id, fee_id, fee_name, amount, status, lga, reference
        FROM schoolkano_payments
@@ -69,55 +69,84 @@ export async function POST(req: Request) {
       [billReference],
     );
 
-    // If not found in schoolkano_payments — genuine 404, return 200 to avoid retries
-    if (paymentRes.rows.length === 0) {
-      await client.query("ROLLBACK");
+    const invoiceRes = await client.query(
+      `SELECT id, school_id, invoice_number, bill_reference, amount, status
+       FROM schoolkano_invoices
+       WHERE bill_reference = $1`,
+      [billReference],
+    );
+
+    const foundInPayments = paymentRes.rows.length > 0;
+    const foundInInvoices = invoiceRes.rows.length > 0;
+
+    // If found in neither — return 200 to avoid webhook retries
+    if (!foundInPayments && !foundInInvoices) {
+      await client.query("COMMIT");
       console.error(
-        "No payment record found for bill reference:",
+        "No matching record found in either table for:",
         billReference,
       );
       return NextResponse.json(
-        {
-          status: "success",
-          message: "No payment record found for bill reference",
-        },
+        { status: "success", message: "No matching record found" },
         { status: 200 },
       );
     }
 
-    const payment = paymentRes.rows[0];
-    console.log("Payment record found:", payment);
+    const payment = foundInPayments ? paymentRes.rows[0] : null;
+    const invoice = foundInInvoices ? invoiceRes.rows[0] : null;
 
-    // Step 5: Update schoolkano_payments status
-    await client.query(
-      `UPDATE schoolkano_payments
-       SET status = $2, paid_at = $3
-       WHERE reference = $1`,
-      [
-        billReference,
+    // Step 5: Update schoolkano_payments if found
+    if (foundInPayments) {
+      await client.query(
+        `UPDATE schoolkano_payments
+         SET status = $2, paid_at = $3
+         WHERE reference = $1`,
+        [
+          billReference,
+          status.toLowerCase(),
+          status.toLowerCase() === "paid" ? paidat || new Date() : null,
+        ],
+      );
+      console.log(
+        "schoolkano_payments updated — status:",
         status.toLowerCase(),
-        status.toLowerCase() === "paid" ? paidat || new Date() : null,
-      ],
-    );
-    console.log("payments updated — status:", status.toLowerCase());
+      );
 
-    // Step 6
-    // ── Check if this is a certificate fee payment ──────────────────────
-    const paymentRow = await client.query(
-      `SELECT fee_id, school_id FROM schoolkano_payments
-     WHERE reference = $1`,
-      [billReference],
-    );
+      // Step 6: Check if certificate fee — activate license if so, although i think this one is not neccessary
+      const feeId = payment?.fee_id;
+      const schoolId = payment?.school_id;
 
-    const feeId = paymentRow.rows[0]?.fee_id;
-    const schoolId = paymentRow.rows[0]?.school_id;
-
-    // Certificate fee ids are 1, 2, 3
-    if ([1, 2, 3].includes(feeId) && schoolId) {
-      await activateLicense(client, schoolId);
+      if (
+        [1, 2, 3].includes(feeId) &&
+        schoolId &&
+        status.toLowerCase() === "paid"
+      ) {
+        await activateLicense(client, schoolId);
+        console.log("License activated for school:", schoolId);
+      }
     }
 
-    // Step 7: Log to transactionskano
+    // Step 7: Update schoolkano_invoices if found
+    if (foundInInvoices && status.toLowerCase() === "paid") {
+      await client.query(
+        `UPDATE schoolkano_invoices
+         SET status = 'Paid'
+         WHERE bill_reference = $1 AND status = 'Unpaid'`,
+        [billReference],
+      );
+      console.log(
+        "schoolkano_invoices updated — invoice:",
+        invoice?.invoice_number,
+      );
+    }
+
+    // Step 8: Log to transactionskano
+    // Use payment data if available, fall back to invoice data
+    const school_id = payment?.school_id ?? invoice?.school_id;
+    const amount = payment?.amount ?? invoice?.amount;
+    const payment_item = payment?.fee_name ?? `⁠Assessment Fees`;
+    const lga = payment?.lga ?? null;
+
     await client.query(
       `INSERT INTO transactionskano
          (reference, amount, status, payment_method, gateway_response, payment_item, paid_at, created_at, school_id, lga)
@@ -128,21 +157,19 @@ export async function POST(req: Request) {
          gateway_response = $4,
          paid_at          = $6,
          created_at       = NOW(),
-         lga = $8
-         `,
-
+         lga              = $8`,
       [
         billReference,
-        payment.amount,
+        amount,
         status.toLowerCase() === "paid" ? "Paid" : status,
         paymentGateway || "Unknown",
-        payment.fee_name, // ← from schoolkano_payments
+        payment_item,
         status.toLowerCase() === "paid" ? paidat || new Date() : null,
-        payment.school_id,
-        payment.lga,
+        school_id,
+        lga,
       ],
     );
-    console.log("Transaction logged for fee:", payment.fee_name);
+    console.log("Transaction logged for:", payment_item);
 
     await client.query("COMMIT");
 

@@ -71,13 +71,8 @@ export async function GET(req: Request) {
       questionnaireUploaded
     )
       complianceScore = 55; // Step 4 — SAQ uploaded
-    // if (
-    //   consentPaid &&
-    //   guidelinesPaid &&
-    //   questionnaireUploaded &&
-    //   questionnaireApproved
-    // )
-    // complianceScore = 60; // Step 5 — Admin approved
+    if (consentPaid && guidelinesPaid && applicationPaid && certificatePaid)
+      complianceScore = 90; // Step 5 — Admin approved
     if (
       consentPaid &&
       guidelinesPaid &&
