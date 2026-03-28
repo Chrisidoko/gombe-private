@@ -124,8 +124,8 @@ export default async function RevenuePerformancePage() {
                 Revenue targets for {YEAR} have not been set
               </p>
               <p className="text-xs text-yellow-700 mt-0.5">
-                Performance percentages cannot be calculated until an
-                administrator sets the quarterly targets.
+                Performance percentages cannot be calculated until the quarterly
+                targets are sets.
               </p>
             </div>
           </div>
@@ -149,7 +149,7 @@ export default async function RevenuePerformancePage() {
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-gray-100 bg-gray-50">
-                  <th className="text-left px-6 py-3 text-[10px] font-bold uppercase tracking-widest text-gray-400 w-28">
+                  <th className="text-left px-6 py-3 text-[10px] font-bold uppercase tracking-widest text-gray-400 w-38">
                     Quarter
                   </th>
                   <th className="text-right px-4 py-3 text-[10px] font-bold uppercase tracking-widest text-gray-400">
