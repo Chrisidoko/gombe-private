@@ -1,174 +1,248 @@
 "use client";
 
-import Image from "next/image";
-import { useState } from "react";
-import { EyeClosed, Eye, Loader2 } from "lucide-react";
-import Rightside from "@/components/ui/rightside";
-import { useRouter } from "next/navigation";
+import { useState, useEffect } from "react";
 import Link from "next/link";
+import Image from "next/image";
+import {
+  Building2,
+  DollarSign,
+  Settings,
+  ClipboardCheck,
+  ShieldCheck,
+  ChevronRight,
+  ArrowRight,
+} from "lucide-react";
 
-const Page = () => {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [passwordVisible, setPasswordVisible] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
-  const [success, setSuccess] = useState("");
+// ── Slide data — replace src with your actual images ─────────────────────────
+const SLIDES = [
+  {
+    src: "/slides/slide1.jpg", // replace with your image
+    title: "Streamlined Institution Licensing",
+    caption:
+      "A unified platform for private tertiary institutions to manage consent certificates, compliance fees, and annual renewals with full transparency.",
+  },
+  {
+    src: "/slides/slide2.jpg",
+    title: "Real-Time Compliance Tracking",
+    caption:
+      "Monitor your institution's compliance standing, track fee payments, and access ministry-issued documents — all in one secure portal.",
+  },
+  {
+    src: "/slides/slide3.jpg",
+    title: "Powered by Kaduna State Ministry",
+    caption:
+      "Backed by the Ministry of Education, Kaduna State. Ensuring standards, accountability, and excellence across all private tertiary institutions.",
+  },
+];
 
-  const router = useRouter();
+const ROLES = [
+  {
+    icon: Building2,
+    label: "Institution",
+    desc: "Manage your school profile, fees and compliance",
+  },
+  {
+    icon: DollarSign,
+    label: "Finance Admin",
+    desc: "Oversee collections, transactions and revenue",
+  },
+  {
+    icon: Settings,
+    label: "Operations Admin",
+    desc: "Administer institutions and system settings",
+  },
+  {
+    icon: ClipboardCheck,
+    label: "Inspector",
+    desc: "Review and assess institutional compliance",
+  },
+];
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError("");
-    setSuccess("");
-    setLoading(true);
+export default function OnboardingPage() {
+  const [current, setCurrent] = useState(0);
+  const [animating, setAnimating] = useState(false);
 
-    try {
-      const res = await fetch("/api/auth/login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password }),
-        // Important: include credentials so cookies are stored
-        credentials: "include",
-      });
+  // Auto-advance slides
+  useEffect(() => {
+    const timer = setInterval(() => {
+      goTo((current + 1) % SLIDES.length);
+    }, 5000);
+    return () => clearInterval(timer);
+  }, [current]);
 
-      const data = await res.json();
-      setLoading(false);
-
-      if (!res.ok) {
-        setError(data.message || "Login failed");
-        return;
-      }
-
-      // ✅ Success
-      setSuccess(data.message);
-      console.log("User details:", data.user);
-
-      // ✅ Cookie is already set by backend — just redirect based on role
-      if (data.user.role === "admin") {
-        router.push("/dashboard"); // (admin)
-      } else if (data.user.role === "school") {
-        router.push("/home"); // (school)
-      } else if (data.user.role === "finance") {
-        router.push("/collections"); // (finance)
-      }
-    } catch (err) {
-      console.error(err);
-      setError("Something went wrong. Please try again.");
-    } finally {
-      setLoading(false);
-    }
-  };
+  function goTo(index: number) {
+    if (animating || index === current) return;
+    setAnimating(true);
+    setTimeout(() => {
+      setCurrent(index);
+      setAnimating(false);
+    }, 300);
+  }
 
   return (
-    <div className="w-full flex flex-col sm:flex-row ">
-      {/* Left Section */}
-      <div className="w-[100%] sm:w-[45%] h-[100vh] bg-[#ffffff] relative top-0 left-0 flex flex-col justify-between sm:order-1 order-1">
-        <div className="w-4/5 sm:w-3/5 mx-auto my-auto flex flex-col gap-2 px-6 sm:px-0">
-          <Image
-            src="/KD_logo.png"
-            alt="kaduna state"
-            width={66}
-            height={66}
-            className="md:block object-cover mx-auto"
-          />
-          <h2 className="text-xl font-bold mx-auto">Sign-In</h2>
-          <p className="text-gray-500 text-xs">
-            Access your dashboard using your email and password.
-          </p>
-
-          {error && <p className="text-red-600 text-sm">{error}</p>}
-          {success && <p className="text-green-600 text-sm">{success}</p>}
-
-          <form onSubmit={handleSubmit} className="flex flex-col mt-3 gap-4">
-            <label className="text-sm font-medium">Email</label>
-            <input
-              type="email"
-              className="w-full p-2 border border-gray-300 rounded-md text-sm"
-              placeholder="Enter your email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
+    <div className="min-h-screen flex flex-col lg:flex-row bg-white overflow-hidden">
+      {/* ── LEFT — Image Slideshow ────────────────────────────────────────── */}
+      <div className="relative w-full lg:w-1/2 min-h-[40vh] lg:min-h-screen overflow-hidden">
+        {/* Slide images */}
+        {SLIDES.map((slide, i) => (
+          <div
+            key={i}
+            className={`absolute inset-0 transition-opacity duration-700 ${
+              i === current ? "opacity-100" : "opacity-0"
+            }`}
+          >
+            {/* Fallback gradient background if image not available */}
+            <div className="absolute inset-0 bg-gradient-to-br from-[#1a5c2e] via-[#166534] to-[#052e16]" />
+            <Image
+              src={slide.src}
+              alt={slide.title}
+              fill
+              className="object-cover mix-blend-overlay opacity-30"
+              onError={() => {}} // silently fail — gradient shows instead
             />
 
-            <label className="text-sm font-medium">Password</label>
-            <div className="relative">
-              <input
-                type={passwordVisible ? "text" : "password"}
-                className="w-full p-2 border border-gray-300 rounded-md text-sm"
-                placeholder="Enter your password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-              />
-              <button
-                type="button" // Prevents form submission
-                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-600 text-sm"
-                onClick={() => setPasswordVisible(!passwordVisible)}
-              >
-                {passwordVisible ? <EyeClosed size={14} /> : <Eye size={14} />}
-              </button>
-            </div>
-            <Link
-              href="/forgot-password"
-              className="ml-auto text-xs font-semibold text-green-600 hover:underline"
-            >
-              Forgot password?
-            </Link>
-
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full bg-[#28a745] text-white font-semibold py-3 rounded-md text-sm transition cursor-pointer flex items-center justify-center"
-            >
-              {loading ? (
-                <>
-                  <Loader2 size={18} className="animate-spin mr-2" /> Please
-                  wait
-                </>
-              ) : (
-                "Sign-In"
-              )}
-            </button>
-          </form>
-
-          <p className="text-xs text-gray-500">
-            New on our platform?{" "}
-            <Link
-              href="/signup"
-              className="text-sm text-blue-700 font-semibold"
-            >
-              Create an account
-            </Link>
-          </p>
-
-          <div className="mt-16 flex gap-3 sm:gap-8 text-xs font-medium text-blue-700">
-            <a href="#">Terms & Condition</a> <a href="#">Privacy Policy</a>{" "}
-            <a href="#">Support</a>
+            {/* Geometric pattern overlay */}
+            <div
+              className="absolute inset-0 opacity-10"
+              style={{
+                backgroundImage: `radial-gradient(circle at 25% 25%, #ffffff 1px, transparent 1px),
+                                  radial-gradient(circle at 75% 75%, #ffffff 1px, transparent 1px)`,
+                backgroundSize: "40px 40px",
+              }}
+            />
           </div>
-          <span className="flex items-center text-xs mt-3 mb-6">
-            © {new Date().getFullYear()} Powered by
-            <span className="ml-1">
-              <Image src="/paypro.png" alt="Logo" width={46} height={46} />
-            </span>
-            <p className="hidden sm:block"> . All Rights Reserved. </p>
+        ))}
+
+        {/* Dark gradient overlay at bottom for text readability */}
+        <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
+
+        {/* Slide text */}
+        <div className="absolute bottom-0 left-0 right-0 px-8 pb-12 lg:pb-16">
+          <div
+            className={`transition-all duration-500 ${
+              animating
+                ? "opacity-0 translate-y-4"
+                : "opacity-100 translate-y-0"
+            }`}
+          >
+            <h2 className="text-2xl lg:text-3xl font-black text-white mb-3 leading-tight">
+              {SLIDES[current].title}
+            </h2>
+            <p className="text-sm text-white/75 leading-relaxed max-w-md">
+              {SLIDES[current].caption}
+            </p>
+          </div>
+
+          {/* Slide indicators */}
+          <div className="flex items-center gap-2 mt-6">
+            {SLIDES.map((_, i) => (
+              <button
+                key={i}
+                onClick={() => goTo(i)}
+                className={`transition-all duration-300 rounded-full ${
+                  i === current
+                    ? "w-8 h-2 bg-white"
+                    : "w-2 h-2 bg-white/40 hover:bg-white/60"
+                }`}
+              />
+            ))}
+          </div>
+        </div>
+
+        {/* Top-left branding on mobile */}
+        <div className="absolute top-6 left-6 lg:hidden">
+          <span className="text-white font-black text-lg tracking-tight">
+            KAPTEMS
           </span>
         </div>
       </div>
 
-      {/* Right Section */}
-      <div
-        className="w-full sm:w-[55%] relative bg-[#199b39] bg-cover bg-center sm:order-2 order-1"
-        style={{
-          backgroundImage:
-            "linear-gradient(rgba(25,155,57,0.9), rgba(25,155,57,1.0)), url('/KD_logo.png')",
-          backgroundSize: "620px",
-          backgroundPosition: "center",
-          backgroundRepeat: "no-repeat",
-        }}
-      >
-        <Rightside />
+      {/* ── RIGHT — Content Panel ─────────────────────────────────────────── */}
+      <div className="w-full lg:w-1/2 flex flex-col justify-between min-h-screen bg-gray-50 px-8 py-10 lg:px-12 lg:py-12">
+        {/* Ministry badge — 40% height */}
+        <div
+          className="flex flex-col items-center justify-center text-center"
+          style={{ minHeight: "40vh" }}
+        >
+          {/* Logo */}
+          <div className="mb-5">
+            <div className="w-20 h-20 rounded-2xl bg-white shadow-md border border-gray-100 flex items-center justify-center mx-auto overflow-hidden">
+              <Image
+                src="/KD_logo.png"
+                alt="Kaduna State Ministry of Education"
+                width={64}
+                height={64}
+                className="object-contain"
+              />
+            </div>
+          </div>
+
+          <p className="text-xs font-bold uppercase tracking-[0.2em] text-green-700 mb-1">
+            Kaduna State
+          </p>
+          <h1 className="text-2xl lg:text-3xl font-black text-gray-900 leading-tight mb-2">
+            Ministry of Education
+          </h1>
+          <p className="text-sm text-gray-500 max-w-xs leading-relaxed mb-1">
+            Private Tertiary Institutions Portal
+          </p>
+          <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest">
+            KAPTEMS
+          </p>
+
+          {/* CTA */}
+          <Link
+            href="/login"
+            className="mt-8 inline-flex items-center gap-2 bg-[#1a5c2e] hover:bg-[#166534] text-white font-bold px-8 py-3.5 rounded-xl transition-all duration-200 shadow-lg shadow-green-900/20 hover:shadow-green-900/30 hover:scale-[1.02] active:scale-[0.98]"
+          >
+            Login to Portal
+            <ArrowRight className="w-4 h-4" />
+          </Link>
+        </div>
+
+        {/* Roles list */}
+        <div className="mt-auto">
+          <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-gray-400 mb-3 text-center">
+            Portal Access Roles
+          </p>
+          <div className="grid grid-cols-2 gap-2">
+            {ROLES.map(({ icon: Icon, label, desc }) => (
+              <div
+                key={label}
+                className="flex items-start gap-3 bg-white border border-gray-100 rounded-xl px-4 py-3 shadow-sm"
+              >
+                <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-green-50 border border-green-100 shrink-0 mt-0.5">
+                  <Icon className="w-4 h-4 text-green-600" />
+                </div>
+                <div className="min-w-0">
+                  <p className="text-xs font-bold text-gray-800">{label}</p>
+                  <p className="text-[10px] text-gray-400 leading-snug mt-0.5">
+                    {desc}
+                  </p>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Verify licence link */}
+          <div className="mt-4 flex justify-center">
+            <Link
+              href="/verify"
+              className="inline-flex items-center gap-2 text-sm font-semibold text-green-700 hover:text-green-900 transition group"
+            >
+              <ShieldCheck className="w-4 h-4" />
+              Verify an Institution License
+              <ChevronRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
+            </Link>
+          </div>
+
+          {/* Footer */}
+          <p className="text-center text-[10px] text-gray-300 mt-6">
+            © {new Date().getFullYear()} Kaduna State Ministry of Education. All
+            rights reserved.
+          </p>
+        </div>
       </div>
     </div>
   );
-};
-
-export default Page;
+}

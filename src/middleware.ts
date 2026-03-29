@@ -33,23 +33,36 @@ export async function middleware(req: NextRequest) {
   try {
     const { payload } = await jwtVerify(token, JWT_SECRET);
 
-    const role = payload.role as string;
     const institution = payload.institution as string;
 
     // ── Determine role from institution value ───────────────────────────────
     // "CBS_Admin"  → admin
     // "CBS_Finance" → finance (new)
+    // "CBS_Inspector" → inspector (new)
     // anything else → school (institution = school_id)
     const isAdmin = institution === "CBS_Admin";
     const isFinance = institution === "CBS_Finance";
-    const isSchool = !isAdmin && !isFinance;
+    const isInspector = institution === "CBS_Inspector";
+    const isSchool = !isAdmin && !isFinance && !isInspector;
+
+    // ── Helper — where to redirect a non-authorised user ─────────────────
+    function defaultRedirect() {
+      if (isAdmin) return "/dashboard";
+      if (isFinance) return "/finance";
+      if (isInspector) return "/inspector";
+      return "/home"; // school
+    }
 
     // ── Admin routes — /dashboard ───────────────────────────────────────────
-    if (url.startsWith("/dashboard")) {
+    if (
+      url.startsWith("/dashboard") ||
+      url.startsWith("/evaluations") ||
+      url.startsWith("/questionnaires") ||
+      url.startsWith("/requests") ||
+      url.startsWith("/institutions")
+    ) {
       if (!isAdmin) {
-        return NextResponse.redirect(
-          new URL(isFinance ? "/finance" : "/home", req.url),
-        );
+        return NextResponse.redirect(new URL(defaultRedirect(), req.url));
       }
     }
 
@@ -62,19 +75,25 @@ export async function middleware(req: NextRequest) {
       url.startsWith("/reports")
     ) {
       if (!isSchool) {
-        return NextResponse.redirect(
-          new URL(isAdmin ? "/dashboard" : "/finance", req.url),
-        );
+        return NextResponse.redirect(new URL(defaultRedirect(), req.url));
       }
     }
 
     // ── Finance routes — /finance ───────────────────────────────────────────
-    if (url.startsWith("/finance")) {
+    if (
+      url.startsWith("/finance") ||
+      url.startsWith("/collections") ||
+      url.startsWith("/transactions")
+    ) {
       if (!isFinance) {
-        return NextResponse.redirect(
-          new URL(isAdmin ? "/dashboard" : "/home", req.url),
-        );
+        return NextResponse.redirect(new URL(defaultRedirect(), req.url));
       }
+    }
+
+    // ── Inspector routes — /inspector ─────────────────────────────────────
+    if (url.startsWith("/inspector")) {
+      if (!isInspector)
+        return NextResponse.redirect(new URL(defaultRedirect(), req.url));
     }
 
     return NextResponse.next();

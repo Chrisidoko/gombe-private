@@ -1,7 +1,12 @@
 "use client";
 
 import { useEffect, useState } from "react";
-// import { Layers } from "lucide-react";
+import {
+  // Layers,
+  X,
+  ExternalLink,
+} from "lucide-react";
+
 import * as XLSX from "xlsx";
 
 interface TransactionType {
@@ -13,55 +18,6 @@ interface TransactionType {
   invoice_number: string | null;
   updated_at: string;
 }
-
-// Mock data for demo
-// const mockTransactions: TransactionType[] = [
-//   {
-//     id: 1,
-//     reference: "TXN-2024-001-ABC123",
-//     amount: 150000,
-//     status: "success",
-//     payment_item: "Tax Invoice",
-//     invoice_number: "INV-2024-001",
-//     updated_at: "2024-03-15T10:30:00Z",
-//   },
-//   {
-//     id: 2,
-//     reference: "TXN-2024-002-XYZ456",
-//     amount: 200000,
-//     status: "success",
-//     payment_item: "Tax Invoice",
-//     invoice_number: "INV-2024-002",
-//     updated_at: "2024-03-14T14:22:00Z",
-//   },
-//   {
-//     id: 3,
-//     reference: "TXN-2024-003-DEF789",
-//     amount: 75000,
-//     status: "failed",
-//     payment_item: "School Fees",
-//     invoice_number: null,
-//     updated_at: "2024-03-13T09:15:00Z",
-//   },
-//   {
-//     id: 4,
-//     reference: "TXN-2024-004-GHI012",
-//     amount: 120000,
-//     status: "pending",
-//     payment_item: "Tax Invoice",
-//     invoice_number: "INV-2024-003",
-//     updated_at: "2024-03-12T16:45:00Z",
-//   },
-//   {
-//     id: 5,
-//     reference: "TXN-2024-005-JKL345",
-//     amount: 180000,
-//     status: "success",
-//     payment_item: "Registration Fee",
-//     invoice_number: null,
-//     updated_at: "2024-03-11T11:20:00Z",
-//   },
-// ];
 
 function formatDate(dateString: string) {
   return new Date(dateString).toLocaleString("en-US", {
@@ -132,10 +88,11 @@ function getStatusIcon(status: string) {
 export default function TransactionsTable({ schoolId }: { schoolId: string }) {
   const [transactions, setTransactions] = useState<TransactionType[]>([]);
   const [loading, setLoading] = useState(true);
-  const [filter, setFilter] = useState<"all" | "Paid" | "Unpaid" | "pending">(
+  const [filter, setFilter] = useState<"all" | "paid" | "Unpaid" | "pending">(
     "all",
   );
   const [searchTerm, setSearchTerm] = useState("");
+  const [receiptUrl, setReceiptUrl] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
 
@@ -273,105 +230,6 @@ export default function TransactionsTable({ schoolId }: { schoolId: string }) {
             Export to Excel
           </button>
         </div>
-
-        {/* Stats Cards */}
-        {/* <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-6">
-          <div className="bg-white rounded-lg p-4 shadow-sm border border-gray-100">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-xs font-medium text-gray-600 uppercase">
-                  Total Volume
-                </p>
-                <p className="text-xl font-bold text-gray-900 mt-1">
-                  ₦{stats.total.toLocaleString()}
-                </p>
-              </div>
-              <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
-                <Layers className="w-5 h-5 text-blue-500" />
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-white rounded-lg p-4 shadow-sm border border-gray-100">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-xs font-medium text-gray-600 uppercase">
-                  Successful
-                </p>
-                <p className="text-xl font-bold text-green-600 mt-1">
-                  ₦{stats.success.toLocaleString()}
-                </p>
-              </div>
-              <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
-                <svg
-                  className="w-6 h-6 text-green-600"
-                  fill="currentColor"
-                  viewBox="0 0 20 20"
-                >
-                  <path
-                    fillRule="evenodd"
-                    d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
-                    clipRule="evenodd"
-                  />
-                </svg>
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-white rounded-lg p-4 shadow-sm border border-gray-100">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-xs font-medium text-gray-600 uppercase">
-                  Unpaid
-                </p>
-                <p className="text-xl font-bold text-red-600 mt-1">
-                  {stats.failed}
-                </p>
-              </div>
-              <div className="w-12 h-12 bg-red-100 rounded-lg flex items-center justify-center">
-                <svg
-                  className="w-6 h-6 text-red-600"
-                  fill="currentColor"
-                  viewBox="0 0 20 20"
-                >
-                  <path
-                    fillRule="evenodd"
-                    d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
-                    clipRule="evenodd"
-                  />
-                </svg>
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-white rounded-lg p-4 shadow-sm border border-gray-100">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-xs font-medium text-gray-600 uppercase">
-                  Pending
-                </p>
-                <p className="text-xl font-bold text-yellow-600 mt-1">
-                  {stats.pending}
-                </p>
-              </div>
-              <div className="w-12 h-12 bg-yellow-100 rounded-lg flex items-center justify-center">
-                <svg
-                  className="w-6 h-6 text-yellow-600"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
-                  />
-                </svg>
-              </div>
-            </div>
-          </div>
-        </div> */}
       </div>
 
       <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-3 mb-3">
@@ -395,7 +253,7 @@ export default function TransactionsTable({ schoolId }: { schoolId: string }) {
               </svg>
               <input
                 type="text"
-                placeholder="Search by reference, invoice, or payment item..."
+                placeholder="Search by reference, or payment item..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="w-full pl-10 pr-4 py-2 bg-white border border-gray-300 text-sm rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
@@ -404,7 +262,7 @@ export default function TransactionsTable({ schoolId }: { schoolId: string }) {
 
             {/* Status Filter */}
             <div className="flex gap-2 flex-wrap">
-              {(["all", "Paid", "Unpaid", "pending"] as const).map((status) => (
+              {(["all", "paid", "Unpaid", "pending"] as const).map((status) => (
                 <button
                   key={status}
                   onClick={() => {
@@ -466,14 +324,17 @@ export default function TransactionsTable({ schoolId }: { schoolId: string }) {
                   <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
                     Payment Item
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                  {/* <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
                     Invoice
-                  </th>
+                  </th> */}
                   <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
                     Status
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
                     Date & Time
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                    Receipt
                   </th>
                 </tr>
               </thead>
@@ -485,21 +346,6 @@ export default function TransactionsTable({ schoolId }: { schoolId: string }) {
                   >
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-3">
-                        {/* <div className="flex-shrink-0 w-10 h-10 bg-gradient-to-br from-purple-100 to-indigo-100 rounded-lg flex items-center justify-center">
-                        <svg
-                          className="w-5 h-5 text-purple-600"
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z"
-                          />
-                        </svg>
-                      </div> */}
                         <div className="min-w-0">
                           <p className="text-sm font-semibold text-gray-900 truncate">
                             {txn.reference}
@@ -518,7 +364,7 @@ export default function TransactionsTable({ schoolId }: { schoolId: string }) {
                         {txn.payment_item}
                       </p>
                     </td>
-                    <td className="px-6 py-4">
+                    {/* <td className="px-6 py-4">
                       {txn.invoice_number ? (
                         <span className="inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-medium bg-blue-50 text-blue-700 border border-blue-200">
                           {txn.invoice_number}
@@ -526,7 +372,7 @@ export default function TransactionsTable({ schoolId }: { schoolId: string }) {
                       ) : (
                         <span className="text-sm text-gray-400">—</span>
                       )}
-                    </td>
+                    </td> */}
                     <td className="px-6 py-4">
                       <span
                         className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold border ${getStatusColor(
@@ -542,12 +388,63 @@ export default function TransactionsTable({ schoolId }: { schoolId: string }) {
                         {formatDate(txn.updated_at)}
                       </p>
                     </td>
+                    <td className="px-6 py-4">
+                      {txn.reference ? (
+                        <button
+                          onClick={() =>
+                            setReceiptUrl(
+                              `https://paykaduna.com/payment_summary_open?billReference=${txn.reference}&ref=${txn.reference}`,
+                            )
+                          }
+                          className="inline-flex items-center gap-1.5 text-xs font-semibold text-blue-600 hover:text-blue-800 transition"
+                        >
+                          <ExternalLink className="w-3.5 h-3.5" />
+                          View
+                        </button>
+                      ) : (
+                        <span className="text-sm text-gray-300">—</span>
+                      )}
+                    </td>
                   </tr>
                 ))}
               </tbody>
             </table>
           )}
         </div>
+
+        {/* Receipt Modal */}
+        {receiptUrl && (
+          <div
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm"
+            onClick={() => setReceiptUrl(null)}
+          >
+            <div
+              className="relative bg-white rounded-2xl shadow-2xl w-full max-w-3xl mx-4 overflow-hidden"
+              style={{ height: "85vh" }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              {/* Modal header */}
+              <div className="flex items-center justify-between px-5 py-3 border-b border-gray-100">
+                <p className="text-sm font-semibold text-gray-700">
+                  Payment Receipt
+                </p>
+                <button
+                  onClick={() => setReceiptUrl(null)}
+                  className="text-gray-400 hover:text-gray-600 transition"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              {/* iframe */}
+              <iframe
+                src={receiptUrl}
+                className="w-full h-full border-0"
+                title="Payment Receipt"
+              />
+            </div>
+          </div>
+        )}
 
         {/* Pagination */}
         {totalPages > 1 && (
