@@ -68,19 +68,13 @@ const Page = () => {
   "
     >
       {/* Left Section */}
-      <div
-        className="w-[100%] h-[100vh] bg-[#ffffff] flex flex-col"
-        style={{
-          backgroundImage:
-            "linear-gradient(rgba(255, 255, 255, 0.9), rgba(255, 255, 255, 0.9)), url('/KD_logo.png')",
-          backgroundSize: "920px",
-          backgroundPosition: "right",
-          backgroundRepeat: "no-repeat",
-        }}
-      >
+      <div className="w-[100%] h-[100vh] bg-gray-50 flex flex-col">
         <div className="w-[70%] sm:w-[30%] mx-auto my-auto flex flex-col gap-2 px-6 sm:px-0">
           <div className="mb-5">
-            <div className="w-20 h-20 rounded-2xl bg-white shadow-md border border-gray-100 flex items-center justify-center mx-auto overflow-hidden">
+            <Link
+              href="/"
+              className="w-20 h-20 rounded-2xl bg-white shadow-md border border-gray-100 flex items-center justify-center mx-auto overflow-hidden"
+            >
               <Image
                 src="/KD_logo.png"
                 alt="Kaduna State Ministry of Education"
@@ -88,7 +82,7 @@ const Page = () => {
                 height={64}
                 className="object-contain"
               />
-            </div>
+            </Link>
           </div>
           <h2 className="text-xl font-bold mx-auto">Sign-In</h2>
           <p className="text-gray-500 mx-auto text-xs">

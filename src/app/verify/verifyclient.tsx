@@ -77,27 +77,30 @@ export default function VerifyForm() {
   }
 
   return (
-    <div className="flex flex-col min-h-screen">
+    <div
+      className="flex flex-col min-h-screen bg-gray-50 bg-cover"
+      style={{
+        backgroundImage:
+          "linear-gradient(rgba(25,155,57,0.9), rgba(25,155,57,1.0)), url('/KD_logo.png')",
+        backgroundSize: "100vw",
+        backgroundPosition: "center",
+        backgroundRepeat: "no-repeat",
+      }}
+    >
       <main className="flex-grow">
-        <Link href="/">
-          <button className="w-full flex justify-center items-center gap-2 bg-[#28a745] text-white font-semibold py-3 text-sm transition cursor-pointer">
-            <CircleX /> Cancel & Return Home
-          </button>
-        </Link>
-
-        <div className="relative flex flex-col items-center bg-white mt-[16%] sm:mt-[3%] w-[86vw] sm:w-[44vw] mx-auto rounded-xl border border-gray-300 shadow-xl px-8 py-12">
+        <div className="relative flex flex-col items-center bg-white mt-[16%] sm:mt-[3%] w-[86vw] sm:w-[40vw] mx-auto rounded-xl border border-gray-300 shadow-xl px-8 py-12">
           {/* Top Logo */}
-          <div className="max-w-6xl px-6 py-2">
+          <div className="w-20 h-20 rounded-2xl bg-white shadow-md border border-gray-100 flex items-center justify-center mx-auto overflow-hidden">
             <Image
               src="/KD_logo.png"
-              alt="Logo"
-              className="mx-auto"
-              width={76}
-              height={76}
+              alt="Kaduna State Ministry of Education"
+              width={64}
+              height={64}
+              className="object-contain"
             />
           </div>
 
-          <h2 className="text-3xl font-bold mb-6 text-[#28a745]">
+          <h2 className="text-3xl mt-6 font-bold mb-6 font-black">
             Verify Certificate
           </h2>
 
@@ -126,6 +129,15 @@ export default function VerifyForm() {
                 {loading && <Loader2 className="animate-spin w-4 h-4" />}
                 {loading ? "Checking" : "Proceed and Confirm"}
               </button>
+              <div className="text-center">
+                <Link
+                  href="/"
+                  className="inline-flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-700 transition"
+                >
+                  <ArrowLeft className="w-3.5 h-3.5" />
+                  Back to Homepage
+                </Link>
+              </div>
 
               {error && (
                 <p className="text-red-500 text-sm text-center mt-4">{error}</p>
@@ -242,7 +254,7 @@ export default function VerifyForm() {
         </div>
       </main>
 
-      <footer className="mt-auto w-full bg-gray-100 border-t border-gray-300 py-6">
+      <footer className="mt-auto w-full bg-gray-100 border-t border-gray-300 py-3">
         <div className="max-w-6xl mx-auto px-6 flex flex-col items-center justify-between text-xs sm:text-sm text-gray-600">
           <div className="flex items-center mb-4 md:mb-0 text-center md:text-left">
             © {new Date().getFullYear()} Powered by{" "}

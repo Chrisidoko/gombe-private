@@ -105,9 +105,12 @@ export default function SignUpForm() {
   return (
     <div className="w-full flex flex-col sm:flex-row ">
       {/* --- Left Section --- */}
-      <div className="w-[100%] h-[100%] bg-[#ffffff] relative top-0 left-0 flex flex-col justify-between">
+      <div className="w-[100%] h-[100%] bg-gray-50 relative top-0 left-0 flex flex-col justify-between">
         <div className="w-[70%] sm:w-[30%]  mx-auto mt-6 flex flex-col gap-4 px-6 sm:px-0">
-          <div className="w-20 h-20 rounded-2xl bg-white shadow-md border border-gray-100 flex items-center justify-center mx-auto overflow-hidden">
+          <Link
+            href="/"
+            className="w-20 h-20 rounded-2xl bg-white shadow-md border border-gray-100 flex items-center justify-center mx-auto overflow-hidden"
+          >
             <Image
               src="/KD_logo.png"
               alt="Kaduna State Ministry of Education"
@@ -115,9 +118,9 @@ export default function SignUpForm() {
               height={64}
               className="object-contain"
             />
-          </div>
+          </Link>
           <h2 className="text-lg font-bold mx-auto">Register</h2>
-          <p className="text-gray-500 text-xs">
+          <p className="text-gray-500 text-center text-xs">
             Create an account to manage your Institutions.
           </p>
 
@@ -217,7 +220,7 @@ export default function SignUpForm() {
 
           <p className="text-xs text-gray-500">
             Already have an account?{" "}
-            <Link href="/" className="text-sm text-blue-700 font-semibold">
+            <Link href="/login" className="text-sm text-blue-700 font-semibold">
               Sign in
             </Link>
           </p>
@@ -229,8 +232,10 @@ export default function SignUpForm() {
               alt="Paypro"
               width={46}
               height={46}
-              className="ml-1"
+              className="ml-1 mr-1"
             />
+            {"  "}
+            All Rights Reserved.
           </span>
         </div>
       </div>
