@@ -5,7 +5,7 @@ import Link from "next/link";
 import Image from "next/image";
 import {
   Building2,
-  DollarSign,
+  WalletCards,
   Settings,
   ClipboardCheck,
   ShieldCheck,
@@ -16,8 +16,8 @@ import {
 // ── Slide data — replace src with your actual images ─────────────────────────
 const SLIDES = [
   {
-    src: "/slides/slide1.jpg", // replace with your image
-    title: "Streamlined Institution Licensing",
+    src: "slide1.jpg", // replace with your image
+    title: "Streamlined Institutions",
     caption:
       "A unified platform for private tertiary institutions to manage consent certificates, compliance fees, and annual renewals with full transparency.",
   },
@@ -28,8 +28,8 @@ const SLIDES = [
       "Monitor your institution's compliance standing, track fee payments, and access ministry-issued documents — all in one secure portal.",
   },
   {
-    src: "/slides/slide3.jpg",
-    title: "Powered by Kaduna State Ministry",
+    src: "/slides/slide.png",
+    title: "Powered by Kaduna State Ministry of Education",
     caption:
       "Backed by the Ministry of Education, Kaduna State. Ensuring standards, accountability, and excellence across all private tertiary institutions.",
   },
@@ -42,14 +42,14 @@ const ROLES = [
     desc: "Manage your school profile, fees and compliance",
   },
   {
-    icon: DollarSign,
-    label: "Finance Admin",
+    icon: WalletCards,
+    label: "Finance",
     desc: "Oversee collections, transactions and revenue",
   },
   {
     icon: Settings,
-    label: "Operations Admin",
-    desc: "Administer institutions and system settings",
+    label: "Management",
+    desc: "Administer and Manage Institutions",
   },
   {
     icon: ClipboardCheck,
@@ -93,12 +93,20 @@ export default function OnboardingPage() {
           >
             {/* Fallback gradient background if image not available */}
             <div className="absolute inset-0 bg-gradient-to-br from-[#1a5c2e] via-[#166534] to-[#052e16]" />
-            <Image
+            {/* <Image
               src={slide.src}
               alt={slide.title}
               fill
               className="object-cover mix-blend-overlay opacity-30"
               onError={() => {}} // silently fail — gradient shows instead
+            /> */}
+            <img
+              src={slide.src}
+              alt={slide.title}
+              className="absolute inset-0 w-full h-full object-cover mix-blend-overlay opacity-30"
+              onError={(e) => {
+                (e.target as HTMLImageElement).style.display = "none";
+              }}
             />
 
             {/* Geometric pattern overlay */}
@@ -193,7 +201,7 @@ export default function OnboardingPage() {
           {/* CTA */}
           <Link
             href="/login"
-            className="mt-8 inline-flex items-center gap-2 bg-[#1a5c2e] hover:bg-[#166534] text-white font-bold px-8 py-3.5 rounded-xl transition-all duration-200 shadow-lg shadow-green-900/20 hover:shadow-green-900/30 hover:scale-[1.02] active:scale-[0.98]"
+            className="mt-8 inline-flex items-center gap-2 bg-[#28a745] hover:bg-[#166534] text-white font-bold px-8 py-3.5 rounded-xl transition-all duration-200 shadow-lg shadow-green-900/20 hover:shadow-green-900/30 hover:scale-[1.02] active:scale-[0.98]"
           >
             Login to Portal
             <ArrowRight className="w-4 h-4" />
@@ -237,9 +245,16 @@ export default function OnboardingPage() {
           </div>
 
           {/* Footer */}
-          <p className="text-center text-[10px] text-gray-300 mt-6">
+          <p className="flex items-center justify-center text-[11px] text-gray-300 mt-6">
             © {new Date().getFullYear()} Kaduna State Ministry of Education. All
-            rights reserved.
+            rights reserved. Powered by {""}
+            <Image
+              src="/paypro.png"
+              alt="Paypro"
+              width={36}
+              height={36}
+              className="ml-1"
+            />
           </p>
         </div>
       </div>

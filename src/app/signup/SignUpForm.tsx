@@ -7,7 +7,7 @@ import { useState, useEffect } from "react";
 import { EyeClosed, Eye, Loader2 } from "lucide-react";
 import toast from "react-hot-toast";
 import Link from "next/link";
-import Rightside from "@/components/ui/rightside";
+// import Rightside from "@/components/ui/rightside";
 
 interface Institution {
   id: number;
@@ -96,7 +96,7 @@ export default function SignUpForm() {
       const data = await res.json();
       if (!res.ok) return toast.error(data.error);
 
-      toast.success("Account created! Check your email for verification.");
+      toast.success("Account created! Pending approval.");
     } finally {
       setLoading(false);
     }
@@ -105,15 +105,17 @@ export default function SignUpForm() {
   return (
     <div className="w-full flex flex-col sm:flex-row ">
       {/* --- Left Section --- */}
-      <div className="w-[100%] sm:w-[45%] h-[100%] bg-[#ffffff] relative top-0 left-0 flex flex-col justify-between">
-        <div className="w-4/5 sm:w-3/5 mx-auto mt-6 flex flex-col gap-4 px-6 sm:px-0">
-          <Image
-            src="/KD_logo.png"
-            alt="kaduna state"
-            width={56}
-            height={56}
-            className="md:block object-cover mx-auto"
-          />
+      <div className="w-[100%] h-[100%] bg-[#ffffff] relative top-0 left-0 flex flex-col justify-between">
+        <div className="w-[70%] sm:w-[30%]  mx-auto mt-6 flex flex-col gap-4 px-6 sm:px-0">
+          <div className="w-20 h-20 rounded-2xl bg-white shadow-md border border-gray-100 flex items-center justify-center mx-auto overflow-hidden">
+            <Image
+              src="/KD_logo.png"
+              alt="Kaduna State Ministry of Education"
+              width={64}
+              height={64}
+              className="object-contain"
+            />
+          </div>
           <h2 className="text-lg font-bold mx-auto">Register</h2>
           <p className="text-gray-500 text-xs">
             Create an account to manage your Institutions.
@@ -168,6 +170,7 @@ export default function SignUpForm() {
               >
                 <option value="">Select Institution</option>
                 <option value="CBS_Admin">CBS Admin</option>
+                <option value="CBS_Inspector">Inspector</option>
                 <option value="CBS_Finance">Finance Admin</option>
                 {/* {institutions.map((school) => (
                   <option key={school.id} value={school.school_id}>
@@ -233,9 +236,9 @@ export default function SignUpForm() {
       </div>
 
       {/* --- Right Section --- */}
-      <div className="hidden sm:block w-full sm:w-[55%] relative bg-[#199b39] bg-cover bg-center">
+      {/* <div className="hidden sm:block w-full sm:w-[55%] relative bg-[#199b39] bg-cover bg-center">
         <Rightside />
-      </div>
+      </div> */}
     </div>
   );
 }
