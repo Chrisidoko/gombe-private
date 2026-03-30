@@ -46,13 +46,13 @@ const Page = () => {
 
       // ✅ Cookie is already set by backend — just redirect based on role
       if (data.user.role === "admin") {
-        router.push("/dashboard"); // (admin)
+        window.location.href = "/dashboard"; // (admin)
       } else if (data.user.role === "school") {
-        router.push("/home"); // (school)
+        window.location.href = "/home"; // (school)
       } else if (data.user.role === "finance") {
-        router.push("/collections"); // (finance)
+        window.location.href = "/collections"; // (finance)
       } else if (data.user.role === "inspector") {
-        router.push("/inspector"); // (inspector)
+        window.location.href = "/inspector"; // (inspector)
       }
     } catch (err) {
       console.error(err);

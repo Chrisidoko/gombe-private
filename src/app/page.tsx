@@ -22,13 +22,13 @@ const SLIDES = [
       "A unified platform for private tertiary institutions to manage consent certificates, compliance fees, and annual renewals with full transparency.",
   },
   {
-    src: "/slides/slide2.jpg",
+    src: "/slides/slide1.jpg",
     title: "Real-Time Compliance Tracking",
     caption:
       "Monitor your institution's compliance standing, track fee payments, and access ministry-issued documents — all in one secure portal.",
   },
   {
-    src: "/slides/slide.png",
+    src: "/slides/slide1.jpg",
     title: "Powered by Kaduna State Ministry of Education",
     caption:
       "Backed by the Ministry of Education, Kaduna State. Ensuring standards, accountability, and excellence across all private tertiary institutions.",

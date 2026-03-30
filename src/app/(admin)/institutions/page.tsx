@@ -215,7 +215,7 @@ export default function InstitutionsPage() {
             {/* License status */}
             <div>
               <label className="block text-xs font-semibold text-gray-500 uppercase tracking-widest mb-1.5">
-                License Status
+                Certificate Status
               </label>
               <select
                 value={licenseFilter}
@@ -270,7 +270,7 @@ export default function InstitutionsPage() {
               <div className="col-span-6">Institution</div>
               <div className="col-span-2">LGA</div>
               <div className="col-span-2">Approval</div>
-              <div className="col-span-2">License</div>
+              <div className="col-span-2">Certificate</div>
             </div>
 
             {/* Table rows */}

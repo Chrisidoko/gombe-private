@@ -76,7 +76,9 @@ export default function FeeTable({
         if (showCertificateFee) params.set("show_certificate", "true");
         if (license_status) params.set("license_status", license_status);
 
-        const res = await fetch(`/api/schools/fees?${params.toString()}`);
+        const res = await fetch(`/api/schools/fees?${params.toString()}`, {
+          cache: "no-store", // ← make sure this exists on every fetch
+        });
         if (!res.ok) throw new Error("Failed to fetch fees");
         const data = await res.json();
         setFeeGroups(data);

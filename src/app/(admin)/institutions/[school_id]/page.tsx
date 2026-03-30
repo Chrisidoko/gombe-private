@@ -12,7 +12,11 @@ import {
   Calendar,
   BadgeCheck,
   //   FileText,
-  DollarSign,
+  // DollarSign,
+  // Files,
+  Download,
+  FileText,
+  WalletCards,
 } from "lucide-react";
 
 type School = {
@@ -49,6 +53,13 @@ type School = {
   total_academic_staff: number | null;
   created_at: string;
   updated_at: string | null;
+};
+
+type Document = {
+  id: number;
+  document_type: string;
+  file_url: string;
+  uploaded_at: string;
 };
 
 function formatDate(d: string | null) {
@@ -121,14 +132,25 @@ function Field({ label, value }: { label: string; value: React.ReactNode }) {
   );
 }
 
-async function getSchool(school_id: string): Promise<School | null> {
+async function getSchool(
+  school_id: string,
+): Promise<{ school: School | null; documents: Document[] }> {
   const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
-  const res = await fetch(
-    `${baseUrl}/api/admin/schools/${encodeURIComponent(school_id)}`,
-    { cache: "no-store" },
-  );
-  if (!res.ok) return null;
-  return res.json();
+  const encoded = encodeURIComponent(school_id);
+
+  // Fetch both in parallel
+  const [schoolRes, docsRes] = await Promise.all([
+    fetch(`${baseUrl}/api/admin/schools/${encoded}`, { cache: "no-store" }),
+    fetch(`${baseUrl}/api/schools/${encoded}/documents`, { cache: "no-store" }),
+  ]);
+
+  const school = schoolRes.ok ? await schoolRes.json() : null;
+  const docsData = docsRes.ok ? await docsRes.json() : { documents: [] };
+
+  return {
+    school,
+    documents: docsData.documents || [],
+  };
 }
 
 export default async function InstitutionDetailPage({
@@ -136,8 +158,8 @@ export default async function InstitutionDetailPage({
 }: {
   params: Promise<{ school_id: string }>; // ← Promise type
 }) {
-  const { school_id } = await params; // ← await it
-  const school = await getSchool(school_id);
+  const { school_id } = await params;
+  const { school, documents } = await getSchool(school_id);
 
   if (!school) notFound();
 
@@ -327,6 +349,38 @@ export default async function InstitutionDetailPage({
           </div>
         </Section>
 
+        {/* Documents */}
+        {documents.length > 0 && (
+          <Section icon={FileText} title="Uploaded Documents">
+            <div className="space-y-2">
+              {documents.map((doc) => (
+                <div
+                  key={doc.id}
+                  className="flex items-center justify-between py-2 border-b border-gray-100 last:border-0"
+                >
+                  <div>
+                    <p className="text-sm font-semibold text-gray-800">
+                      {doc.document_type}
+                    </p>
+                    <p className="text-xs text-gray-400">
+                      {formatDate(doc.uploaded_at)}
+                    </p>
+                  </div>
+                  <a
+                    href={doc.file_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1.5 text-xs font-semibold text-blue-600 hover:text-blue-800 transition"
+                  >
+                    <Download className="w-3.5 h-3.5" />
+                    View
+                  </a>
+                </div>
+              ))}
+            </div>
+          </Section>
+        )}
+
         {/* Staff & Students */}
         {/* <Section icon={Users} title="Staff & Students">
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
@@ -358,7 +412,7 @@ export default async function InstitutionDetailPage({
         </Section> */}
 
         {/* Financial Information */}
-        <Section icon={DollarSign} title="Financial Information">
+        <Section icon={WalletCards} title="Financial Information">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
             <Field
               label="Average Fee per Student"

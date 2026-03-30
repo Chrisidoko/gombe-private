@@ -110,7 +110,7 @@ const CategoryCard: React.FC<CategoryCardProps> = ({
 async function getSchoolStats(): Promise<SchoolStats> {
   const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
   const res = await fetch(`${baseUrl}/api/dashboard/stats`, {
-    next: { revalidate: 60 },
+    cache: "no-store", // ← make sure this exists on every fetch
   });
 
   if (!res.ok) throw new Error("Failed to fetch school stats");
