@@ -3,7 +3,12 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
-import { Building, Building2, FileQuestionMark } from "lucide-react";
+import {
+  Building,
+  Building2,
+  FileQuestionMark,
+  UserRoundCog,
+} from "lucide-react";
 import LogoutButton from "@/components/ui/logoutbutton";
 
 interface NavigationProps {
@@ -89,6 +94,11 @@ const Navigation: React.FC<NavigationProps> = ({ collapsed, setCollapsed }) => {
       href: "/create-school",
       label: "Create School",
       icon: <Building className="w-4 h-4" />,
+    },
+    {
+      href: "/accounts",
+      label: "Accounts",
+      icon: <UserRoundCog className="w-4 h-4" />,
     },
   ];
 
