@@ -48,7 +48,7 @@ const ROLES = [
   },
   {
     icon: Settings,
-    label: "Admin|Operations",
+    label: "Admin | Operations",
     desc: "Administer and Manage Institutions",
   },
   {
@@ -213,24 +213,26 @@ export default function OnboardingPage() {
           <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-gray-400 mb-3 text-center">
             Portal Access Roles
           </p>
-          <div className="grid grid-cols-2 gap-2">
-            {ROLES.map(({ icon: Icon, label, desc }) => (
-              <div
-                key={label}
-                className="flex items-start gap-3 bg-white border border-gray-100 rounded-xl px-4 py-3 shadow-sm"
-              >
-                <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-green-50 border border-green-100 shrink-0 mt-0.5">
-                  <Icon className="w-4 h-4 text-green-600" />
+          <Link href="/login">
+            <div className="grid grid-cols-2 gap-2">
+              {ROLES.map(({ icon: Icon, label, desc }) => (
+                <div
+                  key={label}
+                  className="flex items-start gap-3 bg-white border border-gray-100 rounded-xl px-4 py-3 shadow-sm"
+                >
+                  <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-green-50 border border-green-100 shrink-0 mt-0.5">
+                    <Icon className="w-4 h-4 text-green-600" />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-xs font-bold text-gray-800">{label}</p>
+                    <p className="text-[10px] text-gray-400 leading-snug mt-0.5">
+                      {desc}
+                    </p>
+                  </div>
                 </div>
-                <div className="min-w-0">
-                  <p className="text-xs font-bold text-gray-800">{label}</p>
-                  <p className="text-[10px] text-gray-400 leading-snug mt-0.5">
-                    {desc}
-                  </p>
-                </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          </Link>
 
           {/* Verify licence link */}
           <div className="mt-4 flex justify-center">
