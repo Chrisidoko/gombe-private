@@ -133,9 +133,7 @@ export default function InspectorPage() {
       <div className="max-w-4xl mx-auto space-y-6">
         {/* Header */}
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">
-            Institution Inspector
-          </h1>
+          <h1 className="text-2xl font-bold text-gray-900">Field Inspector</h1>
           <p className="text-sm text-gray-500 mt-0.5">
             Search for any institution to view their license, compliance status
             and approved courses.

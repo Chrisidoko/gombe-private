@@ -124,11 +124,9 @@ export default function AccountApprovalsPage() {
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">
-              Account Approvals
-            </h1>
+            <h1 className="text-2xl font-bold text-gray-900">User Approvals</h1>
             <p className="text-sm text-gray-500 mt-0.5">
-              Review and approve institution account registrations
+              Review and approve user accounts registrations
             </p>
           </div>
           <button

@@ -43,12 +43,12 @@ const ROLES = [
   },
   {
     icon: WalletCards,
-    label: "Finance",
+    label: "Management",
     desc: "Oversee collections, transactions and revenue",
   },
   {
     icon: Settings,
-    label: "Management",
+    label: "Admin|Operations",
     desc: "Administer and Manage Institutions",
   },
   {

@@ -97,7 +97,7 @@ const Navigation: React.FC<NavigationProps> = ({ collapsed, setCollapsed }) => {
     },
     {
       href: "/accounts",
-      label: "Accounts",
+      label: "Users",
       icon: <UserRoundCog className="w-4 h-4" />,
     },
   ];
