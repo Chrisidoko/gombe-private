@@ -11,6 +11,7 @@ import {
   ShieldCheck,
   ChevronRight,
   ArrowRight,
+  ListTodo,
 } from "lucide-react";
 
 // ── Slide data — replace src with your actual images ─────────────────────────
@@ -48,8 +49,13 @@ const ROLES = [
   },
   {
     icon: Settings,
-    label: "Admin | Operations",
+    label: "Admin",
     desc: "Administer and Manage Institutions",
+  },
+  {
+    icon: ListTodo,
+    label: "Operator",
+    desc: "Assessment and Demand Notices",
   },
   {
     icon: ClipboardCheck,
@@ -214,23 +220,43 @@ export default function OnboardingPage() {
             Portal Access Roles
           </p>
           <Link href="/login">
-            <div className="grid grid-cols-2 gap-2">
-              {ROLES.map(({ icon: Icon, label, desc }) => (
-                <div
-                  key={label}
-                  className="flex items-start gap-3 bg-white border border-gray-100 rounded-xl px-4 py-3 shadow-sm"
-                >
-                  <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-green-50 border border-green-100 shrink-0 mt-0.5">
-                    <Icon className="w-4 h-4 text-green-600" />
+            <div className="flex flex-col gap-2">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                {ROLES.slice(0, 2).map(({ icon: Icon, label, desc }) => (
+                  <div
+                    key={label}
+                    className="flex items-start gap-3 bg-white border border-gray-100 rounded-xl px-4 py-3 shadow-sm"
+                  >
+                    <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-green-50 border border-green-100 shrink-0 mt-0.5">
+                      <Icon className="w-4 h-4 text-green-600" />
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-xs font-bold text-gray-800">{label}</p>
+                      <p className="text-[10px] text-gray-400 leading-snug mt-0.5">
+                        {desc}
+                      </p>
+                    </div>
                   </div>
-                  <div className="min-w-0">
-                    <p className="text-xs font-bold text-gray-800">{label}</p>
-                    <p className="text-[10px] text-gray-400 leading-snug mt-0.5">
-                      {desc}
-                    </p>
+                ))}
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                {ROLES.slice(2).map(({ icon: Icon, label, desc }) => (
+                  <div
+                    key={label}
+                    className="flex items-start gap-3 bg-white border border-gray-100 rounded-xl px-4 py-3 shadow-sm"
+                  >
+                    <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-green-50 border border-green-100 shrink-0 mt-0.5">
+                      <Icon className="w-4 h-4 text-green-600" />
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-xs font-bold text-gray-800">{label}</p>
+                      <p className="text-[10px] text-gray-400 leading-snug mt-0.5">
+                        {desc}
+                      </p>
+                    </div>
                   </div>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
           </Link>
 
