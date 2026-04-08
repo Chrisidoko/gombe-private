@@ -8,8 +8,8 @@ import {
   X,
   Loader2,
   Send,
-  Receipt,
   CheckCircle2,
+  Settings2,
 } from "lucide-react";
 
 type School = {
@@ -157,7 +157,7 @@ export default function FixedAssessmentsPage() {
           {/* Card header */}
           <div className="bg-[#1a5c2e] px-6 py-5 flex items-center gap-3">
             <div className="flex items-center justify-center w-9 h-9 rounded-xl bg-white/10">
-              <Receipt className="w-4 h-4 text-white" />
+              <Settings2 className="w-4 h-4 text-white" />
             </div>
             <div>
               <h2 className="text-sm font-bold text-white">
