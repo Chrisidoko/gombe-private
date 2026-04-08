@@ -8,10 +8,10 @@ export async function GET() {
         COUNT(*)                                            AS total_schools,
         COUNT(*) FILTER (WHERE approval_status = 'approved') AS active_schools,
         COUNT(*) FILTER (WHERE approval_status = 'unapproved')  AS unapproved_approvals,
-        COUNT(*) FILTER (WHERE category = 'University')  AS total_universities,
-        COUNT(*) FILTER (WHERE category = 'Polytechnic')  AS total_polytechnics,
-        COUNT(*) FILTER (WHERE category = 'College of Education')  AS total_colleges_of_education,
-        COUNT(*) FILTER (WHERE category = 'School of Health Technology')  AS total_schools_of_health_technology,  
+        COUNT(*) FILTER (WHERE category = 'University' AND approval_status = 'approved')  AS total_universities,
+        COUNT(*) FILTER (WHERE category = 'Polytechnic' AND approval_status = 'approved')  AS total_polytechnics,
+        COUNT(*) FILTER (WHERE category = 'College of Education' AND approval_status = 'approved')  AS total_colleges_of_education,
+        COUNT(*) FILTER (WHERE category = 'School of Health Technology' AND approval_status = 'approved')  AS total_schools_of_health_technology,  
         COUNT(license_number) FILTER (WHERE license_number IS NOT NULL AND license_number <> '' AND approval_status = 'approved') AS total_licenses
       FROM schoolskano;
     `);

@@ -43,25 +43,37 @@ export async function middleware(req: NextRequest) {
     const isAdmin = institution === "CBS_Admin";
     const isFinance = institution === "CBS_Finance";
     const isInspector = institution === "CBS_Inspector";
-    const isSchool = !isAdmin && !isFinance && !isInspector;
+    const isOperator = institution === "CBS_Operator";
+    const isSchool = !isAdmin && !isFinance && !isInspector && !isOperator;
 
     // ── Helper — where to redirect a non-authorised user ─────────────────
     function defaultRedirect() {
       if (isAdmin) return "/dashboard";
       if (isFinance) return "/finance";
       if (isInspector) return "/inspector";
+      if (isOperator) return "/evaluations";
       return "/home"; // school
     }
 
     // ── Admin routes — /dashboard ───────────────────────────────────────────
     if (
       url.startsWith("/dashboard") ||
-      url.startsWith("/evaluations") ||
       url.startsWith("/questionnaires") ||
       url.startsWith("/requests") ||
-      url.startsWith("/institutions")
+      url.startsWith("/institutions") ||
+      url.startsWith("/accounts")
     ) {
       if (!isAdmin) {
+        return NextResponse.redirect(new URL(defaultRedirect(), req.url));
+      }
+    }
+
+    // ── Operator routes — /dashboard ───────────────────────────────────────────
+    if (
+      url.startsWith("/evaluations") ||
+      url.startsWith("//ministry-assessment")
+    ) {
+      if (!isOperator) {
         return NextResponse.redirect(new URL(defaultRedirect(), req.url));
       }
     }

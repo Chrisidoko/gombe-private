@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
-// import { Building2 } from "lucide-react";
+import { Building } from "lucide-react";
 import LogoutButton from "@/components/ui/logoutbutton";
 
 interface NavigationProps {
@@ -17,27 +17,8 @@ const Navigation: React.FC<NavigationProps> = ({ collapsed, setCollapsed }) => {
 
   const navItems = [
     {
-      href: "/collections",
-      label: "Summaries",
-      icon: (
-        <svg
-          className="w-5 h-5"
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={2}
-            d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"
-          />
-        </svg>
-      ),
-    },
-    {
-      href: "/finance",
-      label: "Revenue Performance",
+      href: "/evaluations",
+      label: "Self Assessment",
       icon: (
         <svg
           className="w-5 h-5"
@@ -54,25 +35,11 @@ const Navigation: React.FC<NavigationProps> = ({ collapsed, setCollapsed }) => {
         </svg>
       ),
     },
+
     {
-      href: "/transactions",
-      label: "Transactions",
-      // badge: 3,
-      icon: (
-        <svg
-          className="w-5 h-5"
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={2}
-            d="M9 14l6-6m-5.5.5h.01m4.99 5h.01M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16l3.5-2 3.5 2 3.5-2 3.5 2zM10 8.5a.5.5 0 11-1 0 .5.5 0 011 0zm5 5a.5.5 0 11-1 0 .5.5 0 011 0z"
-          />
-        </svg>
-      ),
+      href: "/ministry-assessment",
+      label: "Ministry Assessment",
+      icon: <Building className="w-4 h-4" />,
     },
   ];
 
@@ -239,7 +206,7 @@ const Navigation: React.FC<NavigationProps> = ({ collapsed, setCollapsed }) => {
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-semibold text-gray-900 truncate">
-                      Management
+                      Operator
                     </p>
                     <p className="text-xs text-gray-600 truncate">
                       Click to View Profile

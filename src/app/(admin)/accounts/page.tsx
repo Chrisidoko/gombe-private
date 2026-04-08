@@ -68,7 +68,7 @@ export default function AccountApprovalsPage() {
   async function handleAction(id: number, action: "approve" | "reject") {
     setActing(id);
     try {
-      const res = await fetch("/api/admin/accounts", {
+      const res = await fetch("/api/auth/verify", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ id, action }),
@@ -207,9 +207,9 @@ export default function AccountApprovalsPage() {
                         )}
                       </div>
 
-                      <p className="text-xs font-mono text-gray-400 mt-0.5">
+                      {/* <p className="text-xs font-mono text-gray-400 mt-0.5">
                         {account.institution}
-                      </p>
+                      </p> */}
 
                       <div className="flex flex-wrap items-center gap-3 mt-2">
                         <div className="flex items-center gap-1.5 text-xs text-gray-500">

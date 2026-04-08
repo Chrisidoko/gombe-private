@@ -172,9 +172,10 @@ export default function SignUpForm() {
                 disabled={iloading}
               >
                 <option value="">Select Institution</option>
-                <option value="CBS_Admin">CBS Admin</option>
+                <option value="CBS_Admin">Admin</option>
                 <option value="CBS_Inspector">Inspector</option>
-                <option value="CBS_Finance">Finance Admin</option>
+                <option value="CBS_Finance">Management</option>
+                <option value="CBS_Operator">Operator</option>
                 {/* {institutions.map((school) => (
                   <option key={school.id} value={school.school_id}>
                     {school.name}

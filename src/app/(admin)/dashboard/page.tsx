@@ -149,7 +149,7 @@ export default async function AdminDashboard() {
 
                 <div className="bg-green-500/20 rounded-md p-1 flex items-center justify-center">
                   <span className="mx-auto text-xs text-green-700 font-semibold">
-                    OPERATIONS
+                    ADMIN
                   </span>
                 </div>
               </div>

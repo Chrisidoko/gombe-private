@@ -535,12 +535,14 @@ export default function Requests() {
   return (
     <main className="space-y-6">
       {/* Header */}
-      <div className="  p-6">
+      <div className="p-6">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">Assessments</h1>
-            <p className="text-gray-600 mt-1">
-              Review and approve pending school assessments
+            <h1 className="text-3xl font-bold text-gray-900">
+              Self Assessments
+            </h1>
+            <p className="text-sm text-gray-500 mt-1">
+              Review and approve pending self assessments made by institutions.
             </p>
           </div>
           <div className="bg-blue-50 border border-blue-200 rounded-lg px-4 py-2">
