@@ -1,12 +1,11 @@
 import React from "react";
 import { getUserFromCookie } from "@/lib/auth";
-// import LogoutButton from "@/components/ui/logoutbutton";
-import InspectorPage from "@/components/ui/InspectorPageClient"; // ← your search component
-// import { Shield } from "lucide-react";
+
 import TopHeader from "@/components/TopHeader";
+import CreateSchoolPage from "./CreatePage";
 import { UserRoundSearch } from "lucide-react";
 
-export default async function InspectorDashboard() {
+export default async function CreatePage() {
   const user = await getUserFromCookie();
 
   if (!user) {
@@ -30,7 +29,7 @@ export default async function InspectorDashboard() {
       </div>
 
       {/* Inspector search page */}
-      <InspectorPage />
+      <CreateSchoolPage />
     </main>
   );
 }

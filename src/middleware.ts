@@ -103,7 +103,7 @@ export async function middleware(req: NextRequest) {
     }
 
     // ── Inspector routes — /inspector ─────────────────────────────────────
-    if (url.startsWith("/inspector")) {
+    if (url.startsWith("/inspector") || url.startsWith("/create")) {
       if (!isInspector)
         return NextResponse.redirect(new URL(defaultRedirect(), req.url));
     }
