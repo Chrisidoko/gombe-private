@@ -39,12 +39,12 @@ const FEE_OPTIONS = [
     amount: null,
     note: "Custom amount required",
   },
-  {
-    id: "inspection_levy",
-    label: "Inspection Levy",
-    amount: 50000,
-    note: "Ministry inspection charge",
-  },
+  // {
+  //   id: "inspection_levy",
+  //   label: "Inspection Levy",
+  //   amount: 50000,
+  //   note: "Ministry inspection charge",
+  // },
   {
     id: "custom",
     label: "Custom Fee",

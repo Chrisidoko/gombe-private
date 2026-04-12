@@ -71,7 +71,8 @@ export async function middleware(req: NextRequest) {
     // ── Operator routes — /dashboard ───────────────────────────────────────────
     if (
       url.startsWith("/evaluations") ||
-      url.startsWith("//ministry-assessment")
+      url.startsWith("//ministry-assessment") ||
+      url.startsWith("/records")
     ) {
       if (!isOperator) {
         return NextResponse.redirect(new URL(defaultRedirect(), req.url));
