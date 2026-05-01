@@ -1,7 +1,7 @@
 // components/TopPaymentsChart.tsx
 "use client";
 
-import { PieChart, Pie, Tooltip, ResponsiveContainer, Legend } from "recharts";
+import { PieChart, Pie, Tooltip, ResponsiveContainer } from "recharts";
 import type { TooltipProps } from "recharts";
 
 type TopPayment = {

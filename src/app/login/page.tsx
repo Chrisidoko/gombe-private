@@ -4,7 +4,7 @@ import Image from "next/image";
 import { useState } from "react";
 import { EyeClosed, Eye, Loader2 } from "lucide-react";
 // import Rightside from "@/components/ui/rightside";
-import { useRouter } from "next/navigation";
+// import { useRouter } from "next/navigation";
 import Link from "next/link";
 
 const Page = () => {
@@ -15,7 +15,7 @@ const Page = () => {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
 
-  const router = useRouter();
+  // const router = useRouter();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
