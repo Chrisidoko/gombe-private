@@ -11,7 +11,7 @@ import {
   ResponsiveContainer,
   Cell,
 } from "recharts";
-import { MapPin, Loader2, TrendingUp } from "lucide-react";
+import { MapPin, Loader2 } from "lucide-react";
 import type { TooltipProps } from "recharts";
 
 type LGARevenue = {

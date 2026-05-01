@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
-import { Building } from "lucide-react";
+import { Building, Blocks } from "lucide-react";
 import LogoutButton from "@/components/ui/logoutbutton";
 
 interface NavigationProps {
@@ -16,6 +16,11 @@ const Navigation: React.FC<NavigationProps> = ({ collapsed, setCollapsed }) => {
   const [isMobileOpen, setIsMobileOpen] = useState(false);
 
   const navItems = [
+    {
+      href: "/operator-Invoices",
+      label: "Invoices Overview",
+      icon: <Blocks size={18} />,
+    },
     {
       href: "/evaluations",
       label: "Self Assessment",

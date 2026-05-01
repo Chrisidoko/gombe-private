@@ -51,7 +51,7 @@ export async function middleware(req: NextRequest) {
       if (isAdmin) return "/dashboard";
       if (isFinance) return "/finance";
       if (isInspector) return "/inspector";
-      if (isOperator) return "/evaluations";
+      if (isOperator) return "/operator-Invoices";
       return "/home"; // school
     }
 
@@ -71,7 +71,8 @@ export async function middleware(req: NextRequest) {
     // ── Operator routes — /dashboard ───────────────────────────────────────────
     if (
       url.startsWith("/evaluations") ||
-      url.startsWith("//ministry-assessment") ||
+      url.startsWith("/ministry-assessment") ||
+      url.startsWith("/operator-Invoices") ||
       url.startsWith("/records")
     ) {
       if (!isOperator) {
