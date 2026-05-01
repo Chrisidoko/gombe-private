@@ -54,7 +54,7 @@ const Page = () => {
       } else if (data.user.role === "inspector") {
         window.location.href = "/inspector"; // (inspector)
       } else if (data.user.role === "operator") {
-        window.location.href = "/evaluations"; // (operator)
+        window.location.href = "/operator-Invoices"; // (operator)
       }
     } catch (err) {
       console.error(err);
