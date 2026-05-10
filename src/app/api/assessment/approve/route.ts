@@ -1,4 +1,5 @@
 // /api/assessment/approve/route.ts
+// Currently this route is only used for the self assessment approval flow, where the ministry approves assessments of an individual assessment made by a school.
 import { NextResponse } from "next/server";
 import pool from "@/lib/db";
 import nodemailer from "nodemailer";
@@ -42,7 +43,7 @@ export async function POST(req: Request) {
       assessment_id,
       amount,
     ]);
-    console.log("✅ Invoice inserted:", rows[0]);
+    // console.log("Invoice inserted:", rows[0]);
 
     const invoiceId = rows[0].id;
     const dueDate = rows[0].due_date;
@@ -53,7 +54,7 @@ export async function POST(req: Request) {
       [school_id],
     );
     const school = schoolRes.rows[0];
-    console.log("🏫 School found:", school);
+    // console.log(" School found:", school);
 
     if (!school) throw new Error("School not found");
 

@@ -68,40 +68,30 @@ export default function InvoiceTable({ schoolId }: { schoolId: string }) {
 
   async function handleCheckout(invoiceId: number) {
     setCheckoutLoading(invoiceId);
-
     try {
-      const response = await fetch("/api/payments/checkout", {
+      const response = await fetch("/api/invoice-payments/checkout", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          invoice_id: invoiceId,
-        }),
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ invoice_id: invoiceId }), // ← just invoice_id
       });
 
       const data = await response.json();
+      if (!response.ok)
+        throw new Error(data.error || "Failed to initiate payment");
 
-      if (!response.ok) {
-        throw new Error(data.error || "Failed to create checkout session");
-      }
-
-      // Redirect to PayKaduna checkout page in the same tab
-      // window.location.href = data.checkoutUrl;
-
-      // Create temporary anchor element to open a new tab to guarantee it opens in a new tab without popup blockers interfering
+      // Open checkout in new tab
       const link = document.createElement("a");
       link.href = data.checkoutUrl;
       link.target = "_blank";
-      link.rel = "noopener noreferrer"; // Security best practice
+      link.rel = "noopener noreferrer";
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
     } catch (error) {
-      console.error("Checkout error:", error);
       toast.error(
         error instanceof Error ? error.message : "Failed to initiate checkout",
       );
+    } finally {
       setCheckoutLoading(null);
     }
   }

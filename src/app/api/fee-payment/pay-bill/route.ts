@@ -1,4 +1,4 @@
-// /api/payment/checkout/route.ts
+// /api/fee-payment/pay-bill/route.ts
 import { NextResponse } from "next/server";
 import pool from "@/lib/db";
 import crypto from "crypto";

@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
-import { Building, Blocks } from "lucide-react";
+import { Building, Blocks, Layers2, ChartNoAxesGantt } from "lucide-react";
 import LogoutButton from "@/components/ui/logoutbutton";
 
 interface NavigationProps {
@@ -40,10 +40,19 @@ const Navigation: React.FC<NavigationProps> = ({ collapsed, setCollapsed }) => {
         </svg>
       ),
     },
-
+    {
+      href: "/tiers",
+      label: "Type Categorization",
+      icon: <Layers2 className="w-4 h-4" />,
+    },
+    {
+      href: "/bulk-assessment",
+      label: "Bulk Assessment",
+      icon: <ChartNoAxesGantt size={18} />,
+    },
     {
       href: "/ministry-assessment",
-      label: "Ministry Assessment",
+      label: "Other Fees",
       icon: <Building className="w-4 h-4" />,
     },
     {
@@ -99,7 +108,7 @@ const Navigation: React.FC<NavigationProps> = ({ collapsed, setCollapsed }) => {
             >
               <img
                 src="/KD_logo.png"
-                alt="KIRS logo"
+                alt="Kaduna State logo"
                 className={`flex-shrink-0 transition-all ${
                   collapsed ? "w-10 h-10" : "w-12 h-12"
                 }`}

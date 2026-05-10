@@ -16,6 +16,7 @@ export async function middleware(req: NextRequest) {
     url.startsWith("/login") ||
     url.startsWith("/signup") ||
     url.startsWith("/api") ||
+    url.startsWith("/payment-success") || // ← public
     url.startsWith("/verify") || // ← public
     url.startsWith("/school-overview") || // ← public
     url.startsWith("/forgot-password") || // ← public
@@ -68,11 +69,13 @@ export async function middleware(req: NextRequest) {
       }
     }
 
-    // ── Operator routes — /dashboard ───────────────────────────────────────────
+    // ── Operator routes ───────────────────────────────────────────
     if (
       url.startsWith("/evaluations") ||
       url.startsWith("/ministry-assessment") ||
       url.startsWith("/operator-Invoices") ||
+      url.startsWith("/bulk-assessment") ||
+      url.startsWith("/tiers") ||
       url.startsWith("/records")
     ) {
       if (!isOperator) {

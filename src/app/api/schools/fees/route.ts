@@ -6,9 +6,9 @@ import crypto from "crypto";
 
 /*
 3-stage fee progression:
-Stage 1 — Consent Letter Fee (₦300,000) — every school pays this first, regardless of category. This is the entry-level fee that's been owed since inception. Show this to all schools always.
+Stage 1 — Establishment Letter Fee (₦300,000) — every school pays this first, regardless of category. This is the entry-level fee that's been owed since inception. Show this to all schools always.
 Stage 2 — Administrative Fees — processing, inspection etc. These show after or alongside Stage 1. Still visible to all schools.
-Stage 3 — Certificate Fee (₦300k / ₦350k / ₦1,000,000) — this only becomes visible when BOTH conditions are met:
+Stage 3 — Consent Certificate Fee (₦300k / ₦350k / ₦1,000,000) — this only becomes visible when BOTH conditions are met:
 * license_status !== "Active" — they don't already have an active license
 * approval_status === "approved" — the ministry has reviewed and approved their assessment form
 So the certificate fee is essentially locked/hidden until the school has fulfilled the earlier stages and received ministry approval. This prevents schools from seeing or attempting to pay the final fee before they're eligible.

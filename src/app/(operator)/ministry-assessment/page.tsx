@@ -21,12 +21,12 @@ type School = {
 };
 
 const FEE_OPTIONS = [
-  {
-    id: "tuition_5pct",
-    label: "5% of Tuition Fee",
-    amount: null,
-    note: "Calculated from student tuition records",
-  },
+  // {
+  //   id: "tuition_5pct",
+  //   label: "5% of Tuition Fee",
+  //   amount: null,
+  //   note: "Calculated from student tuition records",
+  // },
   {
     id: "annual_renewal",
     label: "Annual License Renewal",

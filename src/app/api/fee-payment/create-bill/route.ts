@@ -1,4 +1,6 @@
 // app/api/fee-payment/create-bill/route.ts
+// Currently not in use : take note
+
 import { NextResponse } from "next/server";
 import pool from "@/lib/db";
 import crypto from "crypto";
@@ -14,7 +16,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Missing fields" }, { status: 400 });
     }
 
-    // console.log("✅ Invoice created:", result.rows[0]);
+    // console.log(" Invoice created:", result.rows[0]);
 
     // Step 1: Fetch school info
     const schoolRes = await client.query(
@@ -44,7 +46,7 @@ export async function POST(req: Request) {
 
       const billPayload = {
         engineCode: process.env.PAYKADUNA_ENGINE_CODE,
-        identifier: `${school_id}-${Date.now()}`, // Unique identifier for this bill
+        identifier: `${school_id}`, // Unique identifier for this bill --- stable per school, remains the same all through, allows idempotency per school
         firstName: firstName,
         middleName: middleName,
         lastName: lastName,
@@ -53,7 +55,7 @@ export async function POST(req: Request) {
         esBillDetailsDto: [
           {
             amount: parseFloat(amount),
-            mdasId: parseInt(process.env.MDAS_ID || "3646"),
+            mdasId: parseInt(process.env.MDAS_ID || "3654"),
             narration: `${narration} - Invoice for ${school.name}`,
           },
         ],

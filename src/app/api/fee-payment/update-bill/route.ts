@@ -1,4 +1,6 @@
 // app/api/fee-payment/update-bill/route.ts
+// This route is called by the payment gateway (PayKaduna) after a payment attempt, to update the invoice status in our database based on the payment outcome.
+// I don't Think i am using this route anymore, but I am keeping it here for now just in case. It can be deleted later if i confirm it's not needed.
 import { NextResponse } from "next/server";
 import pool from "@/lib/db";
 

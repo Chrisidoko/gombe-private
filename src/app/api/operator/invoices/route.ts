@@ -4,7 +4,7 @@ import pool from "@/lib/db";
 
 export async function GET() {
   try {
-    // ── Summaries ─────────────────────────────────────────────────────────
+    // ── Summaries & DB Information ─────────────────────────────────────────────────────────
     const summaryResult = await pool.query(`
       SELECT
         COUNT(*) FILTER (

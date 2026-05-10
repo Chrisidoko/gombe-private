@@ -1,4 +1,4 @@
-// /api/payment/checkout/route.ts
+// app/api/invoice-payment/pay/route.ts
 import { NextResponse } from "next/server";
 import pool from "@/lib/db";
 import crypto from "crypto";
@@ -6,24 +6,36 @@ import crypto from "crypto";
 export async function POST(req: Request) {
   const client = await pool.connect();
 
+  let invoice_id: string | number | undefined;
+
   try {
     const body = await req.json();
-    const { invoice_id } = body;
-
-    // console.log("🔹 Initiating checkout for invoice:", invoice_id);
+    invoice_id = body.invoice_id;
 
     if (!invoice_id) {
       return NextResponse.json(
-        { error: "Missing invoice_id" },
+        { error: "invoice_id is required" },
         { status: 400 },
       );
     }
 
-    // Fetch invoice details including tpui and bill_reference
+    // ── Step 1: Fetch invoice + school info in one query ──────────────────
     const invoiceRes = await client.query(
-      `SELECT id, invoice_number, bill_reference, tpui, amount, status, school_id 
-       FROM schoolkano_invoices 
-       WHERE id = $1`,
+      `SELECT
+         i.id,
+         i.school_id,
+         i.invoice_number,
+         i.amount,
+         i.status,
+         i.bill_reference,
+         i.is_creating_bill,
+         s.name    AS school_name,
+         s.phone   AS school_phone,
+         s.address AS school_address,
+         s.email   AS school_email
+       FROM schoolkano_invoices i
+       LEFT JOIN schoolskano s ON s.school_id = i.school_id
+       WHERE i.id = $1`,
       [invoice_id],
     );
 
@@ -33,41 +45,65 @@ export async function POST(req: Request) {
 
     const invoice = invoiceRes.rows[0];
 
-    if (invoice.status !== "Unpaid") {
+    // ── Step 2: Guard checks ──────────────────────────────────────────────
+    if (invoice.status === "Paid") {
       return NextResponse.json(
-        { error: "Invoice is already paid" },
+        { error: "This invoice has already been paid" },
         { status: 400 },
       );
     }
 
-    if (!invoice.bill_reference) {
+    if (invoice.is_creating_bill) {
       return NextResponse.json(
-        { error: "Bill reference not found. Please contact support." },
-        { status: 400 },
+        {
+          error:
+            "Payment is already being processed. Please wait a moment and try again.",
+        },
+        { status: 429 },
       );
     }
 
-    if (!invoice.tpui) {
-      return NextResponse.json(
-        { error: "TPUI not found. Please contact support." },
-        { status: 400 },
-      );
+    // ── Step 3: If bill reference already exists — go straight to checkout ─
+    if (invoice.bill_reference) {
+      const checkoutUrl = `https://paykaduna.com/make_payment_tsp?ref=${invoice.bill_reference}`;
+      return NextResponse.json({ success: true, checkoutUrl });
     }
 
-    // Create checkout session with PayKaduna
-    const checkoutPayload = {
-      tpui: invoice.tpui,
-      billReference: invoice.bill_reference,
+    // ── Step 4: No bill reference — create one now ─────────────────────────
+    // Lock the row to prevent duplicate creation from parallel requests
+    await client.query(
+      `UPDATE schoolkano_invoices SET is_creating_bill = true WHERE id = $1`,
+      [invoice_id],
+    );
+
+    const apiKey = process.env.PAYKADUNA_API_KEY;
+    if (!apiKey) throw new Error("PayKaduna API key not configured");
+
+    // Build bill payload
+    const nameParts = (invoice.school_name || "School").split(" ");
+    const firstName = nameParts[0] || invoice.school_name;
+    const middleName = nameParts[1] || "";
+    const lastName =
+      nameParts.length > 2 ? nameParts.slice(2).join(" ") : nameParts[0];
+
+    const billPayload = {
+      engineCode: process.env.PAYKADUNA_ENGINE_CODE,
+      identifier: `${invoice.school_id}`, // Unique identifier for this bill --- stable per school, remains the same all through, allows idempotency per school
+      firstName,
+      middleName,
+      lastName,
+      address: invoice.school_address || "Kaduna, Nigeria",
+      telephone: invoice.school_phone || "08000000000",
+      esBillDetailsDto: [
+        {
+          amount: parseFloat(invoice.amount),
+          mdasId: parseInt(process.env.MDAS_ID || "3654"),
+          narration: `Assessment Invoice ${invoice.invoice_number} — ${invoice.school_name}`,
+        },
+      ],
     };
 
-    const jsonPayload = JSON.stringify(checkoutPayload);
-
-    // Generate HMAC SHA256 signature
-    const apiKey = process.env.PAYKADUNA_API_KEY;
-    if (!apiKey) {
-      throw new Error("PayKaduna API key not configured");
-    }
-
+    const jsonPayload = JSON.stringify(billPayload);
     const signature = crypto
       .createHmac("sha256", apiKey)
       .update(jsonPayload)
@@ -77,13 +113,10 @@ export async function POST(req: Request) {
     if (!baseUrl.startsWith("http://") && !baseUrl.startsWith("https://")) {
       baseUrl = `https://${baseUrl}`;
     }
-    const apiUrl = `${baseUrl}api/ESBills/CreateESTransaction`;
 
-    // console.log("🔹 Creating checkout session...");
-    // console.log("📍 API URL:", apiUrl);
-    // console.log("📦 Payload:", checkoutPayload);
+    console.log("Creating bill for invoice:", invoice.invoice_number);
 
-    const checkoutResponse = await fetch(apiUrl, {
+    const billResponse = await fetch(`${baseUrl}api/ESBills/CreateESBill`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -92,35 +125,64 @@ export async function POST(req: Request) {
       body: jsonPayload,
     });
 
-    if (!checkoutResponse.ok) {
-      const errorData = await checkoutResponse.text();
-      console.error("❌ PayKaduna API error:", errorData);
-      throw new Error(
-        `Checkout creation failed: ${checkoutResponse.statusText}`,
+    if (!billResponse.ok) {
+      const errText = await billResponse.text();
+      console.error("PayKaduna bill creation error:", errText);
+
+      // Release the lock before returning error
+      await client.query(
+        `UPDATE schoolkano_invoices SET is_creating_bill = false WHERE id = $1`,
+        [invoice_id],
       );
+
+      throw new Error(`Bill creation failed: ${billResponse.statusText}`);
     }
 
-    const checkoutData = await checkoutResponse.json();
-    // console.log("✅ Checkout session created:", checkoutData);
+    const billData = await billResponse.json();
+    const billReference = billData.bill?.billReference || null;
 
-    const checkoutUrl = checkoutData.checkoutUrl;
-
-    if (!checkoutUrl) {
-      throw new Error("No checkout URL received from PayKaduna");
+    if (!billReference) {
+      await client.query(
+        `UPDATE schoolkano_invoices SET is_creating_bill = false WHERE id = $1`,
+        [invoice_id],
+      );
+      throw new Error("No bill reference returned from PayKaduna");
     }
 
-    // console.log("✅ Redirecting to checkout URL");
+    console.log("Bill created:", billReference);
 
-    return NextResponse.json({
-      success: true,
-      checkoutUrl,
-    });
+    // ── Step 5: Save bill reference and release lock ───────────────────────
+    await client.query(
+      `UPDATE schoolkano_invoices
+       SET bill_reference    = $1,
+           is_creating_bill  = false
+       WHERE id = $2`,
+      [billReference, invoice_id],
+    );
+
+    // ── Step 6: Return checkout URL ───────────────────────────────────────
+    const checkoutUrl = `https://paykaduna.com/make_payment_tsp?ref=${billReference}`;
+
+    return NextResponse.json({ success: true, checkoutUrl });
   } catch (error: unknown) {
-    console.error("🔥 Error creating checkout:", error);
+    // Always release the lock on any unhandled error
+    if (invoice_id) {
+      await client
+        .query(
+          `UPDATE schoolkano_invoices SET is_creating_bill = false WHERE id = $1`,
+          [invoice_id],
+        )
+        .catch(() => {}); // silently ignore if this also fails
+    }
+    console.error("Invoice payment error:", error);
 
-    const errorMessage =
+    const message =
       error instanceof Error ? error.message : "An unknown error occurred";
-    return NextResponse.json({ error: errorMessage }, { status: 500 });
+
+    return NextResponse.json(
+      { success: false, error: message },
+      { status: 500 },
+    );
   } finally {
     client.release();
   }

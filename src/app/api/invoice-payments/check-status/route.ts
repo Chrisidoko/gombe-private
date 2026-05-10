@@ -1,4 +1,10 @@
 // /api/payment/check-status/route.ts
+
+// This API route checks the payment status of an invoice using the PayKaduna API.
+// It expects a query parameter "bill_reference" to identify the invoice.
+// The route will update the invoice status in the database if the payment is confirmed as paid.
+// ------I dont think this is being used anywhere, but we can keep it for future use when we want to implement a manual "Check Payment Status". For now, the system relies on PayKaduna's webhook to update payment status automatically. -----
+
 import { NextResponse } from "next/server";
 import pool from "@/lib/db";
 import crypto from "crypto";

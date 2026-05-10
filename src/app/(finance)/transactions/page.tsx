@@ -9,7 +9,7 @@ import { DataTable } from "@/components/ui/data-table/DataTable";
 // import { ChevronsUpDown } from "lucide-react";
 import { DateRange } from "react-day-picker";
 import { Row } from "@tanstack/react-table";
-// import Filterbar from "@/components/ui/datefilter";
+import Filterbar from "@/components/ui/datefilter";
 // import { DataTableDrawer } from "@/components/ui/data-table/DataTableDrawer";
 
 export type PeriodValue = "previous-period" | "last-year" | "no-comparison";
@@ -103,7 +103,13 @@ export default function Transactions() {
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-3xl font-bold text-gray-900">Transactions</h1>
-          <p className="text-gray-500 sm:text-sm/6">Transactions History</p>
+          {/* <p className="text-gray-500 sm:text-sm/6">Transactions History</p> */}
+          <p className="mt-2 text-gray-500 leading-6 text-sm">
+            Showing your transactions for the{" "}
+            <span className="font-semibold">current month.</span> To see
+            transactions from a different time period, please choose a new
+            <span className="font-semibold"> date range</span>.
+          </p>
         </div>
       </div>
       <Divider />
@@ -119,15 +125,15 @@ export default function Transactions() {
                 transactions from a different time period, please choose a new
                 <span className="font-semibold"> date range</span>.
               </p> */}
-              <div className="mt-6 flex items-center space-x-5">
-                {/* <Filterbar
+              <div className="mt-0 flex items-center space-x-5">
+                <Filterbar
                   maxDate={new Date()} // Prevent future dates
                   minDate={new Date(2024, 0, 1)}
                   selectedDates={selectedDates}
                   onDatesChange={handleDatesChange}
                   selectedPeriod={selectedPeriod}
                   onPeriodChange={setSelectedPeriod}
-                /> */}
+                />
                 {/* {sumTnx !== null && (
                   <div className="flex items-center gap-2 text-[#151D48] font-semibold text-md">
                     <span className="text-indigo-500 ">Total Revenue:</span>
