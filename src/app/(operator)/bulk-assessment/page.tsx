@@ -177,6 +177,14 @@ export default function AssessmentPage() {
     }
   }
 
+  const currentYear = new Date().getFullYear();
+
+  const assessmentOptions = [
+    `${currentYear - 1} Annual Tax Assessment`,
+    `${currentYear} Annual Tax Assessment`,
+    `${currentYear + 1} Annual Tax Assessment`,
+  ];
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -190,7 +198,9 @@ export default function AssessmentPage() {
       <div className="max-w-5xl mx-auto space-y-8">
         {/* Header */}
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Bulk Assessment</h1>
+          <h1 className="text-2xl font-bold text-gray-900">
+            Ministry Assessment
+          </h1>
           <p className="text-sm text-gray-500 mt-0.5">
             Set fees per type category and send demand notices to all
             institutions at once.
@@ -232,13 +242,26 @@ export default function AssessmentPage() {
                   <label className="block text-xs font-bold uppercase tracking-widest text-gray-500 mb-1.5">
                     Assessment Title <span className="text-red-500">*</span>
                   </label>
-                  <input
+                  <select
+                    value={title}
+                    onChange={(e) => setTitle(e.target.value)}
+                    className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
+                  >
+                    <option value="">Select Assessment Type</option>
+
+                    {assessmentOptions.map((item) => (
+                      <option key={item} value={item}>
+                        {item}
+                      </option>
+                    ))}
+                  </select>
+                  {/* <input
                     type="text"
                     value={title}
                     onChange={(e) => setTitle(e.target.value)}
                     placeholder="e.g. 2026 Annual Tax Assessment"
                     className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
-                  />
+                  /> */}
                 </div>
                 <div>
                   <label className="block text-xs font-bold uppercase tracking-widest text-gray-500 mb-1.5">
@@ -310,16 +333,34 @@ export default function AssessmentPage() {
                         </span>
                       </div>
                       <div className="relative">
-                        <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-500 text-sm font-semibold">
+                        {/* <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-500 text-sm font-semibold">
                           ₦
-                        </span>
-                        <input
+                        </span> */}
+                        {/* <input
                           type="number"
                           placeholder="0.00"
                           value={fee}
                           onChange={(e) => setFee(e.target.value)}
                           className="w-full pl-8 pr-4 py-2.5 bg-white border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
-                        />
+                        /> */}
+
+                        <select
+                          value={fee}
+                          onChange={(e) => setFee(e.target.value)}
+                          className="w-full pl-4 pr-4 py-2.5 bg-white border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
+                        >
+                          <option value="">Select Amount</option>
+
+                          {Array.from({ length: 20 }, (_, i) => {
+                            const amount = (i + 1) * 50000;
+
+                            return (
+                              <option key={amount} value={amount}>
+                                ₦{amount.toLocaleString()}
+                              </option>
+                            );
+                          })}
+                        </select>
                       </div>
                       {fee && count > 0 && (
                         <p className="text-xs text-gray-500 mt-1.5">

@@ -47,7 +47,7 @@ const Navigation: React.FC<NavigationProps> = ({ collapsed, setCollapsed }) => {
     },
     {
       href: "/bulk-assessment",
-      label: "Bulk Assessment",
+      label: "Ministry Assessment",
       icon: <ChartNoAxesGantt size={18} />,
     },
     {

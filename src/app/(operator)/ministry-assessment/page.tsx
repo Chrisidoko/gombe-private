@@ -143,9 +143,7 @@ export default function FixedAssessmentsPage() {
       <div className="max-w-4xl mx-auto space-y-6">
         {/* Header */}
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">
-            Ministry Assessment
-          </h1>
+          <h1 className="text-2xl font-bold text-gray-900">Other Fees</h1>
           <p className="text-sm text-gray-500 mt-1">
             Send flat demand notices to institutions based on ministry
             evaluation results.
@@ -201,7 +199,7 @@ export default function FixedAssessmentsPage() {
                 </div>
 
                 {/* Dropdown */}
-                {showDropdown && (
+                {showDropdown && !selected && (
                   <div className="absolute top-full left-0 right-0 mt-1.5 bg-white rounded-xl border border-gray-200 shadow-xl z-50 overflow-hidden">
                     {results.length === 0 ? (
                       <div className="px-4 py-3 text-xs text-gray-400 text-center">
