@@ -29,7 +29,7 @@ const FEE_OPTIONS = [
   // },
   {
     id: "annual_renewal",
-    label: "Annual License Renewal",
+    label: "Annual Consent Certificate Renewal",
     amount: 150000,
     note: "Flat renewal fee per year",
   },

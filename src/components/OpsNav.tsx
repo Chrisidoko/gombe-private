@@ -42,7 +42,7 @@ const Navigation: React.FC<NavigationProps> = ({ collapsed, setCollapsed }) => {
     },
     {
       href: "/tiers",
-      label: "Type Categorization",
+      label: "Institution Categorization",
       icon: <Layers2 className="w-4 h-4" />,
     },
     {

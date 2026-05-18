@@ -39,19 +39,19 @@ type Assessment = {
 
 const TIER_CONFIG = {
   1: {
-    label: "Type A",
+    label: "Category A",
     desc: "Small-Scale institutions",
     color: "border-blue-200   bg-blue-50",
     badge: "bg-blue-100   text-blue-700",
   },
   2: {
-    label: "Type B",
+    label: "Category B",
     desc: "Medium-Scale institutions",
     color: "border-green-200  bg-green-50",
     badge: "bg-green-100  text-green-700",
   },
   3: {
-    label: "Type C",
+    label: "Category C",
     desc: "Large-Scale institutions",
     color: "border-purple-200 bg-purple-50",
     badge: "bg-purple-100 text-purple-700",
@@ -293,7 +293,7 @@ export default function AssessmentPage() {
             <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
               <div className="px-6 py-4 border-b border-gray-100 bg-gray-50">
                 <h2 className="text-sm font-bold text-gray-700">
-                  Fee per Type
+                  Fee per Category
                 </h2>
                 <p className="text-xs text-gray-400 mt-0.5">
                   Leave a type blank to exclude it from this assessment
