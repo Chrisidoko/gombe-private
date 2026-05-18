@@ -257,10 +257,10 @@ export default function TierManagementPage() {
       });
 
       toast.success(
-        tier ? `Moved to Type ${tier}` : "School unassigned from tier",
+        tier ? `Moved to Category ${tier}` : "School unassigned from category",
       );
     } catch {
-      toast.error("Failed to update tier");
+      toast.error("Failed to update category");
     } finally {
       setMoving(null);
     }
@@ -345,17 +345,17 @@ export default function TierManagementPage() {
           <div className="grid grid-cols-4 gap-3">
             {[
               {
-                label: "Type 1",
+                label: "Category 1",
                 count: data.tier1.length,
                 color: "text-blue-600",
               },
               {
-                label: "Type 2",
+                label: "Category 2",
                 count: data.tier2.length,
                 color: "text-green-600",
               },
               {
-                label: "Type 3",
+                label: "Category 3",
                 count: data.tier3.length,
                 color: "text-purple-600",
               },
