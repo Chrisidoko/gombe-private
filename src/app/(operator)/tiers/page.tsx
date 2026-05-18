@@ -32,7 +32,7 @@ type TierData = {
 
 const TIER_CONFIG = {
   1: {
-    label: "Type A",
+    label: "Category A",
     desc: "Small-Scale institutions",
     color: "border-blue-200 bg-blue-50",
     badge: "bg-blue-100 text-blue-700 border-blue-200",
@@ -40,7 +40,7 @@ const TIER_CONFIG = {
     dot: "bg-blue-500",
   },
   2: {
-    label: "Type B",
+    label: "Category B",
     desc: "Medium-Scale institutions",
     color: "border-green-200 bg-green-50",
     badge: "bg-green-100 text-green-700 border-green-200",
@@ -48,7 +48,7 @@ const TIER_CONFIG = {
     dot: "bg-green-500",
   },
   3: {
-    label: "Type C",
+    label: "Category C",
     desc: "Large-Scale institutions",
     color: "border-purple-200 bg-purple-50",
     badge: "bg-purple-100 text-purple-700 border-purple-200",
@@ -301,10 +301,11 @@ export default function TierManagementPage() {
         <div className="flex items-start justify-between flex-wrap gap-4">
           <div>
             <h1 className="text-2xl font-bold text-gray-900">
-              Type Management
+              Institution Categorization{" "}
             </h1>
             <p className="text-sm text-gray-500 mt-0.5">
-              Assign institutions to assessment types. Changes save immediately.
+              Assign institutions to assessment categories. Changes save
+              immediately.
             </p>
           </div>
           <button
