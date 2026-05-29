@@ -340,8 +340,17 @@ export default function AssessmentPage() {
                           type="number"
                           placeholder="0.00"
                           value={fee}
-                          onChange={(e) => setFee(e.target.value)}
-                          className="w-full pl-8 pr-4 py-2.5 bg-white border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
+                          min="0"
+                          onChange={(e) => {
+                            const value = e.target.value;
+
+                            // Prevent negative values
+                            if (Number(value) >= 0 || value === "") {
+                              setFee(value);
+                            }
+                          }}
+                          onWheel={(e) => e.currentTarget.blur()} // Prevent scroll wheel changing value
+                          className="w-full pl-8 pr-4 py-2.5 bg-white border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-green-500 appearance-none"
                         />
 
                         {/* <select
