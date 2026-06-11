@@ -10,6 +10,7 @@ interface invoiceTypes {
   id: number;
   school_id: string;
   invoice_number: string;
+  title: string | null;
   amount: string | number;
   bill_reference: string | null;
   issue_date: string;
@@ -233,11 +234,13 @@ export default function InvoiceTable({ schoolId }: { schoolId: string }) {
                               <FileText size={21} />
                             </div>
                             <div>
-                              <p className="font-base text-gray-900">
+                              {inv.title && (
+                                <p className="text-xs font-semibold text-gray-700 leading-tight">
+                                  {inv.title}
+                                </p>
+                              )}
+                              <p className={`font-mono text-gray-500 ${inv.title ? "text-xs mt-0.5" : "text-sm font-medium text-gray-900"}`}>
                                 {inv.invoice_number}
-                              </p>
-                              <p className="text-xs text-gray-500">
-                                ID: {inv.id}
                               </p>
                             </div>
                           </div>

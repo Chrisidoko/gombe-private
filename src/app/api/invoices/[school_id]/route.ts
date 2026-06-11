@@ -3,14 +3,14 @@ import { NextResponse } from "next/server";
 import pool from "@/lib/db";
 
 export async function GET(
-  req: Request,
-  context: { params: Promise<{ school_id: string }> } // 👈 params as a Promise
+  _req: Request,
+  context: { params: Promise<{ school_id: string }> }
 ) {
   try {
     const { school_id } = await context.params; // 👈 awaited before use
 
     const query = `
-      SELECT id, invoice_number, amount, status, issue_date, due_date
+      SELECT id, invoice_number, title, amount, status, issue_date, due_date
       FROM schoolkano_invoices
       WHERE school_id = $1
       ORDER BY issue_date DESC

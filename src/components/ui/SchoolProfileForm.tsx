@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Loader2,
   Building,
@@ -9,10 +9,32 @@ import {
   CheckCircle,
   Save,
   X,
-  Lock,
+  Clock,
+  AlertTriangle,
+  Send,
 } from "lucide-react";
 import toast from "react-hot-toast";
 import { School } from "@/lib/types";
+
+type AcademicSnapshot = {
+  mode_of_operation: string[];
+  avg_fee: string;
+  total_revenue: string;
+  academic_session: string;
+  session_start: string;
+  session_end: string;
+  programmes: string[];
+  courses: string[];
+};
+
+type AcademicChangeRequest = {
+  id: number;
+  status: string;
+  current_snapshot: AcademicSnapshot;
+  requested_changes: AcademicSnapshot;
+  rejection_reason: string | null;
+  created_at: string;
+};
 
 type FormData = {
   // General Information
@@ -109,6 +131,35 @@ export default function SchoolProfileForm({
   const [activeSection, setActiveSection] = useState<string | null>(null);
   const [courseInput, setCourseInput] = useState("");
 
+  const [pendingRequest, setPendingRequest] = useState<AcademicChangeRequest | null>(null);
+  const [academicSubmitLoading, setAcademicSubmitLoading] = useState(false);
+  const [withdrawLoading, setWithdrawLoading] = useState(false);
+
+  // When the school is approved, check for any pending academic change request
+  useEffect(() => {
+    if (!isApproved) return;
+    fetch("/api/schools/academic-change-request")
+      .then((r) => r.json())
+      .then((data) => {
+        if (data.request?.status === "pending") {
+          setPendingRequest(data.request);
+          const ch = data.request.requested_changes as AcademicSnapshot;
+          setFormData((prev) => ({
+            ...prev,
+            modeOfOperation: ch.mode_of_operation ?? prev.modeOfOperation,
+            avgFee: ch.avg_fee ?? prev.avgFee,
+            totalRevenue: ch.total_revenue ?? prev.totalRevenue,
+            academicSession: ch.academic_session ?? prev.academicSession,
+            sessionStart: ch.session_start ?? prev.sessionStart,
+            sessionEnd: ch.session_end ?? prev.sessionEnd,
+            programmes: ch.programmes ?? prev.programmes,
+            courses: ch.courses ?? prev.courses,
+          }));
+        }
+      })
+      .catch(console.error);
+  }, [isApproved]);
+
   const handleChange = (field: keyof FormData, value: string | string[]) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
@@ -126,14 +177,93 @@ export default function SchoolProfileForm({
     });
   };
 
+  // Submit academic section changes for re-approval
+  const handleAcademicSubmit = async () => {
+    setAcademicSubmitLoading(true);
+    try {
+      const requested_changes: AcademicSnapshot = {
+        mode_of_operation: formData.modeOfOperation,
+        avg_fee: formData.avgFee,
+        total_revenue: formData.totalRevenue,
+        academic_session: formData.academicSession,
+        session_start: formData.sessionStart,
+        session_end: formData.sessionEnd,
+        programmes: formData.programmes,
+        courses: formData.courses,
+      };
+      const res = await fetch("/api/schools/academic-change-request", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ requested_changes }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message || "Failed to submit");
+      setPendingRequest(data.request);
+      toast.success("Academic changes submitted for ministry review.");
+    } catch (error) {
+      toast.error(
+        error instanceof Error ? error.message : "Failed to submit changes",
+      );
+    } finally {
+      setAcademicSubmitLoading(false);
+    }
+  };
+
+  // Withdraw the pending academic change request
+  const handleWithdraw = async () => {
+    setWithdrawLoading(true);
+    try {
+      const res = await fetch("/api/schools/academic-change-request", {
+        method: "DELETE",
+      });
+      if (!res.ok) throw new Error("Failed to withdraw");
+      setPendingRequest(null);
+      // Reset academic fields back to the currently approved values
+      setFormData((prev) => ({
+        ...prev,
+        modeOfOperation: schoolData.mode_of_operation ?? [],
+        avgFee: schoolData.avg_fee ?? "",
+        totalRevenue: schoolData.total_revenue ?? "",
+        academicSession: schoolData.academic_session ?? "2025/2026",
+        sessionStart: schoolData.session_start ?? "",
+        sessionEnd: schoolData.session_end ?? "",
+        programmes: schoolData.programmes ?? [],
+        courses: schoolData.courses ?? [],
+      }));
+      toast.success("Change request withdrawn.");
+    } catch {
+      toast.error("Failed to withdraw request.");
+    } finally {
+      setWithdrawLoading(false);
+    }
+  };
+
   const handleSubmit = async () => {
     setLoading(true);
 
     try {
+      // When approved, only send non-academic fields — academic changes go through re-approval
+      const payload = isApproved
+        ? {
+            proprietorName: formData.proprietorName,
+            contact_person: formData.contact_person,
+            contact_person_phone: formData.contact_person_phone,
+            contact_person_designation: formData.contact_person_designation,
+            ownershipType: formData.ownershipType,
+            address: formData.address,
+            lga: formData.lga,
+            tin: formData.tin,
+            lastTaxFiling: formData.lastTaxFiling,
+            category: formData.category,
+            website: formData.website,
+            license_status: formData.license_status,
+          }
+        : formData;
+
       const res = await fetch("/api/schools/profile", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(formData),
+        body: JSON.stringify(payload),
       });
 
       const data = await res.json();
@@ -144,7 +274,6 @@ export default function SchoolProfileForm({
 
       toast.success("Profile updated successfully!");
 
-      // Optionally refresh the page or redirect
       window.location.reload();
     } catch (error) {
       console.error("Error:", error);
@@ -487,10 +616,17 @@ export default function SchoolProfileForm({
             </div>
             <div className="flex items-center gap-3">
               {isApproved ? (
-                <span className="flex items-center gap-1 text-blue-600 text-sm font-medium">
-                  <Lock className="w-4 h-4" />
-                  Locked
-                </span>
+                pendingRequest ? (
+                  <span className="flex items-center gap-1 text-amber-600 text-sm font-medium">
+                    <Clock className="w-4 h-4" />
+                    Under Review
+                  </span>
+                ) : (
+                  <span className="flex items-center gap-1 text-blue-600 text-sm font-medium">
+                    <AlertTriangle className="w-4 h-4" />
+                    Re-approval Required
+                  </span>
+                )
               ) : (
                 isAcademicComplete && (
                   <span className="flex items-center gap-1 text-green-600 text-sm font-medium">
@@ -519,13 +655,23 @@ export default function SchoolProfileForm({
 
           {activeSection === "academic" && (
             <div className="p-6 space-y-6">
-              {/* Locked notice */}
-              {isApproved && (
+              {/* Status banners */}
+              {isApproved && pendingRequest && (
+                <div className="flex items-center gap-2 bg-amber-50 border border-amber-200 rounded-lg px-4 py-2.5">
+                  <Clock className="w-4 h-4 text-amber-500 shrink-0" />
+                  <p className="text-xs text-amber-700 font-medium">
+                    Your changes are under ministry review. Currently approved
+                    data remains live on the verification portal.
+                  </p>
+                </div>
+              )}
+              {isApproved && !pendingRequest && (
                 <div className="flex items-center gap-2 bg-blue-50 border border-blue-200 rounded-lg px-4 py-2.5">
-                  <Lock className="w-4 h-4 text-blue-500 shrink-0" />
+                  <AlertTriangle className="w-4 h-4 text-blue-500 shrink-0" />
                   <p className="text-xs text-blue-700 font-medium">
-                    This section is locked after ministry approval. Contact the
-                    Ministry to request any changes.
+                    Changes to this section require ministry re-approval. Your
+                    currently approved data stays live until the ministry reviews
+                    and approves the update.
                   </p>
                 </div>
               )}
@@ -541,7 +687,7 @@ export default function SchoolProfileForm({
                       <label
                         key={mode}
                         className={`flex items-center gap-3 p-3 border-2 rounded-lg transition-all ${
-                          isApproved
+                          isApproved && !!pendingRequest
                             ? "cursor-not-allowed opacity-60"
                             : "cursor-pointer"
                         } ${
@@ -554,10 +700,10 @@ export default function SchoolProfileForm({
                           type="checkbox"
                           checked={formData.modeOfOperation.includes(mode)}
                           onChange={() =>
-                            !isApproved &&
+                            !(isApproved && !!pendingRequest) &&
                             toggleCheckbox("modeOfOperation", mode)
                           }
-                          disabled={isApproved}
+                          disabled={isApproved && !!pendingRequest}
                           className="w-4 h-4 text-blue-600 disabled:cursor-not-allowed"
                         />
                         <span className="font-medium text-gray-900">
@@ -585,7 +731,7 @@ export default function SchoolProfileForm({
                       placeholder="0.00"
                       value={formData.avgFee}
                       onChange={(e) => handleChange("avgFee", e.target.value)}
-                      disabled={isApproved}
+                      disabled={isApproved && !!pendingRequest}
                       className="w-full pl-8 pr-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all disabled:bg-gray-50 disabled:text-gray-400 disabled:cursor-not-allowed"
                     />
                   </div>
@@ -607,7 +753,7 @@ export default function SchoolProfileForm({
                       onChange={(e) =>
                         handleChange("totalRevenue", e.target.value)
                       }
-                      disabled={isApproved}
+                      disabled={isApproved && !!pendingRequest}
                       className="w-full pl-8 pr-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all disabled:bg-gray-50 disabled:text-gray-400 disabled:cursor-not-allowed"
                     />
                   </div>
@@ -626,7 +772,7 @@ export default function SchoolProfileForm({
                     onChange={(e) =>
                       handleChange("academicSession", e.target.value)
                     }
-                    disabled={isApproved}
+                    disabled={isApproved && !!pendingRequest}
                     className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all disabled:bg-gray-50 disabled:text-gray-400 disabled:cursor-not-allowed"
                     required
                   >
@@ -654,7 +800,7 @@ export default function SchoolProfileForm({
                     onChange={(e) =>
                       handleChange("sessionStart", e.target.value)
                     }
-                    disabled={isApproved}
+                    disabled={isApproved && !!pendingRequest}
                     className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all disabled:bg-gray-50 disabled:text-gray-400 disabled:cursor-not-allowed"
                     required
                   />
@@ -668,7 +814,7 @@ export default function SchoolProfileForm({
                     type="date"
                     value={formData.sessionEnd}
                     onChange={(e) => handleChange("sessionEnd", e.target.value)}
-                    disabled={isApproved}
+                    disabled={isApproved && !!pendingRequest}
                     className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all disabled:bg-gray-50 disabled:text-gray-400 disabled:cursor-not-allowed"
                     required
                   />
@@ -693,7 +839,7 @@ export default function SchoolProfileForm({
                     <label
                       key={prog}
                       className={`flex items-center gap-3 p-3 border-2 rounded-lg transition-all ${
-                        isApproved
+                        isApproved && !!pendingRequest
                           ? "cursor-not-allowed opacity-60"
                           : "cursor-pointer"
                       } ${
@@ -706,9 +852,10 @@ export default function SchoolProfileForm({
                         type="checkbox"
                         checked={formData.programmes.includes(prog)}
                         onChange={() =>
-                          !isApproved && toggleCheckbox("programmes", prog)
+                          !(isApproved && !!pendingRequest) &&
+                          toggleCheckbox("programmes", prog)
                         }
-                        disabled={isApproved}
+                        disabled={isApproved && !!pendingRequest}
                         className="w-4 h-4 text-blue-600 disabled:cursor-not-allowed"
                         required
                       />
@@ -735,7 +882,7 @@ export default function SchoolProfileForm({
                         className="inline-flex items-center gap-1.5 bg-blue-50 border border-blue-200 text-blue-700 text-sm px-3 py-1 rounded-full"
                       >
                         {course}
-                        {!isApproved && (
+                        {!(isApproved && !!pendingRequest) && (
                           <button
                             type="button"
                             onClick={() =>
@@ -756,8 +903,8 @@ export default function SchoolProfileForm({
                   </div>
                 )}
 
-                {/* Add course input — hidden when approved */}
-                {!isApproved && (
+                {/* Add course input — hidden when there is a pending request */}
+                {!(isApproved && !!pendingRequest) && (
                   <>
                     <div className="flex gap-2">
                       <input
@@ -801,6 +948,41 @@ export default function SchoolProfileForm({
                   </>
                 )}
               </div>
+
+              {/* Re-approval action buttons */}
+              {isApproved && (
+                <div className="flex justify-end pt-2 border-t border-gray-100">
+                  {pendingRequest ? (
+                    <button
+                      type="button"
+                      onClick={handleWithdraw}
+                      disabled={withdrawLoading}
+                      className="px-4 py-2 text-sm border border-red-300 text-red-600 rounded-lg hover:bg-red-50 transition-colors disabled:opacity-50 flex items-center gap-2"
+                    >
+                      {withdrawLoading ? (
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                      ) : (
+                        <X className="w-4 h-4" />
+                      )}
+                      Withdraw Request
+                    </button>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={handleAcademicSubmit}
+                      disabled={academicSubmitLoading}
+                      className="px-4 py-2 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 flex items-center gap-2"
+                    >
+                      {academicSubmitLoading ? (
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                      ) : (
+                        <Send className="w-4 h-4" />
+                      )}
+                      Submit for Re-approval
+                    </button>
+                  )}
+                </div>
+              )}
             </div>
           )}
         </div>

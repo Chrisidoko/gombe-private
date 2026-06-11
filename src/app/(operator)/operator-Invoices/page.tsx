@@ -14,6 +14,7 @@ import {
 type Invoice = {
   id: number;
   invoice_number: string;
+  title: string | null;
   school_id: string;
   school_name: string;
   school_email: string;
@@ -114,6 +115,11 @@ function InvoiceProgressCard({ invoice }: { invoice: Invoice }) {
               </span>
             )}
           </div>
+          {invoice.title && (
+            <p className="text-xs font-semibold text-gray-500 mt-0.5">
+              {invoice.title}
+            </p>
+          )}
           <p className="text-xs text-gray-400 mt-0.5 font-mono">
             {invoice.invoice_number}
           </p>

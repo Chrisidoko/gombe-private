@@ -63,7 +63,9 @@ export async function POST(req: Request) {
           ? "finance"
           : user.institution === "CBS_Operator"
             ? "operator"
-            : "school";
+            : user.institution === "CBS_Inspector"
+              ? "inspector"
+              : "school";
 
     const token = await new SignJWT({
       id: user.id,

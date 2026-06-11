@@ -50,6 +50,7 @@ export async function GET() {
       SELECT
         i.id,
         i.invoice_number,
+        i.title,
         i.school_id,
         i.amount,
         i.status,

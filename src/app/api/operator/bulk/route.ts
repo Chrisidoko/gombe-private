@@ -116,12 +116,13 @@ export async function POST(req: Request) {
 
       await client.query(
         `INSERT INTO schoolkano_invoices
-           (school_id, invoice_number, amount, status,
+           (school_id, invoice_number, title, amount, status,
             issue_date, due_date, bulk_assessment_id, tier, is_creating_bill)
-         VALUES ($1, $2, $3, 'Unpaid', NOW(), $4, $5, $6, false)`,
+         VALUES ($1, $2, $3, $4, 'Unpaid', NOW(), $5, $6, $7, false)`,
         [
           school.school_id,
           invoiceNumber,
+          title,
           fee,
           due_date || null,
           assessmentId,
@@ -136,6 +137,7 @@ export async function POST(req: Request) {
       success: true,
       assessment_id: assessmentId,
       total_schools: schools.length,
+      total_invoices: schools.length,
       message: `Assessment created — ${schools.length} invoices generated successfully`,
     });
   } catch (error) {

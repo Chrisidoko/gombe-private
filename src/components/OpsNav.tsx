@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
-import { Building, Blocks, Layers2, ChartNoAxesGantt } from "lucide-react";
+import { Building, Blocks, Layers2, ChartNoAxesGantt, FileText } from "lucide-react";
 import LogoutButton from "@/components/ui/logoutbutton";
 
 interface NavigationProps {
@@ -54,6 +54,11 @@ const Navigation: React.FC<NavigationProps> = ({ collapsed, setCollapsed }) => {
       href: "/ministry-assessment",
       label: "Other Fees",
       icon: <Building className="w-4 h-4" />,
+    },
+    {
+      href: "/field-reports",
+      label: "Field Reports",
+      icon: <FileText className="w-4 h-4" />,
     },
     {
       href: "/records",

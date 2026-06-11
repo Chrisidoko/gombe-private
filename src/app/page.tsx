@@ -17,19 +17,19 @@ import {
 // ── Slide data — replace src with your actual images ─────────────────────────
 const SLIDES = [
   {
-    src: "slide1.jpg", // replace with your image
+    src: "/slides/slide1.jpg",
     title: "Streamlined Institutions",
     caption:
       "A unified platform for private tertiary institutions to manage consent certificates, compliance fees, and annual renewals with full transparency.",
   },
   {
-    src: "/slides/slide1.jpg",
+    src: "/slides/slide3.jpeg",
     title: "Real-Time Compliance Tracking",
     caption:
       "Monitor your institution's compliance standing, track fee payments, and access ministry-issued documents — all in one secure portal.",
   },
   {
-    src: "/slides/slide1.jpg",
+    src: "/slides/slide2.jpg",
     title: "Powered by Kaduna State Ministry of Education",
     caption:
       "Backed by the Ministry of Education, Kaduna State. Ensuring standards, accountability, and excellence across all private tertiary institutions.",

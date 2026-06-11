@@ -59,14 +59,16 @@ export async function middleware(req: NextRequest) {
     // ── Admin routes — /dashboard ───────────────────────────────────────────
     if (
       url.startsWith("/dashboard") ||
-      url.startsWith("/questionnaires") ||
       url.startsWith("/requests") ||
       url.startsWith("/institutions") ||
+      url.startsWith("/questionnaires") ||
+      url.startsWith("/create-school") ||
       url.startsWith("/accounts")
     ) {
       if (!isAdmin) {
         return NextResponse.redirect(new URL(defaultRedirect(), req.url));
       }
+      return NextResponse.next();
     }
 
     // ── Operator routes ───────────────────────────────────────────
@@ -81,6 +83,7 @@ export async function middleware(req: NextRequest) {
       if (!isOperator) {
         return NextResponse.redirect(new URL(defaultRedirect(), req.url));
       }
+      return NextResponse.next();
     }
 
     // ── School routes — /home, /assessment, /fees, /history, /reports ──────
@@ -94,6 +97,7 @@ export async function middleware(req: NextRequest) {
       if (!isSchool) {
         return NextResponse.redirect(new URL(defaultRedirect(), req.url));
       }
+      return NextResponse.next();
     }
 
     // ── Finance routes — /finance ───────────────────────────────────────────
@@ -105,12 +109,18 @@ export async function middleware(req: NextRequest) {
       if (!isFinance) {
         return NextResponse.redirect(new URL(defaultRedirect(), req.url));
       }
+      return NextResponse.next();
     }
 
     // ── Inspector routes — /inspector ─────────────────────────────────────
-    if (url.startsWith("/inspector") || url.startsWith("/create")) {
+    if (
+      url.startsWith("/inspector") ||
+      url.startsWith("/create") ||
+      url.startsWith("/inspector-report")
+    ) {
       if (!isInspector)
         return NextResponse.redirect(new URL(defaultRedirect(), req.url));
+      return NextResponse.next();
     }
 
     return NextResponse.next();

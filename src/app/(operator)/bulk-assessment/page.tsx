@@ -352,6 +352,7 @@ export default function AssessmentPage() {
                           onWheel={(e) => e.currentTarget.blur()} // Prevent scroll wheel changing value
                           className="w-full pl-8 pr-4 py-2.5 bg-white border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-green-500 appearance-none"
                         />
+                        {/* still check this the arrows still affect the value */}
 
                         {/* <select
                           value={fee}

@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
-import { SearchCheck, SquarePen, Shield } from "lucide-react";
+import { SearchCheck, SquarePen, Shield, FileText } from "lucide-react";
 import LogoutButton from "./ui/logoutbutton";
 
 interface NavItem {
@@ -26,6 +26,11 @@ export default function TopHeader() {
       name: "Create",
       path: "/create",
       icon: <SquarePen size={19} />,
+    },
+    {
+      name: "Reports",
+      path: "/inspector-report",
+      icon: <FileText size={19} />,
     },
   ];
 

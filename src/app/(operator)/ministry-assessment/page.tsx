@@ -63,6 +63,9 @@ export default function FixedAssessmentsPage() {
   const [customAmount, setCustomAmount] = useState("");
   const [customDesc, setCustomDesc] = useState("");
   const [narration, setNarration] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState("");
+  const [successMsg, setSuccessMsg] = useState("");
 
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const wrapperRef = useRef<HTMLDivElement>(null);
@@ -122,6 +125,53 @@ export default function FixedAssessmentsPage() {
     setCustomAmount("");
     setCustomDesc("");
     setNarration("");
+  }
+
+  async function handleSend() {
+    if (!selected || !isReady) return;
+    setSubmitting(true);
+    setSubmitError("");
+    setSuccessMsg("");
+
+    const activeFeeLocal = FEE_OPTIONS.find((f) => f.id === selectedFee);
+    const title =
+      selectedFee === "custom"
+        ? customDesc || "Custom Fee"
+        : `${activeFeeLocal?.label}${customDesc ? ` — ${customDesc}` : ""}`;
+    const amount = activeFeeLocal?.amount ?? Number(customAmount);
+
+    try {
+      const res = await fetch("/api/operator/invoices/demand-notice", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          school_id: selected.school_id,
+          title,
+          amount,
+          narration: narration.trim() || undefined,
+        }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        setSubmitError(data.error || "Failed to send demand notice");
+        return;
+      }
+
+      setSuccessMsg(
+        `Notice sent — ${data.invoice.invoice_number} · ${selected.name}`,
+      );
+      setSelected(null);
+      setQuery("");
+      setSelectedFee("");
+      setCustomAmount("");
+      setCustomDesc("");
+      setNarration("");
+    } catch {
+      setSubmitError("Something went wrong. Please try again.");
+    } finally {
+      setSubmitting(false);
+    }
   }
 
   const activeFee = FEE_OPTIONS.find((f) => f.id === selectedFee);
@@ -362,17 +412,32 @@ export default function FixedAssessmentsPage() {
               </div>
             )}
 
-            {/* Send button — dormant */}
+            {submitError && (
+              <p className="text-xs text-red-500 font-medium text-center">
+                {submitError}
+              </p>
+            )}
+
+            {successMsg && (
+              <div className="flex items-center gap-2 bg-green-50 border border-green-200 rounded-xl px-4 py-3">
+                <CheckCircle2 className="w-4 h-4 text-green-600 shrink-0" />
+                <p className="text-sm font-medium text-green-700">{successMsg}</p>
+              </div>
+            )}
+
+            {/* Send button */}
             <button
-              disabled
-              className="w-full flex items-center justify-center gap-2 bg-green-600 text-white font-bold py-3 rounded-xl text-sm opacity-40 cursor-not-allowed"
+              onClick={handleSend}
+              disabled={!isReady || submitting}
+              className="w-full flex items-center justify-center gap-2 bg-[#1a5c2e] hover:bg-[#166534] text-white font-bold py-3 rounded-xl text-sm transition disabled:opacity-40 disabled:cursor-not-allowed"
             >
-              <Send className="w-4 h-4" />
-              Send Demand Notice
+              {submitting ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <Send className="w-4 h-4" />
+              )}
+              {submitting ? "Sending..." : "Send Demand Notice"}
             </button>
-            <p className="text-center text-xs text-gray-400">
-              Send functionality coming soon
-            </p>
           </div>
         </div>
       </div>
