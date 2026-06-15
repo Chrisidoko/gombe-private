@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
-import { SearchCheck, SquarePen, Shield, FileText } from "lucide-react";
+import { SearchCheck, SquarePen, Shield, FileText, Building2 } from "lucide-react";
 import LogoutButton from "./ui/logoutbutton";
 
 interface NavItem {
@@ -31,6 +31,11 @@ export default function TopHeader() {
       name: "Reports",
       path: "/inspector-report",
       icon: <FileText size={19} />,
+    },
+    {
+      name: "My Schools",
+      path: "/my-schools",
+      icon: <Building2 size={19} />,
     },
   ];
 

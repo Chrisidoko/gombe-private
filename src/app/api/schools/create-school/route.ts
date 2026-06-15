@@ -4,6 +4,7 @@ import { NextResponse } from "next/server";
 import pool from "@/lib/db";
 import bcrypt from "bcryptjs";
 import { generateSchoolID } from "@/lib/generateSchoolID";
+import { getUserFromCookie } from "@/lib/auth";
 
 function generateEmail(name: string): string {
   const slug = name
@@ -18,6 +19,9 @@ function generateEmail(name: string): string {
 
 export async function POST(req: Request) {
   try {
+    const user = await getUserFromCookie();
+    const enumeratorName = user?.name ?? null;
+
     const { name } = await req.json();
 
     if (!name || !name.trim()) {
@@ -38,9 +42,9 @@ export async function POST(req: Request) {
     try {
       // 1. Insert into schoolskano
       await pool.query(
-        `INSERT INTO schoolskano (school_id, name, email)
-         VALUES ($1, $2, $3)`,
-        [school_id, officialName, email],
+        `INSERT INTO schoolskano (school_id, name, email, enumerator_name)
+         VALUES ($1, $2, $3, $4)`,
+        [school_id, officialName, email, enumeratorName],
       );
 
       // 2. Insert into userskano

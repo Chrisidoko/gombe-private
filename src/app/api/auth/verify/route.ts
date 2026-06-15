@@ -25,7 +25,6 @@ export async function GET(req: Request) {
        FROM userskano u
        LEFT JOIN schoolskano s ON s.school_id = u.institution
        WHERE u.status = $1
-         AND u.institution NOT IN ('CBS_Admin', 'CBS_Finance', 'CBS_Inspector')
        ORDER BY u.created_at DESC`,
       [status],
     );

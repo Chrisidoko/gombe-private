@@ -19,6 +19,7 @@ export async function GET(
         form_status, programmes, courses, mode_of_operation,
         avg_fee, total_revenue, academic_session, category,
         session_start, session_end,
+        enumerator_name,
         created_at, updated_at
        FROM schoolskano
        WHERE school_id = $1`,

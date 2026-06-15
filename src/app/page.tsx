@@ -109,7 +109,7 @@ export default function OnboardingPage() {
             <img
               src={slide.src}
               alt={slide.title}
-              className="absolute inset-0 w-full h-full object-cover mix-blend-overlay opacity-30"
+              className="absolute inset-0 w-full h-full object-cover mix-blend-overlay opacity-80"
               onError={(e) => {
                 (e.target as HTMLImageElement).style.display = "none";
               }}

@@ -51,6 +51,7 @@ type School = {
   total_students: number | null;
   total_staff: number | null;
   total_academic_staff: number | null;
+  enumerator_name: string | null;
   created_at: string;
   updated_at: string | null;
 };
@@ -427,12 +428,13 @@ export default async function InstitutionDetailPage({
 
         {/* Record Info */}
         <Section icon={Calendar} title="Record Information">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
             <Field
               label="Date Registered"
               value={formatDate(school.created_at)}
             />
             <Field label="Last Updated" value={formatDate(school.updated_at)} />
+            <Field label="Registered By (Enumerator)" value={school.enumerator_name} />
           </div>
         </Section>
       </div>
