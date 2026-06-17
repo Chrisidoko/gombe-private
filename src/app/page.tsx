@@ -30,9 +30,9 @@ const SLIDES = [
   },
   {
     src: "/slides/slide2.jpg",
-    title: "Powered by Kaduna State Ministry of Education",
+    title: "Govt Alone Can’t Fund Education",
     caption:
-      "Backed by the Ministry of Education, Kaduna State. Ensuring standards, accountability, and excellence across all private tertiary institutions.",
+      "Meaningful progress requires collaboration among government, communities, faith-based organizations, and private institutions",
   },
   {
     src: "/slides/slide4.jpg",
