@@ -23,16 +23,22 @@ const SLIDES = [
       "A unified platform for private tertiary institutions to manage consent certificates, compliance fees, and annual renewals with full transparency.",
   },
   {
-    src: "/slides/slide3.jpeg",
-    title: "Real-Time Compliance Tracking",
+    src: "/slides/slide5.jpg",
+    title: "Kaduna State Education Modernization",
     caption:
-      "Monitor your institution's compliance standing, track fee payments, and access ministry-issued documents — all in one secure portal.",
+      "Kaduna State will accelerate the transition of the education system to a technology-driven and a globally competitive sector",
   },
   {
     src: "/slides/slide2.jpg",
     title: "Powered by Kaduna State Ministry of Education",
     caption:
       "Backed by the Ministry of Education, Kaduna State. Ensuring standards, accountability, and excellence across all private tertiary institutions.",
+  },
+  {
+    src: "/slides/slide4.jpg",
+    title: "Automating Tax Administration",
+    caption:
+      "'Tax For Service', revenue generation should not be a burden but a shared responsibility that allows the government to deliver roads, schools, and infrastructure.",
   },
 ];
 
