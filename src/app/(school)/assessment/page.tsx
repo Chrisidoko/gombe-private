@@ -30,7 +30,7 @@ export default async function AssesmentDashboard() {
   return (
     <div className="relative">
       {/* Blur overlay */}
-      <div className="absolute inset-0 z-50 backdrop-blur-sm bg-white/60 flex items-center justify-center pointer-events-auto">
+      {/* <div className="absolute inset-0 z-50 backdrop-blur-sm bg-white/60 flex items-center justify-center pointer-events-auto">
         <div className="mx-4 max-w-md text-center bg-white border border-gray-200 rounded-2xl shadow-lg px-8 py-8">
           <div className="flex items-center justify-center w-14 h-14 rounded-full bg-yellow-100 mx-auto mb-4">
             <span className="text-2xl">
@@ -45,7 +45,7 @@ export default async function AssesmentDashboard() {
             assessments.
           </p>
         </div>
-      </div>
+      </div> */}
 
       {/* Page content — blurred and unclickable beneath overlay */}
       <main className="pointer-events-none select-none">

@@ -32,16 +32,31 @@ type Account = {
 type StatusFilter = "pending" | "approved" | "rejected";
 
 const INSTITUTION_LABELS: Record<string, { label: string; cls: string }> = {
-  CBS_Admin:     { label: "Admin",     cls: "bg-purple-50 text-purple-700 border-purple-200" },
-  CBS_Finance:   { label: "Finance",   cls: "bg-blue-50 text-blue-700 border-blue-200" },
-  CBS_Inspector: { label: "Inspector", cls: "bg-orange-50 text-orange-700 border-orange-200" },
-  CBS_Operator:  { label: "Operator",  cls: "bg-teal-50 text-teal-700 border-teal-200" },
+  CBS_Admin: {
+    label: "Admin",
+    cls: "bg-purple-50 text-purple-700 border-purple-200",
+  },
+  CBS_Finance: {
+    label: "Management",
+    cls: "bg-blue-50 text-blue-700 border-blue-200",
+  },
+  CBS_Inspector: {
+    label: "Inspector",
+    cls: "bg-orange-50 text-orange-700 border-orange-200",
+  },
+  CBS_Operator: {
+    label: "Operator",
+    cls: "bg-teal-50 text-teal-700 border-teal-200",
+  },
 };
 
 function institutionBadge(institution: string) {
   const match = INSTITUTION_LABELS[institution];
   if (match) return match;
-  return { label: "School", cls: "bg-green-50 text-green-700 border-green-200" };
+  return {
+    label: "School",
+    cls: "bg-green-50 text-green-700 border-green-200",
+  };
 }
 
 function formatDate(d: string) {
@@ -220,7 +235,9 @@ export default function AccountApprovalsPage() {
                         )}
                       </div>
 
-                      <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold border mt-0.5 ${institutionBadge(account.institution).cls}`}>
+                      <span
+                        className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold border mt-0.5 ${institutionBadge(account.institution).cls}`}
+                      >
                         {institutionBadge(account.institution).label}
                       </span>
 
