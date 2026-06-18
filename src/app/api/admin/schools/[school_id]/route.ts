@@ -12,8 +12,8 @@ export async function GET(
 
     const result = await pool.query(
       `SELECT
-        school_id, tin,  name, email, contact_person_phone, contact_person, contact_person_designation, address,
-        lga, state, ownership, proprietor_name, website,
+        school_id, tin, name, email, contact_person_phone, contact_person, contact_person_designation, address,
+        lga, state, ownership, proprietor_name, proprietor_nin, property_type, website,
         approval_status, license_status,
         license_number, last_license_renewal, license_expiry_date,
         form_status, programmes, courses, mode_of_operation,

@@ -7,11 +7,12 @@ import {
   ChevronDown,
   ChevronUp,
   Users,
-  DollarSign,
   Calculator,
   FileText,
   Check,
   X,
+  LockKeyhole,
+  LockKeyholeOpen,
 } from "lucide-react";
 import toast from "react-hot-toast";
 
@@ -406,6 +407,8 @@ function AssessmentCard({
 export default function Requests() {
   const [assessments, setAssessments] = useState<Assessment[]>([]);
   const [loading, setLoading] = useState(true);
+  const [windowOpen, setWindowOpen] = useState(false);
+  const [windowToggling, setWindowToggling] = useState(false);
   const [actionLoading, setActionLoading] = useState<{
     id: number | null;
     action: string | null;
@@ -417,16 +420,14 @@ export default function Requests() {
   useEffect(() => {
     async function fetchPending() {
       try {
-        // Simulating API call with mock data
-        // setTimeout(() => {
-        //   setAssessments(mockAssessments);
-        //   setLoading(false);
-        // }, 1000);
-
-        //Actual API call (commented out for demo):
-        const res = await fetch("/api/assessment/pending");
-        const data = await res.json();
+        const [pendingRes, windowRes] = await Promise.all([
+          fetch("/api/assessment/pending"),
+          fetch("/api/operator/settings/assessment-window"),
+        ]);
+        const data = await pendingRes.json();
+        const { open } = await windowRes.json();
         setAssessments(data.assessments || []);
+        setWindowOpen(open);
       } catch (err) {
         console.error(err);
       } finally {
@@ -435,6 +436,30 @@ export default function Requests() {
     }
     fetchPending();
   }, []);
+
+  async function handleToggleWindow() {
+    setWindowToggling(true);
+    try {
+      const res = await fetch("/api/operator/settings/assessment-window", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ open: !windowOpen }),
+      });
+      if (!res.ok) throw new Error("Failed to update setting");
+      const { open } = await res.json();
+      setWindowOpen(open);
+      toast.success(
+        open
+          ? "Assessment window opened — schools can now submit."
+          : "Assessment window closed — schools are locked out.",
+      );
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to update assessment window.");
+    } finally {
+      setWindowToggling(false);
+    }
+  }
 
   async function handleAction(
     assessment_id: number,
@@ -490,7 +515,7 @@ export default function Requests() {
     <main className="space-y-6">
       {/* Header */}
       <div className="px-3 py-3">
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between gap-4 flex-wrap">
           <div>
             <h1 className="text-2xl font-bold text-gray-900">
               Self Assessments
@@ -499,11 +524,39 @@ export default function Requests() {
               Review and approve pending self assessments made by institutions.
             </p>
           </div>
-          <div className="bg-blue-50 border border-blue-200 rounded-lg px-4 py-2">
-            <p className="text-sm text-blue-600 font-medium">Pending Reviews</p>
-            <p className="text-2xl font-bold text-blue-900">
-              {assessments.length}
-            </p>
+
+          <div className="flex items-center gap-3">
+            {/* Assessment window toggle */}
+            <button
+              onClick={handleToggleWindow}
+              disabled={windowToggling}
+              className={`flex items-center gap-2 px-4 py-2.5 rounded-lg border font-medium text-sm transition-all disabled:opacity-60 disabled:cursor-not-allowed ${
+                windowOpen
+                  ? "bg-green-50 border-green-300 text-green-700 hover:bg-green-100"
+                  : "bg-red-50 border-red-300 text-red-700 hover:bg-red-100"
+              }`}
+              title={
+                windowOpen
+                  ? "Click to close the assessment window"
+                  : "Click to open the assessment window"
+              }
+            >
+              {windowToggling ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : windowOpen ? (
+                <LockKeyholeOpen className="w-4 h-4" />
+              ) : (
+                <LockKeyhole className="w-4 h-4" />
+              )}
+              {windowOpen ? "Window Open" : "Window Closed"}
+            </button>
+
+            <div className="bg-blue-50 border border-blue-200 rounded-lg px-4 py-2">
+              <p className="text-sm text-blue-600 font-medium">Pending Reviews</p>
+              <p className="text-2xl font-bold text-blue-900">
+                {assessments.length}
+              </p>
+            </div>
           </div>
         </div>
       </div>

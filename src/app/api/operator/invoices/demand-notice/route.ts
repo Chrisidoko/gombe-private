@@ -28,6 +28,13 @@ export async function POST(req: Request) {
     await client.query("BEGIN");
 
     // Step 1: Generate invoice
+    // Demand notices are standalone invoices — neither assessment_id nor
+    // bulk_assessment_id is set (both remain NULL). The DB constraint
+    // "only_one_assessment_check" on schoolkano_invoices was relaxed to
+    // allow this. The three valid invoice origins are:
+    //   • assessment_id set     → individual school self-assessment (approve flow)
+    //   • bulk_assessment_id set → operator bulk assessment (bulk route)
+    //   • both NULL              → direct demand notice (this route)
     const invoice_number = `INV-${school_id}-${Date.now()}`;
     const { rows } = await client.query(
       `INSERT INTO schoolkano_invoices

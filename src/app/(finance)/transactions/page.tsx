@@ -33,6 +33,7 @@ export default function Transactions() {
     page: 1,
     startDate: "2025-10-01",
     endDate: "2026-12-31",
+    lga: "",
   });
   const [selectedDates, setSelectedDates] = useState<DateRange | undefined>(
     getStartAndEndOfMonth(),
@@ -81,10 +82,15 @@ export default function Transactions() {
   const fetchTransactions = async () => {
     setLoading(true);
     try {
-      const { perPage, page, startDate, endDate } = filters;
-      const res = await fetch(
-        `/api/transactions/all?per_page=${perPage}&page=${page}&start_date=${startDate}&end_date=${endDate}`,
-      );
+      const { perPage, page, startDate, endDate, lga } = filters;
+      const params = new URLSearchParams({
+        per_page: String(perPage),
+        page: String(page),
+        start_date: startDate,
+        end_date: endDate,
+      });
+      if (lga) params.set("lga", lga);
+      const res = await fetch(`/api/transactions/all?${params.toString()}`);
       const data = await res.json();
 
       if (data.success) {
@@ -125,7 +131,7 @@ export default function Transactions() {
                 transactions from a different time period, please choose a new
                 <span className="font-semibold"> date range</span>.
               </p> */}
-              <div className="mt-0 flex items-center space-x-5">
+              <div className="mt-0 flex items-center flex-wrap gap-3">
                 <Filterbar
                   maxDate={new Date()} // Prevent future dates
                   minDate={new Date(2024, 0, 1)}
@@ -134,6 +140,27 @@ export default function Transactions() {
                   selectedPeriod={selectedPeriod}
                   onPeriodChange={setSelectedPeriod}
                 />
+                <select
+                  value={filters.lga}
+                  onChange={(e) =>
+                    setFilters((prev) => ({ ...prev, lga: e.target.value, page: 1 }))
+                  }
+                  className="h-9 rounded-md border border-gray-300 bg-white px-3 text-sm text-gray-700 shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                >
+                  <option value="">All LGAs</option>
+                  {[
+                    "Birnin Gwari","Chikun","Giwa","Igabi","Ikara","Jaba",
+                    "Jema'a","Kachia","Kaduna North","Kaduna South","Kagarko",
+                    "Kajuru","Kaura","Kauru","Kubau","Kudan","Lere","Makarfi",
+                    "Sabon Gari","Sanga","Soba","Zangon Kataf","Zaria",
+                  ]
+                    .sort()
+                    .map((l) => (
+                      <option key={l} value={l}>
+                        {l}
+                      </option>
+                    ))}
+                </select>
                 {/* {sumTnx !== null && (
                   <div className="flex items-center gap-2 text-[#151D48] font-semibold text-md">
                     <span className="text-indigo-500 ">Total Revenue:</span>

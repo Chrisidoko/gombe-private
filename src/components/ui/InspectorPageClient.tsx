@@ -26,6 +26,7 @@ type School = {
   lga: string;
   state: string;
   ownership: string;
+  property_type: string | null;
   license_number: string | null;
   license_status: string | null;
   license_expiry_date: string | null;
@@ -167,7 +168,7 @@ export default function InspectorPage() {
           </div>
 
           {/* Dropdown results */}
-          {showDropdown && (
+          {showDropdown && !selected && (
             <div className="absolute top-full left-0 right-0 mt-2 bg-white rounded-2xl border border-gray-200 shadow-xl z-50 overflow-hidden">
               {results.length === 0 ? (
                 <div className="px-5 py-4 text-sm text-gray-400 text-center">
@@ -265,6 +266,17 @@ export default function InspectorPage() {
                     </p>
                     <p className="text-sm text-gray-700">
                       {selected.ownership || "—"}
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-start gap-2.5">
+                  <Building2 className="w-4 h-4 text-gray-400 mt-0.5 shrink-0" />
+                  <div>
+                    <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400">
+                      Property Type
+                    </p>
+                    <p className="text-sm text-gray-700">
+                      {selected.property_type || "—"}
                     </p>
                   </div>
                 </div>

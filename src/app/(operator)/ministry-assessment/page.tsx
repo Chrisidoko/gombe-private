@@ -182,11 +182,12 @@ export default function FixedAssessmentsPage() {
       ? `₦${Number(customAmount).toLocaleString()}`
       : "—";
 
-  // Form is ready when school + fee + amount (if required) are all filled
+  // Form is ready when school + fee + amount (if required) + name (if custom) are all filled
   const isReady =
     !!selected &&
     !!selectedFee &&
-    (!needsAmount || (needsAmount && !!customAmount));
+    (!needsAmount || (needsAmount && !!customAmount)) &&
+    (selectedFee !== "custom" || !!customDesc.trim());
 
   return (
     <div className="min-h-screen bg-gray-50 px-4 py-6">
@@ -346,11 +347,11 @@ export default function FixedAssessmentsPage() {
               </div>
             </div>
 
-            {/* Step 3 — Amount + description (if custom/variable) */}
+            {/* Step 3 — Amount + name/description (if custom/variable) */}
             {selectedFee && needsAmount && (
               <div className="space-y-3">
                 <label className="block text-xs font-bold uppercase tracking-widest text-gray-500">
-                  Step 3 — Enter Amount & Description
+                  Step 3 — Enter Amount{selectedFee === "custom" ? " & Fee Name" : " & Description"}
                 </label>
                 <div className="relative">
                   <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-500 text-sm font-semibold">
@@ -364,13 +365,24 @@ export default function FixedAssessmentsPage() {
                     className="w-full pl-8 pr-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
                   />
                 </div>
-                <input
-                  type="text"
-                  placeholder="Description (e.g. 2024/2025 tuition levy)"
-                  value={customDesc}
-                  onChange={(e) => setCustomDesc(e.target.value)}
-                  className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
-                />
+                <div>
+                  <input
+                    type="text"
+                    placeholder={
+                      selectedFee === "custom"
+                        ? "Fee name (e.g. Library Fee, Registration Fee)"
+                        : "Description (e.g. 2024/2025 tuition levy)"
+                    }
+                    value={customDesc}
+                    onChange={(e) => setCustomDesc(e.target.value)}
+                    className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
+                  />
+                  {selectedFee === "custom" && (
+                    <p className="text-xs text-gray-400 mt-1.5 ml-1">
+                      This will appear as the invoice title — required.
+                    </p>
+                  )}
+                </div>
               </div>
             )}
 
@@ -401,8 +413,9 @@ export default function FixedAssessmentsPage() {
                     Summary
                   </p>
                   <p className="text-sm font-bold text-gray-800 mt-0.5">
-                    {activeFee?.label}
-                    {customDesc ? ` — ${customDesc}` : ""}
+                    {selectedFee === "custom"
+                      ? customDesc
+                      : `${activeFee?.label}${customDesc ? ` — ${customDesc}` : ""}`}
                   </p>
                   <p className="text-xs text-gray-500">{selected?.name}</p>
                 </div>

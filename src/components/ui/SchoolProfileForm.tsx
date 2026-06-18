@@ -40,6 +40,8 @@ type FormData = {
   // General Information
 
   proprietorName: string;
+  proprietorNin: string;
+  propertyType: string;
   contact_person: string;
   contact_person_phone: string;
   contact_person_designation: string;
@@ -101,6 +103,8 @@ export default function SchoolProfileForm({
 }) {
   const [formData, setFormData] = useState<FormData>({
     proprietorName: schoolData.proprietor_name ?? "",
+    proprietorNin: schoolData.proprietor_nin ?? "",
+    propertyType: schoolData.property_type ?? "",
     contact_person: schoolData.contact_person ?? "",
     contact_person_phone: schoolData.contact_person_phone ?? "",
     contact_person_designation: schoolData.contact_person_designation ?? "",
@@ -246,6 +250,8 @@ export default function SchoolProfileForm({
       const payload = isApproved
         ? {
             proprietorName: formData.proprietorName,
+            proprietorNin: formData.proprietorNin,
+            propertyType: formData.propertyType,
             contact_person: formData.contact_person,
             contact_person_phone: formData.contact_person_phone,
             contact_person_designation: formData.contact_person_designation,
@@ -413,6 +419,41 @@ export default function SchoolProfileForm({
                     className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all"
                     required
                   />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    Proprietor NIN
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="11-digit National Identification Number"
+                    value={formData.proprietorNin}
+                    onChange={(e) =>
+                      handleChange("proprietorNin", e.target.value.replace(/\D/g, "").slice(0, 11))
+                    }
+                    maxLength={11}
+                    className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    Property Type <span className="text-red-500">*</span>
+                  </label>
+                  <select
+                    value={formData.propertyType}
+                    onChange={(e) => handleChange("propertyType", e.target.value)}
+                    className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all"
+                    required
+                  >
+                    <option value="">Select property type</option>
+                    <option value="Privately Owned">Privately Owned</option>
+                    <option value="Rented">Rented</option>
+                    <option value="Leased">Leased</option>
+                    <option value="Government-Owned">Government-Owned</option>
+                    <option value="Institutional">Institutional</option>
+                  </select>
                 </div>
 
                 <div>

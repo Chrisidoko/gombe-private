@@ -24,6 +24,7 @@ export async function GET(req: Request) {
         lga,
         state,
         ownership,
+        property_type,
         license_number,
         license_status,
         license_expiry_date,

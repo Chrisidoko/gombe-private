@@ -30,6 +30,8 @@ export interface School {
   year_established: number | null;
   cac_number: string | null;
   proprietor_name: string | null;
+  proprietor_nin: string | null;
+  property_type: string | null;
   chairman_name: string | null;
 
   // Academic Info
@@ -123,6 +125,7 @@ export interface SchoolProfileData {
 export interface TransactionType {
   id: number;
   school_id: string;
+  lga: string | null;
   reference: string;
   amount: string;
   status: string;

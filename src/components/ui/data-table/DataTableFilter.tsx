@@ -336,21 +336,20 @@ export function DataTableFilter<TData, TValue>({
           }
         }}
       >
-        <form
-          onSubmit={(e) => {
-            e.preventDefault();
-            column?.setFilterValue(selectedValues);
-          }}
-        >
-          <div className="space-y-2">
-            <div>
-              <Label className="text-base font-medium sm:text-sm">
-                Filter by {title}
-              </Label>
-              {getDisplayedFilter()}
-            </div>
+        <div className="space-y-2">
+          <div>
+            <Label className="text-base font-medium sm:text-sm">
+              Filter by {title}
+            </Label>
+            {getDisplayedFilter()}
+          </div>
+          <div>
             <PopoverClose className="w-full" asChild>
-              <Button type="submit" className="w-full sm:py-1">
+              <Button
+                type="button"
+                className="w-full sm:py-1"
+                onClick={() => column?.setFilterValue(selectedValues)}
+              >
                 Apply
               </Button>
             </PopoverClose>
@@ -374,7 +373,7 @@ export function DataTableFilter<TData, TValue>({
               </Button>
             )}
           </div>
-        </form>
+        </div>
       </PopoverContent>
     </Popover>
   );

@@ -104,6 +104,13 @@ export async function POST(req: Request) {
     const prefix = `INV-${year}-${String(assessmentId).padStart(4, "0")}`;
 
     // ── Bulk insert one invoice per school ────────────────────────────────
+    // bulk_assessment_id must be set on each invoice to satisfy the
+    // "only_one_assessment_check" constraint on schoolkano_invoices. The three
+    // valid invoice origins are:
+    //   • assessment_id set      → individual self-assessment (approve route)
+    //   • bulk_assessment_id set → operator bulk assessment (this route)
+    //   • both NULL              → direct demand notice (demand-notice route,
+    //                              allowed after the constraint was relaxed)
     for (let i = 0; i < schools.length; i++) {
       const school = schools[i];
       const fee =

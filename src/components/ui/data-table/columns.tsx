@@ -16,20 +16,6 @@ const statuses = [
   { value: "pending", label: "Pending", variant: "warning" },
 ];
 
-const schoolMapping: Record<string, string> = {
-  "1005": "SARCOE",
-  "1001": "AKCILS",
-  // "1003": "KUSTWUDIL",
-  "1002": "CASKANO",
-  "1008": "KSPOLY",
-  "1013": "RMK-CARS",
-  "1009": "ABCOA_DBT", // ABCOA_DBT
-  "1010": "CONAM", // CONAM
-  "1012": "ADUSTECH", // ADUSTECH-1
-  "1011": "KUSTWUDIL", // KUSTWUDIL
-  "1015": "GHACOL", // GHACOL
-};
-
 export const getColumns = ({
   onRowClick,
 }: {
@@ -93,6 +79,7 @@ export const getColumns = ({
         <DataTableColumnHeader column={column} title="Status" />
       ),
       enableSorting: true,
+      filterFn: "equals",
       cell: ({ row }) => {
         const statusValue = row.getValue("status"); // Get the status from API data
         const status = statuses.find((item) => item.value === statusValue);
@@ -109,18 +96,12 @@ export const getColumns = ({
       },
     }),
 
-    columnHelper.accessor("school_id", {
+    columnHelper.accessor("lga", {
       header: ({ column }) => (
-        <DataTableColumnHeader column={column} title="Institution" />
+        <DataTableColumnHeader column={column} title="LGA" />
       ),
-
-      enableSorting: false,
-
-      filterFn: "arrIncludesSome",
-      cell: ({ row }) => {
-        const schoolId = row.getValue("school_id") as string; // Explicitly cast to string
-        return schoolMapping[schoolId] || schoolId; // Default to "Unknown" if not found
-      },
+      enableSorting: true,
+      cell: ({ getValue }) => getValue() ?? "—",
     }),
 
     columnHelper.accessor("amount", {
@@ -135,12 +116,13 @@ export const getColumns = ({
       ),
 
       filterFn: (row, columnId, filterValue: ConditionFilter) => {
-        const value = row.getValue(columnId) as number;
-        const [min, max] = filterValue.value as [number, number];
+        const value = parseFloat(row.getValue(columnId) as string);
+        const min = parseFloat(filterValue.value[0] as string);
+        const max = parseFloat(filterValue.value[1] as string);
 
         switch (filterValue.condition) {
           case "is-equal-to":
-            return value == min;
+            return value === min;
           case "is-between":
             return value >= min && value <= max;
           case "is-greater-than":
@@ -157,6 +139,12 @@ export const getColumns = ({
         <DataTableColumnHeader column={column} title="Date" />
       ),
       enableSorting: true,
+      cell: ({ getValue }) => {
+        const d = new Date(getValue());
+        const date = d.toISOString().slice(0, 10); // 2026-04-23
+        const time = d.toTimeString().slice(0, 5); // 09:30
+        return `${date} ${time}`;
+      },
     }),
     columnHelper.display({
       id: "edit",

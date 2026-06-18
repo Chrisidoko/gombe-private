@@ -15,6 +15,7 @@ interface LicenseResult {
     school_id: string;
     state: string;
     ownership: string;
+    property_type: string | null;
     license_expiry_date: string;
     courses: string[];
   };
@@ -220,6 +221,18 @@ export default function VerifyForm() {
                       ).toDateString()}
                     </p>
                   </div>
+
+                  {/* Property type */}
+                  {result.school.property_type && (
+                    <div className="bg-gray-50 rounded-xl px-4 py-3 border border-gray-100">
+                      <p className="text-xs font-semibold uppercase tracking-widest text-gray-400 mb-0.5">
+                        Property Type
+                      </p>
+                      <p className="text-sm font-bold text-gray-800">
+                        {result.school.property_type}
+                      </p>
+                    </div>
+                  )}
 
                   {/* Courses */}
                   <div className="bg-gray-50 rounded-xl px-4 py-3 border border-gray-100">

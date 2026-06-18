@@ -30,6 +30,10 @@ export async function POST(req: Request) {
     console.log("✅ Assessment approved");
 
     // Step 2: Generate invoice
+    // assessment_id must be set here to satisfy the "only_one_assessment_check"
+    // constraint on schoolkano_invoices. See also: bulk route (sets
+    // bulk_assessment_id) and demand-notice route (both fields NULL — allowed
+    // after the constraint was relaxed to support standalone demand notices).
     const invoice_number = `INV-${school_id}-${Date.now()}`;
     const insertQuery = `
       INSERT INTO schoolkano_invoices (school_id, invoice_number, assessment_id, amount, status, issue_date, due_date)

@@ -13,6 +13,7 @@ export async function GET(req: Request) {
     const endDate = searchParams.get("end_date");
     const status = searchParams.get("status"); // Optional: filter by status
     const schoolId = searchParams.get("school_id"); // Optional: filter by school
+    const lga = searchParams.get("lga"); // Optional: filter by LGA
 
     // Calculate offset for pagination
     const offset = (page - 1) * perPage;
@@ -49,6 +50,13 @@ export async function GET(req: Request) {
       paramIndex++;
     }
 
+    // Optional LGA filter
+    if (lga) {
+      conditions.push(`lga = $${paramIndex}`);
+      values.push(lga);
+      paramIndex++;
+    }
+
     const whereClause =
       conditions.length > 0 ? `WHERE ${conditions.join(" AND ")}` : "";
 
@@ -64,14 +72,15 @@ export async function GET(req: Request) {
 
     // Get paginated transactions
     const dataQuery = `
-      SELECT 
-        id, 
+      SELECT
+        id,
         school_id,
-        reference, 
-        amount, 
-        status, 
-        payment_item, 
-        invoice_number, 
+        lga,
+        reference,
+        amount,
+        status,
+        payment_item,
+        invoice_number,
         updated_at,
         created_at
       FROM transactionskano

@@ -15,8 +15,9 @@ export async function GET(req: Request) {
 
     // Query database for the license
     const result = await pool.query(
-      `SELECT id, name, school_id, state, lga, address, courses, license_number, license_status, license_expiry_date 
-       FROM schoolskano 
+      `SELECT id, name, school_id, state, lga, address, ownership, property_type,
+              courses, license_number, license_status, license_expiry_date
+       FROM schoolskano
        WHERE license_number = $1`,
       [license],
     );
@@ -47,6 +48,8 @@ export async function GET(req: Request) {
         state: school.state,
         lga: school.lga,
         address: school.address,
+        ownership: school.ownership,
+        property_type: school.property_type,
         license_expiry_date: school.license_expiry_date,
         courses: school.courses,
       },

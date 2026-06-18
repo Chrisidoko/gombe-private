@@ -27,6 +27,8 @@ type School = {
   contact_person: string;
   contact_person_designation: string;
   proprietor_name: string;
+  proprietor_nin: string | null;
+  property_type: string | null;
   address: string;
   lga: string;
   state: string;
@@ -214,9 +216,11 @@ export default async function InstitutionDetailPage({
               }
             />
             <Field label="Proprietor" value={school.proprietor_name} />
+            <Field label="Proprietor NIN" value={school.proprietor_nin} />
             <Field label="LGA" value={school.lga} />
             <Field label="State" value={school.state} />
             <Field label="Ownership" value={school.ownership} />
+            <Field label="Property Type" value={school.property_type} />
             <Field label="Address" value={school.address} />
             <Field label="Contact Person" value={school.contact_person} />
             <Field
