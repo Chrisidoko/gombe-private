@@ -125,6 +125,7 @@ export interface SchoolProfileData {
 export interface TransactionType {
   id: number;
   school_id: string;
+  school_name: string | null;
   lga: string | null;
   reference: string;
   amount: string;

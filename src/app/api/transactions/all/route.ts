@@ -25,34 +25,34 @@ export async function GET(req: Request) {
 
     // Date range filter
     if (startDate) {
-      conditions.push(`updated_at >= $${paramIndex}::date`);
+      conditions.push(`t.updated_at >= $${paramIndex}::date`);
       values.push(startDate);
       paramIndex++;
     }
 
     if (endDate) {
-      conditions.push(`updated_at <= $${paramIndex}::date + interval '1 day'`);
+      conditions.push(`t.updated_at <= $${paramIndex}::date + interval '1 day'`);
       values.push(endDate);
       paramIndex++;
     }
 
     // Optional status filter
     if (status) {
-      conditions.push(`status = $${paramIndex}`);
+      conditions.push(`t.status = $${paramIndex}`);
       values.push(status);
       paramIndex++;
     }
 
     // Optional school filter
     if (schoolId) {
-      conditions.push(`school_id = $${paramIndex}`);
+      conditions.push(`t.school_id = $${paramIndex}`);
       values.push(schoolId);
       paramIndex++;
     }
 
     // Optional LGA filter
     if (lga) {
-      conditions.push(`lga = $${paramIndex}`);
+      conditions.push(`t.lga = $${paramIndex}`);
       values.push(lga);
       paramIndex++;
     }
@@ -63,29 +63,31 @@ export async function GET(req: Request) {
     // Get total count for pagination
     const countQuery = `
       SELECT COUNT(*) as total
-      FROM transactionskano
+      FROM transactionskano t
       ${whereClause}
     `;
     const countResult = await pool.query(countQuery, values);
     const totalRecords = parseInt(countResult.rows[0].total);
     const totalPages = Math.ceil(totalRecords / perPage);
 
-    // Get paginated transactions
+    // Get paginated transactions — LEFT JOIN brings school name for export
     const dataQuery = `
       SELECT
-        id,
-        school_id,
-        lga,
-        reference,
-        amount,
-        status,
-        payment_item,
-        invoice_number,
-        updated_at,
-        created_at
-      FROM transactionskano
+        t.id,
+        t.school_id,
+        s.name AS school_name,
+        t.lga,
+        t.reference,
+        t.amount,
+        t.status,
+        t.payment_item,
+        t.invoice_number,
+        t.updated_at,
+        t.created_at
+      FROM transactionskano t
+      LEFT JOIN schoolskano s ON s.school_id = t.school_id
       ${whereClause}
-      ORDER BY updated_at DESC
+      ORDER BY t.updated_at DESC
       LIMIT $${paramIndex} OFFSET $${paramIndex + 1}
     `;
 

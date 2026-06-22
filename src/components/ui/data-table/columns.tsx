@@ -3,10 +3,9 @@
 import { Badge, BadgeProps } from "../../Badge";
 import { Checkbox } from "../../Checkbox";
 import { formatters } from "@/lib/utils";
-import { ColumnDef, createColumnHelper, Row } from "@tanstack/react-table";
+import { ColumnDef, createColumnHelper } from "@tanstack/react-table";
 import { DataTableColumnHeader } from "./DataTableColumnHeader";
 import { ConditionFilter } from "./DataTableFilter";
-import { DataTableRowActions } from "./DataTableRowActions";
 import { TransactionType } from "@/lib/types";
 
 const columnHelper = createColumnHelper<TransactionType>();
@@ -16,11 +15,7 @@ const statuses = [
   { value: "pending", label: "Pending", variant: "warning" },
 ];
 
-export const getColumns = ({
-  onRowClick,
-}: {
-  onRowClick: (row: Row<TransactionType>) => void;
-}) =>
+export const getColumns = () =>
   [
     columnHelper.display({
       id: "select",
@@ -52,11 +47,41 @@ export const getColumns = ({
         displayName: "Select",
       },
     }),
+    columnHelper.accessor("school_name", {
+      header: ({ column }) => (
+        <DataTableColumnHeader column={column} title="Institution" />
+      ),
+      enableSorting: true,
+      cell: ({ getValue, row }) => {
+        const name = getValue();
+        const id = row.original.school_id;
+        return (
+          <div>
+            <span
+              className="block max-w-[180px] truncate font-medium text-gray-800"
+              title={name ?? id}
+            >
+              {name ?? id}
+            </span>
+            <span className="text-xs text-gray-400">{id}</span>
+          </div>
+        );
+      },
+    }),
+
     columnHelper.accessor("payment_item", {
       header: ({ column }) => (
         <DataTableColumnHeader column={column} title="Payment Item" />
       ),
       enableSorting: true,
+      cell: ({ getValue }) => (
+        <span
+          className="block max-w-[160px] truncate whitespace-nowrap overflow-hidden text-ellipsis"
+          title={getValue()}
+        >
+          {getValue()}
+        </span>
+      ),
     }),
 
     columnHelper.accessor("reference", {
@@ -145,18 +170,5 @@ export const getColumns = ({
         const time = d.toTimeString().slice(0, 5); // 09:30
         return `${date} ${time}`;
       },
-    }),
-    columnHelper.display({
-      id: "edit",
-      header: "View",
-      enableSorting: false,
-      enableHiding: false,
-      meta: {
-        className: "text-right",
-        displayName: "View",
-      },
-      cell: ({ row }) => (
-        <DataTableRowActions row={row} onRowClick={onRowClick} />
-      ),
     }),
   ] as ColumnDef<TransactionType>[];

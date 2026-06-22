@@ -8,7 +8,6 @@ import { getColumns } from "@/components/ui/data-table/columns";
 import { DataTable } from "@/components/ui/data-table/DataTable";
 // import { ChevronsUpDown } from "lucide-react";
 import { DateRange } from "react-day-picker";
-import { Row } from "@tanstack/react-table";
 import Filterbar from "@/components/ui/datefilter";
 // import { DataTableDrawer } from "@/components/ui/data-table/DataTableDrawer";
 
@@ -61,11 +60,7 @@ export default function Transactions() {
   // );
   // const [drawerOpen, setDrawerOpen] = useState(false);
 
-  const handleRowClick = (row: Row<TransactionType>) => {
-    // setSelectedRow(row.original);
-    // setDrawerOpen(true);
-  };
-  const columns = getColumns({ onRowClick: handleRowClick });
+  const columns = getColumns();
 
   useEffect(() => {
     fetchTransactions();
