@@ -168,7 +168,7 @@ export default function MySchoolsClient() {
       <div className="max-w-3xl mx-auto space-y-6">
         {/* Header */}
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">My Schools</h1>
+          <h1 className="text-2xl font-bold text-gray-900">My Institutions</h1>
           <p className="text-sm text-gray-500 mt-0.5">
             Institutions you registered — track their profile and approval progress.
           </p>

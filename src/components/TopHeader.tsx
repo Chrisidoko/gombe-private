@@ -33,7 +33,7 @@ export default function TopHeader() {
       icon: <FileText size={19} />,
     },
     {
-      name: "My Schools",
+      name: "My Institutions",
       path: "/my-schools",
       icon: <Building2 size={19} />,
     },
