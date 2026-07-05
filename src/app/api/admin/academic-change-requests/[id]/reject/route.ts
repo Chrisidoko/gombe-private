@@ -47,18 +47,18 @@ export async function POST(
       });
 
       await transporter.sendMail({
-        from: `"KAPTEMS" <${process.env.SMTP_USER}>`,
+        from: `"GAPTEMS" <${process.env.SMTP_USER}>`,
         to: email,
         subject: "Academic Profile Update Request — Not Approved",
         html: `
           <div style="font-family: Arial, sans-serif; line-height: 1.6; max-width: 560px; margin: auto;">
-            <h2 style="color: #dc2626;">Kaduna Private Tertiary Institution Portal</h2>
+            <h2 style="color: #dc2626;">Gombe Private Tertiary Institution Portal</h2>
             <p>Dear <strong>${name}</strong>,</p>
             <p>Your request to update your institution's academic profile has been reviewed and <strong>was not approved</strong> at this time.</p>
             ${reason ? `<p><strong>Reason:</strong> ${reason}</p>` : ""}
             <p>Your currently approved academic data remains unchanged on the portal. You may submit a new request after addressing the concerns above.</p>
             <br />
-            <p>Best Regards,<br>KAPTEMS Assessment Team</p>
+            <p>Best Regards,<br>GAPTEMS Assessment Team</p>
           </div>
         `,
       });

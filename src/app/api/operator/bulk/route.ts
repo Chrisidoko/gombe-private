@@ -81,12 +81,12 @@ export async function POST(req: Request) {
       );
     }
 
-    // ── Create assessment record ──────────────────────────────────────────
+    // ── Create assessment record — status pending_approval until Op2 approves ─
     const assessmentResult = await client.query(
       `INSERT INTO schoolkano_bulk_assessments
          (title, description, tier_1_fee, tier_2_fee, tier_3_fee,
           total_schools, created_by, status)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, 'sent')
+       VALUES ($1, $2, $3, $4, $5, $6, $7, 'pending_approval')
        RETURNING id`,
       [
         title,
@@ -100,43 +100,9 @@ export async function POST(req: Request) {
     );
 
     const assessmentId = assessmentResult.rows[0].id;
-    const year = new Date().getFullYear();
-    const prefix = `INV-${year}-${String(assessmentId).padStart(4, "0")}`;
 
-    // ── Bulk insert one invoice per school ────────────────────────────────
-    // bulk_assessment_id must be set on each invoice to satisfy the
-    // "only_one_assessment_check" constraint on schoolkano_invoices. The three
-    // valid invoice origins are:
-    //   • assessment_id set      → individual self-assessment (approve route)
-    //   • bulk_assessment_id set → operator bulk assessment (this route)
-    //   • both NULL              → direct demand notice (demand-notice route,
-    //                              allowed after the constraint was relaxed)
-    for (let i = 0; i < schools.length; i++) {
-      const school = schools[i];
-      const fee =
-        school.tier === 1
-          ? tier_1_fee
-          : school.tier === 2
-            ? tier_2_fee
-            : tier_3_fee;
-      const invoiceNumber = `${prefix}-${String(i + 1).padStart(4, "0")}`;
-
-      await client.query(
-        `INSERT INTO schoolkano_invoices
-           (school_id, invoice_number, title, amount, status,
-            issue_date, due_date, bulk_assessment_id, tier, is_creating_bill)
-         VALUES ($1, $2, $3, $4, 'Unpaid', NOW(), $5, $6, $7, false)`,
-        [
-          school.school_id,
-          invoiceNumber,
-          title,
-          fee,
-          due_date || null,
-          assessmentId,
-          school.tier,
-        ],
-      );
-    }
+    // Invoices are NOT created here. They are created by Operator 2 when
+    // approving via PATCH /api/operator2/bulk/[id]/approve.
 
     await client.query("COMMIT");
 
@@ -144,8 +110,7 @@ export async function POST(req: Request) {
       success: true,
       assessment_id: assessmentId,
       total_schools: schools.length,
-      total_invoices: schools.length,
-      message: `Assessment created — ${schools.length} invoices generated successfully`,
+      message: `Assessment submitted for review — ${schools.length} schools pending Operator 2 approval`,
     });
   } catch (error) {
     await client.query("ROLLBACK");

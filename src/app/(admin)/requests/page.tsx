@@ -33,6 +33,11 @@ interface School {
   created_at: string;
 }
 
+interface Course {
+  name: string;
+  accredited: boolean;
+}
+
 interface SchoolDetails {
   id: number;
   name: string;
@@ -42,6 +47,7 @@ interface SchoolDetails {
   lga: string;
   address: string;
   email: string;
+  contact_person: string | null;
   contact_person_phone: string;
   tin: string;
   website: string;
@@ -49,7 +55,26 @@ interface SchoolDetails {
   license_status: string;
   last_license_renewal: string;
   license_expiry_date: string;
-  courses: string[];
+  // Academic
+  courses: Course[];
+  programmes: string[];
+  mode_of_operation: string[];
+  avg_fee: string | null;
+  total_students: number | null;
+  graduated_count: number | null;
+  // Gombe — General
+  vc_name: string | null;
+  gsm_no: string | null;
+  year_established: number | null;
+  property_type: string | null;
+  category: string | null;
+  // Gombe — Facilities
+  lab_status: string | null;
+  library_status: string | null;
+  // Gombe — People
+  board_members: string[];
+  academic_staff: { name: string; qualification: string }[];
+  non_academic_staff: { name: string; role: string }[];
 }
 
 interface SchoolDocument {
@@ -69,7 +94,10 @@ interface AcademicSnapshot {
   session_start: string;
   session_end: string;
   programmes: string[];
-  courses: string[];
+  courses: Course[];
+  total_students: string;
+  enrollment_snapshot_date: string;
+  graduated_count: string;
 }
 
 interface AcademicRequest {
@@ -136,6 +164,82 @@ function ArrayDiff({
   );
 }
 
+function CourseDiff({
+  current,
+  proposed,
+}: {
+  current: Course[];
+  proposed: Course[];
+}) {
+  const currentNames = current.map((c) => c.name);
+  const proposedNames = proposed.map((c) => c.name);
+  const added = proposed.filter((c) => !currentNames.includes(c.name));
+  const removed = current.filter((c) => !proposedNames.includes(c.name));
+  const kept = current.filter((c) => proposedNames.includes(c.name));
+  const statusChanged = kept.filter((c) => {
+    const p = proposed.find((x) => x.name === c.name);
+    return p && p.accredited !== c.accredited;
+  });
+
+  if (!added.length && !removed.length && !statusChanged.length) return null;
+
+  return (
+    <div className="mb-4">
+      <p className="text-xs font-semibold text-gray-500 uppercase mb-2">
+        Courses
+      </p>
+      <div className="flex flex-wrap gap-1.5">
+        {kept
+          .filter((c) => !statusChanged.find((s) => s.name === c.name))
+          .map((c) => (
+            <span
+              key={c.name}
+              className={`text-xs px-2 py-0.5 rounded-full border ${
+                c.accredited
+                  ? "bg-green-50 border-green-200 text-green-700"
+                  : "bg-red-50 border-red-200 text-red-700"
+              }`}
+            >
+              {c.name}
+            </span>
+          ))}
+        {statusChanged.map((c) => {
+          const next = proposed.find((x) => x.name === c.name)!;
+          return (
+            <span
+              key={c.name}
+              className="text-xs px-2 py-0.5 rounded-full bg-amber-50 border border-amber-300 text-amber-800"
+            >
+              {c.name}: {c.accredited ? "Accredited" : "Not Accredited"} →{" "}
+              {next.accredited ? "Accredited" : "Not Accredited"}
+            </span>
+          );
+        })}
+        {removed.map((c) => (
+          <span
+            key={c.name}
+            className="text-xs px-2 py-0.5 rounded-full bg-red-100 text-red-700 line-through"
+          >
+            {c.name}
+          </span>
+        ))}
+        {added.map((c) => (
+          <span
+            key={c.name}
+            className={`text-xs px-2 py-0.5 rounded-full border font-medium ${
+              c.accredited
+                ? "bg-green-100 border-green-300 text-green-800"
+                : "bg-red-100 border-red-300 text-red-800"
+            }`}
+          >
+            + {c.name} ({c.accredited ? "Accredited" : "Not Accredited"})
+          </span>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 function ScalarDiff({
   label,
   current,
@@ -154,9 +258,7 @@ function ScalarDiff({
         {label}
       </p>
       <div className="flex items-center gap-2 text-sm">
-        <span className="line-through text-red-600">
-          {current || "—"}
-        </span>
+        <span className="line-through text-red-600">{current || "—"}</span>
         <span className="text-gray-400">→</span>
         <span className="text-green-700 font-medium">{proposed || "—"}</span>
       </div>
@@ -481,7 +583,7 @@ export default function Requests() {
           <div className="bg-white rounded-xl shadow-2xl max-w-3xl w-full max-h-[90vh] overflow-y-auto">
             <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between">
               <h2 className="text-2xl font-bold text-gray-900">
-                School Details
+                Institution Details
               </h2>
               <button
                 onClick={handleCloseModal}
@@ -633,14 +735,38 @@ export default function Requests() {
                           <label className="text-xs font-medium text-gray-500 block mb-1">
                             Course list
                           </label>
-                          <ul className="text-gray-900">
+                          <div className="flex flex-wrap gap-1.5 mt-1">
                             {schoolDetails.courses &&
-                            schoolDetails.courses.length > 0
-                              ? schoolDetails.courses.map((course, index) => (
-                                  <li key={index}>{course}</li>
-                                ))
-                              : "Not provided"}
-                          </ul>
+                            schoolDetails.courses.length > 0 ? (
+                              schoolDetails.courses.map((course, index) => (
+                                <span
+                                  key={index}
+                                  className={`inline-flex items-center gap-1 text-xs font-medium px-2.5 py-1 rounded-full border ${
+                                    course.accredited
+                                      ? "bg-green-50 border-green-200 text-green-800"
+                                      : "bg-red-50 border-red-200 text-red-800"
+                                  }`}
+                                >
+                                  {course.name}
+                                  <span
+                                    className={`px-1 py-0.5 rounded-full text-[10px] font-bold ${
+                                      course.accredited
+                                        ? "bg-green-200 text-green-800"
+                                        : "bg-red-200 text-red-800"
+                                    }`}
+                                  >
+                                    {course.accredited
+                                      ? "Accredited"
+                                      : "Not Accredited"}
+                                  </span>
+                                </span>
+                              ))
+                            ) : (
+                              <span className="text-xs text-gray-400">
+                                Not provided
+                              </span>
+                            )}
+                          </div>
                         </div>
                       </div>
                     </div>
@@ -867,17 +993,14 @@ export default function Requests() {
                   Unchanged
                 </p>
 
-                <ArrayDiff
-                  label="Courses"
+                <CourseDiff
                   current={selectedAcademic.current_snapshot.courses ?? []}
                   proposed={selectedAcademic.requested_changes.courses ?? []}
                 />
                 <ArrayDiff
                   label="Programmes"
                   current={selectedAcademic.current_snapshot.programmes ?? []}
-                  proposed={
-                    selectedAcademic.requested_changes.programmes ?? []
-                  }
+                  proposed={selectedAcademic.requested_changes.programmes ?? []}
                 />
                 <ArrayDiff
                   label="Mode of Operation"
@@ -899,7 +1022,9 @@ export default function Requests() {
                 />
                 <ScalarDiff
                   label="Session Start"
-                  current={selectedAcademic.current_snapshot.session_start ?? ""}
+                  current={
+                    selectedAcademic.current_snapshot.session_start ?? ""
+                  }
                   proposed={
                     selectedAcademic.requested_changes.session_start ?? ""
                   }

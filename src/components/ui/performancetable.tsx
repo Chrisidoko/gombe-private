@@ -110,7 +110,7 @@ export default async function RevenuePerformancePage() {
             Revenue Performance
           </h1>
           <p className="text-sm text-gray-500 mt-0.5">
-            Kaduna State Ministry of Education — Private Tertiary Institutions ·{" "}
+            Gombe State Ministry of Education — Private Tertiary Institutions ·{" "}
             {YEAR}
           </p>
         </div>

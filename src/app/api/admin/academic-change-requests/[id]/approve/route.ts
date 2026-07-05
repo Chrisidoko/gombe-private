@@ -34,22 +34,28 @@ export async function POST(
       session_start: string;
       session_end: string;
       programmes: string[];
-      courses: string[];
+      courses: { name: string; accredited: boolean }[];
+      total_students: string;
+      enrollment_snapshot_date: string;
+      graduated_count: string;
     };
 
     // Apply changes to the live school record
     await pool.query(
       `UPDATE schoolskano
        SET
-         mode_of_operation = $2::jsonb,
-         avg_fee           = $3,
-         total_revenue     = $4,
-         academic_session  = $5,
-         session_start     = NULLIF($6, ''),
-         session_end       = NULLIF($7, ''),
-         programmes        = $8::jsonb,
-         courses           = $9::jsonb,
-         updated_at        = NOW()
+         mode_of_operation        = $2::jsonb,
+         avg_fee                  = $3,
+         total_revenue            = $4,
+         academic_session         = $5,
+         session_start            = NULLIF($6, ''),
+         session_end              = NULLIF($7, ''),
+         programmes               = $8::jsonb,
+         courses                  = $9::jsonb,
+         total_students           = NULLIF($10, '')::integer,
+         enrollment_snapshot_date = NULLIF($11, '')::date,
+         graduated_count          = NULLIF($12, '')::integer,
+         updated_at               = NOW()
        WHERE school_id = $1`,
       [
         school_id,
@@ -61,6 +67,9 @@ export async function POST(
         changes.session_end || "",
         JSON.stringify(changes.programmes ?? []),
         JSON.stringify(changes.courses ?? []),
+        changes.total_students || "",
+        changes.enrollment_snapshot_date || "",
+        changes.graduated_count || "",
       ],
     );
 
@@ -85,17 +94,17 @@ export async function POST(
       });
 
       await transporter.sendMail({
-        from: `"KAPTEMS" <${process.env.SMTP_USER}>`,
+        from: `"GAPTEMS" <${process.env.SMTP_USER}>`,
         to: email,
         subject: "Your Academic Profile Update Has Been Approved",
         html: `
           <div style="font-family: Arial, sans-serif; line-height: 1.6; max-width: 560px; margin: auto;">
-            <h2 style="color: #16a34a;">Kaduna Private Tertiary Institution Portal</h2>
+            <h2 style="color: #16a34a;">Gombe Private Tertiary Institution Portal</h2>
             <p>Dear <strong>${name}</strong>,</p>
             <p>Your request to update your institution's academic profile has been reviewed and <strong>approved</strong> by the Ministry.</p>
             <p>Your updated academic information is now live on the verification portal.</p>
             <br />
-            <p>Best Regards,<br>KAPTEMS Assessment Team</p>
+            <p>Best Regards,<br>GAPTEMS Assessment Team</p>
           </div>
         `,
       });

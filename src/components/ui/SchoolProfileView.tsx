@@ -1,30 +1,48 @@
 "use client";
 
-import { useState } from "react"; // Add this line!
-import {
-  Building,
-  Users,
-  FileText,
-  Calendar,
-  Edit,
-  CheckCircle,
-  Award,
-} from "lucide-react";
+import { useState } from "react";
+import { Edit, CheckCircle, AlertCircle } from "lucide-react";
 import { School } from "@/lib/types";
 
 function formatDate(dateString: string | null) {
-  if (!dateString) return "N/A";
-  return new Date(dateString).toLocaleDateString("en-US", {
+  if (!dateString) return "—";
+  return new Date(dateString).toLocaleDateString("en-NG", {
     year: "numeric",
-    month: "long",
+    month: "short",
     day: "numeric",
   });
 }
 
 function formatCurrency(amount: string | number | null) {
-  if (!amount) return "₦0";
+  if (!amount) return "—";
   return `₦${Number(amount).toLocaleString()}`;
 }
+
+function Field({ label, value }: { label: string; value: React.ReactNode }) {
+  return (
+    <div>
+      <p className="text-xs text-gray-400 uppercase tracking-wide mb-0.5">{label}</p>
+      <div className="text-sm font-semibold text-gray-900">{value || "—"}</div>
+    </div>
+  );
+}
+
+function SectionTitle({ title }: { title: string }) {
+  return (
+    <div className="pb-3 mb-5 border-b border-gray-100">
+      <h2 className="text-sm font-bold text-gray-700">{title}</h2>
+    </div>
+  );
+}
+
+const TABS = [
+  { id: "general",        label: "General" },
+  { id: "academic",       label: "Academic" },
+  { id: "facilities",     label: "Facilities" },
+  { id: "people",         label: "People" },
+  { id: "certificate",    label: "Certificate" },
+] as const;
+type TabId = typeof TABS[number]["id"];
 
 export default function SchoolProfileView({
   schoolData,
@@ -33,413 +51,318 @@ export default function SchoolProfileView({
   schoolData: School;
   onEdit?: () => void;
 }) {
-  const [activeTab, setActiveTab] = useState<
-    "overview" | "academic" | "license"
-  >("overview");
+  const [activeTab, setActiveTab] = useState<TabId>("general");
 
-  // Map database fields to component fields
-  const data = {
-    proprietorName: schoolData?.proprietor_name || "Not provided",
-    contactPerson: schoolData?.contact_person || "Not provided",
-    contactPersonDesignation:
-      schoolData?.contact_person_designation || "Not provided",
-    contactPersonPhone: schoolData?.contact_person_phone || "N/A",
-    ownershipType: schoolData?.ownership || "Not specified",
-    category: schoolData?.category || "Not specified",
-    website: schoolData?.website || "N/A",
-    tin: schoolData?.tin || "N/A",
-    lastTaxFiling: schoolData?.last_tax_filing || null,
-    modeOfOperation: Array.isArray(schoolData?.mode_of_operation)
-      ? schoolData.mode_of_operation
-      : [],
-    avgFee: schoolData?.avg_fee || "0",
-    totalRevenue: schoolData?.total_revenue || "0",
-    academicSession: schoolData?.academic_session || "Not specified",
+  const courses = (Array.isArray(schoolData?.courses) ? schoolData.courses : []).map(
+    (c) => (typeof c === "string" ? { name: c, accredited: true } : c),
+  );
 
-    sessionStart: schoolData?.session_start || null,
-    sessionEnd: schoolData?.session_end || null,
-    programmes: Array.isArray(schoolData?.programmes)
-      ? schoolData.programmes
-      : [],
-    courses: Array.isArray(schoolData?.courses) ? schoolData.courses : [],
-    licenseNumber: schoolData?.license_number || "N/A",
-    licenceStatus: schoolData?.license_status || "Not specified",
-    prevAmount: schoolData?.prev_amount || "0",
-    prevDate: schoolData?.prev_licence_date || null,
-    profileCompleted: schoolData?.form_status === "complete",
-    lastUpdated: schoolData?.updated_at || new Date().toISOString(),
-  };
-
-  if (!data.profileCompleted) {
-    return (
-      <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-6">
-        <div className="flex items-center gap-3">
-          <div className="w-12 h-12 bg-yellow-400 rounded-full flex items-center justify-center">
-            <FileText className="w-6 h-6 text-white" />
-          </div>
-          <div>
-            <h3 className="font-semibold text-gray-900">Profile Incomplete</h3>
-            <p className="text-sm text-gray-600">
-              Please complete your school profile to access all features
-            </p>
-          </div>
-        </div>
-      </div>
-    );
-  }
+  const incomplete = schoolData?.form_status !== "complete";
 
   return (
-    <div className="space-y-6">
-      {/* Header Card with Profile Status */}
-      <div className="overflow-hidden">
-        <div className="p-6">
-          <div className="flex items-start justify-between">
-            <div className="flex items-center gap-4">
-              <div>
-                <div className="flex items-center gap-2 mb-1">
-                  <h1 className="text-2xl font-bold text-gray-900">
-                    School Profile
-                  </h1>
-                </div>
-                <p className="text-sm text-gray-600 mt-1">
-                  Last updated: {formatDate(data.lastUpdated)}
-                </p>
-              </div>
-            </div>
-
+    <div className="space-y-4">
+      {/* Header */}
+      <div className="bg-white rounded-xl border border-gray-200 px-6 py-4 flex items-center justify-between">
+        <div>
+          <h1 className="text-lg font-bold text-gray-900">School Profile</h1>
+          <p className="text-xs text-gray-400 mt-0.5">
+            Last updated: {formatDate(schoolData?.updated_at)}
+          </p>
+        </div>
+        <div className="flex items-center gap-3">
+          {incomplete && (
+            <span className="flex items-center gap-1.5 text-xs font-medium text-amber-700 bg-amber-50 border border-amber-200 px-3 py-1.5 rounded-full">
+              <AlertCircle className="w-3.5 h-3.5" />
+              Profile incomplete
+            </span>
+          )}
+          {!incomplete && (
+            <span className="flex items-center gap-1.5 text-xs font-medium text-green-700 bg-green-50 border border-green-200 px-3 py-1.5 rounded-full">
+              <CheckCircle className="w-3.5 h-3.5" />
+              Profile complete
+            </span>
+          )}
+          {onEdit && (
             <button
               onClick={onEdit}
-              className="flex items-center gap-2 bg-white text-green-600 px-4 py-2 rounded-lg font-medium hover:bg-green-50 transition-all shadow-md border border-green-200"
+              className="flex items-center gap-2 text-sm font-semibold text-white bg-green-600 hover:bg-green-700 px-4 py-2 rounded-lg transition-all"
             >
               <Edit className="w-4 h-4" />
               Edit Profile
             </button>
-          </div>
-        </div>
-
-        {/* Tabs */}
-        <div className="bg-white rounded-xl backdrop-blur-sm border border-gray-200">
-          <div className="flex">
-            <button
-              onClick={() => setActiveTab("overview")}
-              className={`flex-1 px-6 py-3 text-sm font-semibold transition-all ${
-                activeTab === "overview"
-                  ? "bg-green-600 rounded-xl text-white"
-                  : "text-gray-900 hover:bg-white/10"
-              }`}
-            >
-              Overview
-            </button>
-            <button
-              onClick={() => setActiveTab("academic")}
-              className={`flex-1 px-6 py-3 text-sm font-semibold transition-all ${
-                activeTab === "academic"
-                  ? "bg-green-600 rounded-xl text-white rounded-xl"
-                  : "text-gray-900 hover:bg-white/10"
-              }`}
-            >
-              Academic Info
-            </button>
-            <button
-              onClick={() => setActiveTab("license")}
-              className={`flex-1 px-6 py-3 text-sm font-semibold transition-all ${
-                activeTab === "license"
-                  ? "bg-green-600 rounded-xl text-white rounded-xl"
-                  : "text-gray-900 hover:bg-white/10"
-              }`}
-            >
-              Consent Certificate & Tax
-            </button>
-          </div>
+          )}
         </div>
       </div>
 
-      {/* Overview Tab */}
-      {activeTab === "overview" && (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* General Information Card */}
-          <div className="lg:col-span-2 bg-white rounded-xl border border-gray-200 p-6">
-            <div className="flex items-center gap-3 mb-6 pb-4 border-b border-gray-200">
-              <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
-                <Building className="w-5 h-5 text-blue-600" />
-              </div>
-              <h2 className="text-base font-bold text-gray-900">
-                General Information
-              </h2>
-            </div>
+      {/* Tab Bar */}
+      <div className="bg-white rounded-xl border border-gray-200 px-4 py-2 flex gap-1">
+        {TABS.map((tab) => (
+          <button
+            key={tab.id}
+            onClick={() => setActiveTab(tab.id)}
+            className={`flex-1 px-3 py-2 text-xs font-semibold rounded-lg transition-all ${
+              activeTab === tab.id
+                ? "bg-green-600 text-white shadow-sm"
+                : "text-gray-500 hover:bg-gray-100"
+            }`}
+          >
+            {tab.label}
+          </button>
+        ))}
+      </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
-                <p className="text-sm text-gray-500 mb-1">Proprietor Name</p>
-                <p className="font-semibold text-gray-900">
-                  {data.proprietorName}
-                </p>
-              </div>
-
-              <div>
-                <p className="text-sm text-gray-500 mb-1">Contact Person</p>
-                <p className="font-semibold text-gray-900">
-                  {data.contactPerson}
-                </p>
-              </div>
-
-              <div>
-                <p className="text-sm text-gray-500 mb-1">
-                  Contact Person Designation
-                </p>
-                <p className="font-semibold text-gray-900">
-                  {data.contactPersonDesignation}
-                </p>
-              </div>
-
-              <div>
-                <p className="text-sm text-gray-500 mb-1">
-                  Contact Person Phone
-                </p>
-                <p className="font-semibold text-gray-900">
-                  {data.contactPersonPhone}
-                </p>
-              </div>
-
-              <div>
-                <p className="text-sm text-gray-500 mb-1">Ownership Type</p>
-                <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-purple-100 text-purple-700">
-                  {data.ownershipType}
-                </span>
-              </div>
-
-              <div>
-                <p className="text-sm text-gray-500 mb-1">Category</p>
-                <p className="font-mono font-semibold text-gray-900">
-                  {data.category}
-                </p>
-              </div>
-
-              <div>
-                <p className="text-sm text-gray-500 mb-1">Website</p>
-                <p className="font-base underline text-blue-500">
-                  {data.website}
-                </p>
-              </div>
-
-              <div>
-                <p className="text-sm text-gray-500 mb-1">Profile Status</p>
-                <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-sm font-semibold bg-green-100 text-green-700">
-                  <CheckCircle className="w-4 h-4" />
-                  Complete
-                </span>
-              </div>
+      {/* ── General ── */}
+      {activeTab === "general" && (
+        <div className="space-y-4">
+          <div className="bg-white rounded-xl border border-gray-200 p-6">
+            <SectionTitle title="Institution Details" />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+              <Field label="Institution Name" value={schoolData?.name} />
+              <Field label="Category" value={schoolData?.category} />
+              <Field label="VC / Rector / Provost" value={schoolData?.vc_name} />
+              <Field label="GSM Number" value={schoolData?.gsm_no} />
+              <Field label="Year Established" value={schoolData?.year_established} />
+              <Field label="Site Type" value={schoolData?.property_type} />
+              <Field label="LGA" value={schoolData?.lga} />
+              <Field label="Address" value={schoolData?.address} />
+              <Field
+                label="Website"
+                value={
+                  schoolData?.website ? (
+                    <a href={schoolData.website} target="_blank" rel="noreferrer"
+                      className="text-blue-600 underline underline-offset-2">
+                      {schoolData.website}
+                    </a>
+                  ) : null
+                }
+              />
             </div>
           </div>
-          {/* Tax Compliance */}
-          <div className="md:col-span-2 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl border border-blue-200 p-6">
-            <div className="flex items-start gap-4">
-              <div className="w-12 h-12 bg-blue-600 rounded-lg flex items-center justify-center flex-shrink-0">
-                <FileText className="w-6 h-6 text-white" />
-              </div>
-              <div className="flex-1">
-                <h3 className="text-lg font-bold text-gray-900 mb-2">
-                  Tax Compliance Information
-                </h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <p className="text-sm text-gray-600 mb-1">TIN Number</p>
-                    <p className="font-mono font-bold text-gray-900">
-                      {data.tin}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-gray-600 mb-1">
-                      Last Filing Date
-                    </p>
-                    <p className="font-bold text-gray-900">
-                      {formatDate(data.lastTaxFiling)}
-                    </p>
-                  </div>
-                </div>
-              </div>
+
+          <div className="bg-white rounded-xl border border-gray-200 p-6">
+            <SectionTitle title="Proprietor & Ownership" />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+              <Field label="Proprietor Name" value={schoolData?.proprietor_name} />
+              <Field label="Ownership Type" value={schoolData?.ownership} />
+              <Field label="TIN Number" value={schoolData?.tin} />
+              <Field label="Last Tax Filing" value={formatDate(schoolData?.last_tax_filing)} />
+            </div>
+          </div>
+
+          <div className="bg-white rounded-xl border border-gray-200 p-6">
+            <SectionTitle title="Contact Person" />
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+              <Field label="Name" value={schoolData?.contact_person} />
+              <Field label="Designation" value={schoolData?.contact_person_designation} />
+              <Field label="Phone" value={schoolData?.contact_person_phone} />
             </div>
           </div>
         </div>
       )}
 
-      {/* Academic Tab */}
+      {/* ── Academic ── */}
       {activeTab === "academic" && (
-        <div className="space-y-6">
-          {/* Mode of Operation */}
-          <div className="bg-white rounded-xl border border-gray-200 p-6">
-            <div className="flex items-center gap-3 mb-4 pb-4 border-b border-gray-200">
-              <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
-                <Users className="w-5 h-5 text-blue-600" />
+        <div className="space-y-4">
+          {/* Enrolment snapshot */}
+          <div className="grid grid-cols-3 gap-4">
+            {[
+              { label: "Total Students", value: schoolData?.total_students ?? "—" },
+              { label: "Enrolment Date", value: formatDate(schoolData?.enrollment_snapshot_date) },
+              { label: "Graduates (to 2023)", value: schoolData?.graduated_count ?? "—" },
+            ].map((s) => (
+              <div key={s.label} className="bg-white rounded-xl border border-gray-200 px-5 py-4">
+                <p className="text-xs text-gray-400 uppercase tracking-wide mb-1">{s.label}</p>
+                <p className="text-xl font-bold text-gray-900">{s.value}</p>
               </div>
-              <h2 className="text-base font-bold text-gray-900">
-                Mode of Operation
-              </h2>
-            </div>
+            ))}
+          </div>
+
+          <div className="bg-white rounded-xl border border-gray-200 p-6">
+            <SectionTitle title="Mode of Operation" />
             <div className="flex flex-wrap gap-2">
-              {data.modeOfOperation.length > 0 ? (
-                data.modeOfOperation.map((mode: string) => (
-                  <span
-                    key={mode}
-                    className="px-4 py-2 bg-blue-50 text-blue-700 text-sm rounded-lg font-medium border border-blue-200"
-                  >
-                    {mode}
+              {(schoolData?.mode_of_operation ?? []).length > 0 ? (
+                schoolData.mode_of_operation.map((m) => (
+                  <span key={m} className="px-3 py-1 bg-blue-50 border border-blue-200 text-blue-700 text-xs font-semibold rounded-full">
+                    {m}
                   </span>
                 ))
-              ) : (
-                <p className="text-gray-500 text-sm">Not specified</p>
-              )}
+              ) : <p className="text-sm text-gray-400">Not specified</p>}
             </div>
           </div>
 
-          {/* Programmes Offered */}
           <div className="bg-white rounded-xl border border-gray-200 p-6">
-            <div className="flex items-center gap-3 mb-4 pb-4 border-b border-gray-200">
-              <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center">
-                <Award className="w-5 h-5 text-purple-600" />
-              </div>
-              <h2 className="text-base font-bold text-gray-900">
-                Programmes Offered
-              </h2>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              {data.programmes.length > 0 ? (
-                data.programmes.map((prog: string) => (
-                  <div
-                    key={prog}
-                    className="flex items-center gap-2 p-3 bg-purple-50 text-sm rounded-lg border border-purple-200"
-                  >
-                    <CheckCircle className="w-5 h-5 text-purple-600 flex-shrink-0" />
-                    <span className="font-medium text-gray-900">{prog}</span>
+            <SectionTitle title="Programmes Offered" />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+              {(schoolData?.programmes ?? []).length > 0 ? (
+                schoolData.programmes.map((p) => (
+                  <div key={p} className="flex items-center gap-2 px-3 py-2 bg-purple-50 border border-purple-100 rounded-lg">
+                    <CheckCircle className="w-4 h-4 text-purple-500 shrink-0" />
+                    <span className="text-xs font-medium text-gray-800">{p}</span>
                   </div>
                 ))
-              ) : (
-                <p className="text-gray-500 text-sm col-span-2">
-                  No programmes specified
-                </p>
-              )}
+              ) : <p className="text-sm text-gray-400 col-span-2">No programmes specified</p>}
             </div>
           </div>
 
-          {/* Courses Offered */}
-
           <div className="bg-white rounded-xl border border-gray-200 p-6">
-            <div className="flex items-center gap-3 mb-4 pb-4 border-b border-gray-200">
-              <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center">
-                <Award className="w-5 h-5 text-purple-600" />
-              </div>
-              <h2 className="text-base font-bold text-gray-900">
-                Courses Offered
-              </h2>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              {data.courses.length > 0 ? (
-                data.courses.map((prog: string) => (
-                  <div
-                    key={prog}
-                    className="flex items-center gap-2 p-3 bg-orange-50 text-sm rounded-lg border border-orange-200"
-                  >
-                    <CheckCircle className="w-5 h-5 text-orange-600 flex-shrink-0" />
-                    <span className="font-medium text-gray-900">{prog}</span>
-                  </div>
-                ))
-              ) : (
-                <p className="text-gray-500 text-sm col-span-2">
-                  No programmes specified
-                </p>
-              )}
-            </div>
+            <SectionTitle title="Courses" />
+            {courses.length > 0 ? (
+              <>
+                <div className="flex gap-4 text-xs font-semibold text-gray-400 mb-3">
+                  <span className="flex items-center gap-1">
+                    <span className="w-2 h-2 rounded-full bg-green-400 inline-block" />
+                    Accredited: {courses.filter((c) => c.accredited).length}
+                  </span>
+                  <span className="flex items-center gap-1">
+                    <span className="w-2 h-2 rounded-full bg-red-400 inline-block" />
+                    Not Accredited: {courses.filter((c) => !c.accredited).length}
+                  </span>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {courses.map((course, i) => (
+                    <span
+                      key={i}
+                      className={`inline-flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-full border ${
+                        course.accredited
+                          ? "bg-green-50 border-green-200 text-green-800"
+                          : "bg-red-50 border-red-200 text-red-800"
+                      }`}
+                    >
+                      {course.name}
+                      <span className={`px-1.5 py-0.5 rounded-full text-[10px] font-bold ${
+                        course.accredited ? "bg-green-200 text-green-800" : "bg-red-200 text-red-800"
+                      }`}>
+                        {course.accredited ? "Accredited" : "Not Accredited"}
+                      </span>
+                    </span>
+                  ))}
+                </div>
+              </>
+            ) : <p className="text-sm text-gray-400">No courses added</p>}
           </div>
 
-          {/* Academic Calendar */}
-          <div className="bg-white rounded-xl border border-gray-200 p-6">
-            <div className="flex items-center gap-3 mb-4 pb-4 border-b border-gray-200">
-              <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
-                <Calendar className="w-5 h-5 text-green-600" />
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="bg-white rounded-xl border border-gray-200 p-6">
+              <SectionTitle title="Fees" />
+              <div className="space-y-4">
+                <Field label="Average Fee per Semester" value={formatCurrency(schoolData?.avg_fee)} />
+                <Field label="Total Annual Revenue" value={formatCurrency(schoolData?.total_revenue)} />
               </div>
-              <h2 className="text-base font-bold text-gray-900">
-                Academic Calendar
-              </h2>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <div>
-                <p className="text-sm text-gray-500 mb-1">Academic Session</p>
-                <p className="font-semibold text-gray-900">
-                  {data.academicSession}
-                </p>
-              </div>
-
-              <div>
-                <p className="text-sm text-gray-500 mb-1">Session Start</p>
-                <p className="font-semibold text-gray-900">
-                  {formatDate(data.sessionStart)}
-                </p>
-              </div>
-              <div>
-                <p className="text-sm text-gray-500 mb-1">Session End</p>
-                <p className="font-semibold text-gray-900">
-                  {formatDate(data.sessionEnd)}
-                </p>
+            <div className="bg-white rounded-xl border border-gray-200 p-6">
+              <SectionTitle title="Academic Calendar" />
+              <div className="space-y-4">
+                <Field label="Session" value={schoolData?.academic_session} />
+                <Field label="Start Date" value={formatDate(schoolData?.session_start)} />
+                <Field label="End Date" value={formatDate(schoolData?.session_end)} />
               </div>
             </div>
           </div>
         </div>
       )}
 
-      {/* License Tab */}
-      {activeTab === "license" && (
-        <div className="space-y-6">
-          {/* License Status */}
-          <div className="bg-white rounded-xl border border-gray-200 p-6">
-            <div className="flex items-center gap-3 mb-6 pb-4 border-b border-gray-200">
-              <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
-                <FileText className="w-5 h-5 text-green-600" />
-              </div>
-              <h2 className="text-base font-bold text-gray-900">
-                Certificate Status
-              </h2>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
-                <p className="text-sm text-gray-500 mb-1">Certificate Number</p>
-                <p className="text-lg font-semibold text-gray-900">
-                  {data.licenseNumber}
-                </p>
-              </div>
-
-              <div>
-                <p className="text-sm text-gray-500 mb-2">Current Status</p>
-                <div className="flex items-center gap-2">
-                  <span
-                    className={`inline-flex items-center gap-2 px-4 py-2 text-sm rounded-lg font-semibold ${
-                      data.licenceStatus === "Active Licence (Valid)"
-                        ? "bg-green-100 text-green-700"
-                        : data.licenceStatus === "Renewal Due"
-                          ? "bg-yellow-100 text-yellow-700"
-                          : "bg-gray-100 text-gray-700"
-                    }`}
-                  >
-                    <CheckCircle className="w-5 h-5" />
-                    {data.licenceStatus}
+      {/* ── Facilities ── */}
+      {activeTab === "facilities" && (
+        <div className="bg-white rounded-xl border border-gray-200 p-6">
+          <SectionTitle title="Infrastructure Availability" />
+          <p className="text-xs text-gray-400 mb-6">
+            Availability as reported by the institution. Adequacy is assessed separately by an inspector.
+          </p>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {[
+              { label: "Laboratories / Workshop", value: schoolData?.lab_status },
+              { label: "Library", value: schoolData?.library_status },
+            ].map((f) => (
+              <div key={f.label} className="flex items-center justify-between p-4 rounded-xl border border-gray-100 bg-gray-50">
+                <p className="text-sm font-semibold text-gray-700">{f.label}</p>
+                {f.value ? (
+                  <span className={`text-xs font-bold px-3 py-1.5 rounded-full ${
+                    f.value === "Available"
+                      ? "bg-green-100 text-green-700 border border-green-200"
+                      : "bg-red-100 text-red-700 border border-red-200"
+                  }`}>
+                    {f.value}
                   </span>
+                ) : (
+                  <span className="text-xs text-gray-400">Not set</span>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* ── People ── */}
+      {activeTab === "people" && (
+        <div className="space-y-4">
+          <div className="bg-white rounded-xl border border-gray-200 p-6">
+            <SectionTitle title="Board Members" />
+            {(schoolData?.board_members ?? []).length > 0 ? (
+              <div className="flex flex-wrap gap-2">
+                {schoolData.board_members.map((m, i) => (
+                  <span key={i} className="px-3 py-1.5 bg-indigo-50 border border-indigo-200 text-indigo-800 text-xs font-semibold rounded-full">
+                    {m}
+                  </span>
+                ))}
+              </div>
+            ) : <p className="text-sm text-gray-400">No board members added</p>}
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="bg-white rounded-xl border border-gray-200 p-6">
+              <SectionTitle title="Academic Staff" />
+              {(schoolData?.academic_staff ?? []).length > 0 ? (
+                <div className="space-y-2">
+                  {schoolData.academic_staff.map((s, i) => (
+                    <div key={i} className="flex items-center justify-between px-3 py-2 bg-blue-50 border border-blue-100 rounded-lg">
+                      <span className="text-xs font-semibold text-gray-800">{s.name}</span>
+                      <span className="text-xs text-blue-600 font-medium">{s.qualification}</span>
+                    </div>
+                  ))}
                 </div>
-              </div>
-
-              <div>
-                <p className="text-sm text-gray-500 mb-1">Amount Paid</p>
-                <p className="text-lg font-bold text-gray-900">
-                  {formatCurrency(data.prevAmount)}
-                </p>
-              </div>
-
-              <div>
-                <p className="text-sm text-gray-500 mb-1">Payment Date</p>
-                <p className="text-lg font-bold text-gray-900">
-                  {formatDate(data.prevDate)}
-                </p>
-              </div>
+              ) : <p className="text-sm text-gray-400">No academic staff added</p>}
             </div>
+
+            <div className="bg-white rounded-xl border border-gray-200 p-6">
+              <SectionTitle title="Non-Academic Staff" />
+              {(schoolData?.non_academic_staff ?? []).length > 0 ? (
+                <div className="space-y-2">
+                  {schoolData.non_academic_staff.map((s, i) => (
+                    <div key={i} className="flex items-center justify-between px-3 py-2 bg-gray-50 border border-gray-100 rounded-lg">
+                      <span className="text-xs font-semibold text-gray-800">{s.name}</span>
+                      <span className="text-xs text-gray-500 font-medium">{s.role}</span>
+                    </div>
+                  ))}
+                </div>
+              ) : <p className="text-sm text-gray-400">No non-academic staff added</p>}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Certificate ── */}
+      {activeTab === "certificate" && (
+        <div className="bg-white rounded-xl border border-gray-200 p-6">
+          <SectionTitle title="Consent Certificate" />
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+              <p className="text-xs text-gray-400 uppercase tracking-wide mb-2">Current Status</p>
+              {schoolData?.license_status ? (
+                <span className={`inline-flex items-center gap-2 px-4 py-2 text-sm rounded-lg font-semibold ${
+                  schoolData.license_status === "Active"
+                    ? "bg-green-100 text-green-700 border border-green-200"
+                    : "bg-red-100 text-red-700 border border-red-200"
+                }`}>
+                  <CheckCircle className="w-4 h-4" />
+                  {schoolData.license_status}
+                </span>
+              ) : (
+                <span className="text-sm text-gray-400">Not recorded</span>
+              )}
+            </div>
+            <Field label="Certificate / License Number" value={schoolData?.license_number} />
+            <Field label="Amount Paid" value={formatCurrency(schoolData?.prev_amount)} />
+            <Field label="Payment Date" value={formatDate(schoolData?.prev_licence_date)} />
           </div>
         </div>
       )}

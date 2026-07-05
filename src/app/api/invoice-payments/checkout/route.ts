@@ -3,7 +3,16 @@ import { NextResponse } from "next/server";
 import pool from "@/lib/db";
 import crypto from "crypto";
 
+const GATEWAY_ACTIVE = process.env.PAYKADUNA_API_KEY !== "STUB_NOT_ACTIVE";
+
 export async function POST(req: Request) {
+  if (!GATEWAY_ACTIVE) {
+    return NextResponse.json(
+      { error: "Payment gateway not yet configured for Gombe State. Contact the system administrator." },
+      { status: 503 },
+    );
+  }
+
   const client = await pool.connect();
 
   let invoice_id: string | number | undefined;

@@ -204,7 +204,9 @@ export async function GET(req: Request) {
         if (schoolRes.rows.length === 0) continue;
         const school = schoolRes.rows[0];
 
-        // Step 4 — build and send bill to PayKaduna
+        // Step 4 — build and send bill to payment gateway (skipped when not configured)
+        const GATEWAY_ACTIVE = process.env.PAYKADUNA_API_KEY !== "STUB_NOT_ACTIVE";
+        if (!GATEWAY_ACTIVE) continue;
         try {
           const nameParts = school.name.split(" ");
           const firstName = nameParts[0] || school.name;
@@ -219,7 +221,7 @@ export async function GET(req: Request) {
             firstName,
             middleName,
             lastName,
-            address: school.address || "Kaduna, Nigeria",
+            address: school.address || "Gombe, Nigeria",
             telephone: school.phone || "08000000000",
             esBillDetailsDto: [
               {

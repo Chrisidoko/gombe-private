@@ -133,10 +133,10 @@ function AssessmentCard({
                 </div>
                 <div>
                   <h3 className="text-lg font-bold text-white">
-                    Reject Assessment
+                    Recommend Rejection
                   </h3>
                   <p className="text-red-100 text-sm">
-                    Provide a reason for rejection
+                    Operator 2 will review your recommendation
                   </p>
                 </div>
               </div>
@@ -371,12 +371,12 @@ function AssessmentCard({
             {isLoading && loading.action === "approve" ? (
               <>
                 <Loader2 className="w-5 h-5 animate-spin" />
-                <span>Approving...</span>
+                <span>Submitting...</span>
               </>
             ) : (
               <>
                 <Check className="w-5 h-5" />
-                <span>Approve & Generate Invoice</span>
+                <span>Recommend for Approval</span>
               </>
             )}
           </button>
@@ -394,7 +394,7 @@ function AssessmentCard({
             ) : (
               <>
                 <X className="w-5 h-5" />
-                <span>Reject Assessment</span>
+                <span>Recommend Rejection</span>
               </>
             )}
           </button>
@@ -463,38 +463,37 @@ export default function Requests() {
 
   async function handleAction(
     assessment_id: number,
-    school_id: string,
-    amount: string,
     action: "approve" | "reject",
     reason: string,
   ) {
     setActionLoading({ id: assessment_id, action });
 
     try {
-      const endpoint =
-        action === "approve"
-          ? "/api/assessment/approve"
-          : "/api/assessment/reject";
-
-      const res = await fetch(endpoint, {
+      const res = await fetch("/api/assessment/recommend", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ assessment_id, school_id, amount, reason }),
+        body: JSON.stringify({
+          assessment_id,
+          recommendation: action === "approve" ? "recommend_approve" : "recommend_reject",
+          note: reason || undefined,
+        }),
       });
 
-      if (!res.ok) throw new Error(`Failed to ${action} assessment`);
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error || `Failed to submit recommendation`);
+      }
 
       toast.success(
         action === "approve"
-          ? "Invoice generated and email sent successfully!"
-          : "Assessment rejected successfully!",
+          ? "Recommendation submitted — awaiting Operator 2 approval."
+          : "Rejection recommendation submitted — awaiting Operator 2 review.",
       );
 
-      // Remove from list after successful action
       setAssessments((prev) => prev.filter((a) => a.id !== assessment_id));
     } catch (error) {
       console.error("Error:", error);
-      alert("Operation failed. Please try again.");
+      toast.error(error instanceof Error ? error.message : "Operation failed. Please try again.");
     } finally {
       setActionLoading({ id: null, action: null });
     }
@@ -581,24 +580,8 @@ export default function Requests() {
               key={assessment.id}
               assessment={assessment}
               loading={actionLoading}
-              onApprove={() =>
-                handleAction(
-                  assessment.id,
-                  assessment.school_id,
-                  assessment.commission_amount,
-                  "approve",
-                  "",
-                )
-              }
-              onReject={(reason) =>
-                handleAction(
-                  assessment.id,
-                  assessment.school_id,
-                  assessment.commission_amount,
-                  "reject",
-                  reason,
-                )
-              }
+              onApprove={() => handleAction(assessment.id, "approve", "")}
+              onReject={(reason) => handleAction(assessment.id, "reject", reason)}
             />
           ))}
         </div>

@@ -1,11 +1,8 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Loader2,
-  Building,
-  Users,
-  FileText,
   CheckCircle,
   Save,
   X,
@@ -16,6 +13,8 @@ import {
 import toast from "react-hot-toast";
 import { School } from "@/lib/types";
 
+type Course = { name: string; accredited: boolean };
+
 type AcademicSnapshot = {
   mode_of_operation: string[];
   avg_fee: string;
@@ -24,8 +23,14 @@ type AcademicSnapshot = {
   session_start: string;
   session_end: string;
   programmes: string[];
-  courses: string[];
+  courses: Course[];
+  total_students: string;
+  enrollment_snapshot_date: string;
+  graduated_count: string;
 };
+
+type AcademicStaff = { name: string; qualification: string };
+type NonAcademicStaff = { name: string; role: string };
 
 type AcademicChangeRequest = {
   id: number;
@@ -38,7 +43,6 @@ type AcademicChangeRequest = {
 
 type FormData = {
   // General Information
-
   proprietorName: string;
   proprietorNin: string;
   propertyType: string;
@@ -52,48 +56,48 @@ type FormData = {
   lastTaxFiling: string;
   category: string;
   website: string;
+  vcName: string;
+  gsmNo: string;
+  yearEstablished: string;
 
   // Academic Information
   modeOfOperation: string[];
   avgFee: string;
   totalRevenue: string;
   academicSession: string;
-  // weeksPerSemester: string;
   sessionStart: string;
   sessionEnd: string;
   programmes: string[];
-  courses: string[];
+  courses: Course[];
+  totalStudents: string;
+  enrollmentSnapshotDate: string;
+  graduatedCount: string;
+
+  // Infrastructure
+  labStatus: string;
+  libraryStatus: string;
+
+  // People
+  boardMembers: string[];
+  academicStaff: AcademicStaff[];
+  nonAcademicStaff: NonAcademicStaff[];
 
   // License Information
   license_status: string;
-  // licenseNumber: string;
-  // licenseExpiry: string;
 };
 
 const lgas = [
-  "Birnin Gwari",
-  "Chikun",
-  "Giwa",
-  "Igabi",
-  "Ikara",
-  "Jaba",
-  "Jema'a",
-  "Kachia",
-  "Kaduna North",
-  "Kaduna South",
-  "Kagarko",
-  "Kajuru",
-  "Kaura",
-  "Kauru",
-  "Kubau",
-  "Kudan",
-  "Lere",
-  "Makarfi",
-  "Sabon Gari",
-  "Sanga",
-  "Soba",
-  "Zangon Kataf",
-  "Zaria",
+  "Akko",
+  "Balanga",
+  "Billiri",
+  "Dukku",
+  "Funakaye",
+  "Gombe",
+  "Kaltungo",
+  "Kwami",
+  "Nafada",
+  "Shongom",
+  "Yamaltu/Deba",
 ];
 
 export default function SchoolProfileForm({
@@ -123,19 +127,38 @@ export default function SchoolProfileForm({
     sessionStart: schoolData.session_start ?? "",
     sessionEnd: schoolData.session_end ?? "",
     programmes: schoolData.programmes ?? [],
-    courses: schoolData.courses ?? [],
+    courses: (schoolData.courses ?? []).map((c) =>
+      typeof c === "string" ? { name: c, accredited: true } : c,
+    ),
+    totalStudents: schoolData.total_students?.toString() ?? "",
+    enrollmentSnapshotDate: schoolData.enrollment_snapshot_date ?? "",
+    graduatedCount: schoolData.graduated_count?.toString() ?? "",
+    vcName: schoolData.vc_name ?? "",
+    gsmNo: schoolData.gsm_no ?? "",
+    yearEstablished: schoolData.year_established?.toString() ?? "",
+    labStatus: schoolData.lab_status ?? "",
+    libraryStatus: schoolData.library_status ?? "",
+    boardMembers: schoolData.board_members ?? [],
+    academicStaff: schoolData.academic_staff ?? [],
+    nonAcademicStaff: schoolData.non_academic_staff ?? [],
     license_status: schoolData.license_status ?? "",
-    // licenseNumber: "",
-    // licenseExpiry: "",
   });
 
   const isApproved = schoolData?.approval_status === "approved";
 
   const [loading, setLoading] = useState(false);
-  const [activeSection, setActiveSection] = useState<string | null>(null);
+  const [activeSection, setActiveSection] = useState<string | null>("general");
   const [courseInput, setCourseInput] = useState("");
 
-  const [pendingRequest, setPendingRequest] = useState<AcademicChangeRequest | null>(null);
+  // People section inputs
+  const [boardMemberInput, setBoardMemberInput] = useState("");
+  const [academicStaffName, setAcademicStaffName] = useState("");
+  const [academicStaffQual, setAcademicStaffQual] = useState("");
+  const [nonAcademicStaffName, setNonAcademicStaffName] = useState("");
+  const [nonAcademicStaffRole, setNonAcademicStaffRole] = useState("");
+
+  const [pendingRequest, setPendingRequest] =
+    useState<AcademicChangeRequest | null>(null);
   const [academicSubmitLoading, setAcademicSubmitLoading] = useState(false);
   const [withdrawLoading, setWithdrawLoading] = useState(false);
 
@@ -158,26 +181,31 @@ export default function SchoolProfileForm({
             sessionEnd: ch.session_end ?? prev.sessionEnd,
             programmes: ch.programmes ?? prev.programmes,
             courses: ch.courses ?? prev.courses,
+            totalStudents: ch.total_students ?? prev.totalStudents,
+            enrollmentSnapshotDate:
+              ch.enrollment_snapshot_date ?? prev.enrollmentSnapshotDate,
+            graduatedCount: ch.graduated_count ?? prev.graduatedCount,
           }));
         }
       })
       .catch(console.error);
   }, [isApproved]);
 
-  const handleChange = (field: keyof FormData, value: string | string[]) => {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const handleChange = (field: keyof FormData, value: any) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
-  const toggleCheckbox = (field: keyof FormData, value: string) => {
+  const toggleCheckbox = (
+    field: "modeOfOperation" | "programmes",
+    value: string,
+  ) => {
     setFormData((prev) => {
-      const currentField = prev[field];
-      if (Array.isArray(currentField)) {
-        const selected = currentField.includes(value)
-          ? currentField.filter((item) => item !== value)
-          : [...currentField, value];
-        return { ...prev, [field]: selected };
-      }
-      return prev;
+      const current = prev[field] as string[];
+      const selected = current.includes(value)
+        ? current.filter((item) => item !== value)
+        : [...current, value];
+      return { ...prev, [field]: selected };
     });
   };
 
@@ -194,6 +222,9 @@ export default function SchoolProfileForm({
         session_end: formData.sessionEnd,
         programmes: formData.programmes,
         courses: formData.courses,
+        total_students: formData.totalStudents,
+        enrollment_snapshot_date: formData.enrollmentSnapshotDate,
+        graduated_count: formData.graduatedCount,
       };
       const res = await fetch("/api/schools/academic-change-request", {
         method: "POST",
@@ -232,7 +263,12 @@ export default function SchoolProfileForm({
         sessionStart: schoolData.session_start ?? "",
         sessionEnd: schoolData.session_end ?? "",
         programmes: schoolData.programmes ?? [],
-        courses: schoolData.courses ?? [],
+        courses: (schoolData.courses ?? []).map((c) =>
+          typeof c === "string" ? { name: c, accredited: true } : c,
+        ),
+        totalStudents: schoolData.total_students?.toString() ?? "",
+        enrollmentSnapshotDate: schoolData.enrollment_snapshot_date ?? "",
+        graduatedCount: schoolData.graduated_count?.toString() ?? "",
       }));
       toast.success("Change request withdrawn.");
     } catch {
@@ -263,6 +299,14 @@ export default function SchoolProfileForm({
             category: formData.category,
             website: formData.website,
             license_status: formData.license_status,
+            vcName: formData.vcName,
+            gsmNo: formData.gsmNo,
+            yearEstablished: formData.yearEstablished,
+            labStatus: formData.labStatus,
+            libraryStatus: formData.libraryStatus,
+            boardMembers: formData.boardMembers,
+            academicStaff: formData.academicStaff,
+            nonAcademicStaff: formData.nonAcademicStaff,
           }
         : formData;
 
@@ -293,117 +337,162 @@ export default function SchoolProfileForm({
 
   // Check completion status for each section
   const isGeneralComplete =
-    formData.proprietorName && formData.contact_person && formData.category;
+    formData.proprietorName &&
+    formData.contact_person &&
+    formData.category &&
+    formData.vcName;
   const isAcademicComplete =
-    formData.modeOfOperation.length > 0 && formData.programmes;
+    formData.modeOfOperation.length > 0 &&
+    formData.programmes.length > 0 &&
+    formData.totalStudents;
+  const isInfrastructureComplete = formData.labStatus && formData.libraryStatus;
+  const isPeopleComplete =
+    formData.boardMembers.length > 0 || formData.academicStaff.length > 0;
   const isLicenseComplete = formData.license_status;
 
   const completionPercentage = Math.round(
-    ([isGeneralComplete, isAcademicComplete, isLicenseComplete].filter(Boolean)
-      .length /
-      3) *
+    ([
+      isGeneralComplete,
+      isAcademicComplete,
+      isInfrastructureComplete,
+      isPeopleComplete,
+      isLicenseComplete,
+    ].filter(Boolean).length /
+      5) *
       100,
   );
 
+  const STEPS = [
+    { id: "general", label: "General Info" },
+    { id: "academic", label: "Academic" },
+    { id: "infrastructure", label: "Facilities" },
+    { id: "people", label: "People" },
+    { id: "license", label: "Certificate" },
+  ] as const;
+  type StepId = (typeof STEPS)[number]["id"];
+  const stepComplete: Record<StepId, boolean> = {
+    general: !!isGeneralComplete,
+    academic: !!isAcademicComplete,
+    infrastructure: !!isInfrastructureComplete,
+    license: !!isLicenseComplete,
+    people: !!isPeopleComplete,
+  };
+  const currentStepIndex = STEPS.findIndex((s) => s.id === activeSection);
+  const prevStep = () => {
+    if (currentStepIndex > 0) setActiveSection(STEPS[currentStepIndex - 1].id);
+  };
+  const nextStep = () => {
+    if (currentStepIndex < STEPS.length - 1)
+      setActiveSection(STEPS[currentStepIndex + 1].id);
+  };
+
   return (
     <div className="max-w-6xl mx-auto">
-      {/* Header Card */}
-      <div className="bg-white rounded-xl p-6 mb-6 text-gray-900 border border-gray-200">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold mb-2">
-              Update Your School Profile
-            </h1>
-            <p className="text-gray-600 ">
-              Fill in your school information to access all features
-            </p>
-          </div>
-          <div className="text-center">
-            <div className="relative w-24 h-24">
-              <svg className="w-24 h-24 transform -rotate-90">
-                <circle
-                  cx="48"
-                  cy="48"
-                  r="40"
-                  stroke="rgba(7, 234, 37, 0.33)"
-                  strokeWidth="6"
-                  fill="none"
-                />
-                <circle
-                  cx="48"
-                  cy="48"
-                  r="40"
-                  stroke="white"
-                  strokeWidth="6"
-                  fill="none"
-                  strokeDasharray={`${2 * Math.PI * 40}`}
-                  strokeDashoffset={`${
-                    2 * Math.PI * 40 * (1 - completionPercentage / 100)
-                  }`}
-                  strokeLinecap="round"
-                />
-              </svg>
-              <div className="absolute inset-0 flex items-center justify-center">
-                <span className="text-2xl font-bold">
-                  {completionPercentage}%
-                </span>
-              </div>
+      {/* Compact header */}
+      <div className="bg-white rounded-xl px-6 py-4 mb-4 border border-gray-200 flex items-center justify-between">
+        <div>
+          <h1 className="text-lg font-bold text-gray-900">
+            Update School Profile
+          </h1>
+          <p className="text-xs text-gray-500">
+            Complete all sections to submit your institution&apos;s information
+          </p>
+        </div>
+        <div className="flex items-center gap-2">
+          <div className="relative w-14 h-14">
+            <svg className="w-14 h-14 transform -rotate-90">
+              <circle
+                cx="28"
+                cy="28"
+                r="22"
+                stroke="rgba(7,234,37,0.2)"
+                strokeWidth="5"
+                fill="none"
+              />
+              <circle
+                cx="28"
+                cy="28"
+                r="22"
+                stroke="#16a34a"
+                strokeWidth="5"
+                fill="none"
+                strokeDasharray={`${2 * Math.PI * 22}`}
+                strokeDashoffset={`${2 * Math.PI * 22 * (1 - completionPercentage / 100)}`}
+                strokeLinecap="round"
+              />
+            </svg>
+            <div className="absolute inset-0 flex items-center justify-center">
+              <span className="text-sm font-bold text-gray-900">
+                {completionPercentage}%
+              </span>
             </div>
-            <p className="text-xs text-gray-600 mt-2">Complete</p>
           </div>
+          <span className="text-xs text-gray-500">Complete</span>
         </div>
       </div>
 
-      <form onSubmit={handleSubmit} className="space-y-6">
-        {/* General Information Section */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-          <button
-            type="button"
-            onClick={() =>
-              setActiveSection(activeSection === "general" ? null : "general")
-            }
-            className="w-full px-6 py-4 flex items-center justify-between bg-gradient-to-r from-green-50 to-emerald-50 border-b border-gray-200 hover:from-green-100 hover:to-emerald-100 transition-colors"
-          >
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-green-600 rounded-lg flex items-center justify-center">
-                <Building className="w-5 h-5 text-white" />
-              </div>
-              <div className="text-left">
-                <h2 className="text-base font-semibold text-gray-900">
-                  General Information
-                </h2>
-                <p className="text-xs text-gray-600">
-                  Basic school and ownership details
-                </p>
-              </div>
-            </div>
-            <div className="flex items-center gap-3">
-              {isGeneralComplete && (
-                <span className="flex items-center gap-1 text-green-600 text-sm font-medium">
-                  <CheckCircle className="w-4 h-4" />
-                  Complete
-                </span>
-              )}
-              <svg
-                className={`w-5 h-5 text-gray-400 transition-transform ${
-                  activeSection === "general" ? "rotate-180" : ""
-                }`}
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
+      {/* Horizontal Stepper */}
+      <div className="bg-white rounded-xl border border-gray-200 px-6 py-4 mb-4">
+        <div className="flex items-center">
+          {STEPS.map((step, index) => (
+            <React.Fragment key={step.id}>
+              <button
+                type="button"
+                onClick={() => setActiveSection(step.id)}
+                className="flex flex-col items-center gap-1 group flex-1 min-w-0"
               >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M19 9l-7 7-7-7"
+                <div
+                  className={`w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold transition-all ${
+                    activeSection === step.id
+                      ? "bg-green-600 text-white shadow-md"
+                      : stepComplete[step.id]
+                        ? "bg-green-100 text-green-700 border-2 border-green-500"
+                        : "bg-gray-100 text-gray-400 border-2 border-gray-200 group-hover:border-gray-400"
+                  }`}
+                >
+                  {stepComplete[step.id] && activeSection !== step.id ? (
+                    <CheckCircle className="w-4 h-4" />
+                  ) : (
+                    <span>{index + 1}</span>
+                  )}
+                </div>
+                <span
+                  className={`text-xs font-medium text-center leading-tight px-1 ${
+                    activeSection === step.id
+                      ? "text-green-700 font-semibold"
+                      : stepComplete[step.id]
+                        ? "text-green-600"
+                        : "text-gray-400"
+                  }`}
+                >
+                  {step.label}
+                </span>
+              </button>
+              {index < STEPS.length - 1 && (
+                <div
+                  className={`h-0.5 flex-[0.3] mx-1 mb-4 rounded transition-colors ${
+                    stepComplete[step.id] ? "bg-green-400" : "bg-gray-200"
+                  }`}
                 />
-              </svg>
-            </div>
-          </button>
+              )}
+            </React.Fragment>
+          ))}
+        </div>
+      </div>
 
+      <form className="space-y-4">
+        <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
           {activeSection === "general" && (
             <div className="p-6">
+              <div className="mb-5 pb-4 border-b border-gray-100">
+                <h2 className="text-sm font-bold text-gray-800">
+                  General Information
+                </h2>
+                <p className="text-xs text-gray-500 mt-0.5">
+                  Basic school details, ownership, contact person, and site
+                  information
+                </p>
+              </div>
               <div className="grid grid-cols-1 text-sm md:grid-cols-2 gap-6">
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 mb-2">
@@ -430,7 +519,10 @@ export default function SchoolProfileForm({
                     placeholder="11-digit National Identification Number"
                     value={formData.proprietorNin}
                     onChange={(e) =>
-                      handleChange("proprietorNin", e.target.value.replace(/\D/g, "").slice(0, 11))
+                      handleChange(
+                        "proprietorNin",
+                        e.target.value.replace(/\D/g, "").slice(0, 11),
+                      )
                     }
                     maxLength={11}
                     className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all"
@@ -439,20 +531,19 @@ export default function SchoolProfileForm({
 
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 mb-2">
-                    Property Type <span className="text-red-500">*</span>
+                    Site Type <span className="text-red-500">*</span>
                   </label>
                   <select
                     value={formData.propertyType}
-                    onChange={(e) => handleChange("propertyType", e.target.value)}
+                    onChange={(e) =>
+                      handleChange("propertyType", e.target.value)
+                    }
                     className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all"
                     required
                   >
-                    <option value="">Select property type</option>
-                    <option value="Privately Owned">Privately Owned</option>
-                    <option value="Rented">Rented</option>
-                    <option value="Leased">Leased</option>
-                    <option value="Government-Owned">Government-Owned</option>
-                    <option value="Institutional">Institutional</option>
+                    <option value="">Select site type</option>
+                    <option value="Permanent">Permanent</option>
+                    <option value="Temporary">Temporary</option>
                   </select>
                 </div>
 
@@ -628,74 +719,68 @@ export default function SchoolProfileForm({
                     className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all"
                   />
                 </div>
+
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    Name of VC / Rector / Provost{" "}
+                    <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="Full name of institution head"
+                    value={formData.vcName}
+                    onChange={(e) => handleChange("vcName", e.target.value)}
+                    className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    Institution GSM No <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="tel"
+                    placeholder="e.g., 08012345678"
+                    value={formData.gsmNo}
+                    onChange={(e) => handleChange("gsmNo", e.target.value)}
+                    className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    Year of Establishment
+                  </label>
+                  <input
+                    type="number"
+                    placeholder="e.g., 2005"
+                    min="1900"
+                    max={new Date().getFullYear()}
+                    value={formData.yearEstablished}
+                    onChange={(e) =>
+                      handleChange("yearEstablished", e.target.value)
+                    }
+                    className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all"
+                  />
+                </div>
               </div>
             </div>
           )}
-        </div>
-
-        {/* Academic Information Section */}
-        <div className="bg-white text-sm rounded-xl shadow-md border border-gray-200 overflow-hidden">
-          <button
-            type="button"
-            onClick={() =>
-              setActiveSection(activeSection === "academic" ? null : "academic")
-            }
-            className="w-full px-6 py-4 flex items-center justify-between bg-gradient-to-r from-blue-50 to-indigo-50 border-b border-gray-200 hover:from-blue-100 hover:to-indigo-100 transition-colors"
-          >
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center">
-                <Users className="w-5 h-5 text-white" />
-              </div>
-              <div className="text-left">
-                <h2 className="text-base font-semibold text-gray-900">
-                  Academic Information
-                </h2>
-                <p className="text-xs text-gray-600">
-                  Programs, fees, and academic calendar
-                </p>
-              </div>
-            </div>
-            <div className="flex items-center gap-3">
-              {isApproved ? (
-                pendingRequest ? (
-                  <span className="flex items-center gap-1 text-amber-600 text-sm font-medium">
-                    <Clock className="w-4 h-4" />
-                    Under Review
-                  </span>
-                ) : (
-                  <span className="flex items-center gap-1 text-blue-600 text-sm font-medium">
-                    <AlertTriangle className="w-4 h-4" />
-                    Re-approval Required
-                  </span>
-                )
-              ) : (
-                isAcademicComplete && (
-                  <span className="flex items-center gap-1 text-green-600 text-sm font-medium">
-                    <CheckCircle className="w-4 h-4" />
-                    Complete
-                  </span>
-                )
-              )}
-              <svg
-                className={`w-5 h-5 text-gray-400 transition-transform ${
-                  activeSection === "academic" ? "rotate-180" : ""
-                }`}
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M19 9l-7 7-7-7"
-                />
-              </svg>
-            </div>
-          </button>
 
           {activeSection === "academic" && (
             <div className="p-6 space-y-6">
+              <div className="pb-4 border-b border-gray-100">
+                <h2 className="text-sm font-bold text-gray-800">
+                  Academic Information
+                </h2>
+                <p className="text-xs text-gray-500 mt-0.5">
+                  Mode of operation, programmes offered, courses with
+                  accreditation status, fees, student enrolment, and academic
+                  calendar
+                </p>
+              </div>
               {/* Status banners */}
               {isApproved && pendingRequest && (
                 <div className="flex items-center gap-2 bg-amber-50 border border-amber-200 rounded-lg px-4 py-2.5">
@@ -711,8 +796,8 @@ export default function SchoolProfileForm({
                   <AlertTriangle className="w-4 h-4 text-blue-500 shrink-0" />
                   <p className="text-xs text-blue-700 font-medium">
                     Changes to this section require ministry re-approval. Your
-                    currently approved data stays live until the ministry reviews
-                    and approves the update.
+                    currently approved data stays live until the ministry
+                    reviews and approves the update.
                   </p>
                 </div>
               )}
@@ -798,6 +883,54 @@ export default function SchoolProfileForm({
                       className="w-full pl-8 pr-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all disabled:bg-gray-50 disabled:text-gray-400 disabled:cursor-not-allowed"
                     />
                   </div>
+                </div>
+              </div>
+
+              {/* Enrolment & Graduate figures */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    Students Enrolled <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="number"
+                    placeholder="Total enrolled students"
+                    value={formData.totalStudents}
+                    onChange={(e) =>
+                      handleChange("totalStudents", e.target.value)
+                    }
+                    disabled={isApproved && !!pendingRequest}
+                    className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all disabled:bg-gray-50 disabled:text-gray-400 disabled:cursor-not-allowed"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    Enrolment Date
+                  </label>
+                  <input
+                    type="date"
+                    value={formData.enrollmentSnapshotDate}
+                    onChange={(e) =>
+                      handleChange("enrollmentSnapshotDate", e.target.value)
+                    }
+                    disabled={isApproved && !!pendingRequest}
+                    className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all disabled:bg-gray-50 disabled:text-gray-400 disabled:cursor-not-allowed"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    Graduates (up to 2023)
+                  </label>
+                  <input
+                    type="number"
+                    placeholder="Cumulative graduates"
+                    value={formData.graduatedCount}
+                    onChange={(e) =>
+                      handleChange("graduatedCount", e.target.value)
+                    }
+                    disabled={isApproved && !!pendingRequest}
+                    className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all disabled:bg-gray-50 disabled:text-gray-400 disabled:cursor-not-allowed"
+                  />
                 </div>
               </div>
 
@@ -917,24 +1050,33 @@ export default function SchoolProfileForm({
                 {/* Existing courses list */}
                 {formData.courses.length > 0 && (
                   <div className="flex flex-wrap gap-2 mb-3">
-                    {formData.courses.map((course: string, index: number) => (
+                    {formData.courses.map((course: Course, index: number) => (
                       <span
                         key={index}
-                        className="inline-flex items-center gap-1.5 bg-blue-50 border border-blue-200 text-blue-700 text-sm px-3 py-1 rounded-full"
+                        className={`inline-flex items-center gap-1.5 text-sm px-3 py-1 rounded-full border font-medium ${
+                          course.accredited
+                            ? "bg-green-50 border-green-300 text-green-800"
+                            : "bg-red-50 border-red-300 text-red-800"
+                        }`}
                       >
-                        {course}
+                        {course.name}
+                        <span className={`text-xs font-semibold px-1.5 py-0.5 rounded-full ${
+                          course.accredited
+                            ? "bg-green-200 text-green-800"
+                            : "bg-red-200 text-red-800"
+                        }`}>
+                          {course.accredited ? "Accredited" : "Not Accredited"}
+                        </span>
                         {!(isApproved && !!pendingRequest) && (
                           <button
                             type="button"
                             onClick={() =>
                               handleChange(
                                 "courses",
-                                formData.courses.filter(
-                                  (_: string, i: number) => i !== index,
-                                ),
+                                formData.courses.filter((_, i) => i !== index),
                               )
                             }
-                            className="text-blue-400 hover:text-red-500 transition font-bold leading-none"
+                            className="opacity-50 hover:opacity-100 transition font-bold leading-none ml-0.5"
                           >
                             ×
                           </button>
@@ -959,7 +1101,7 @@ export default function SchoolProfileForm({
                             if (courseInput.trim()) {
                               handleChange("courses", [
                                 ...formData.courses,
-                                courseInput.trim(),
+                                { name: courseInput.trim(), accredited: true },
                               ]);
                               setCourseInput("");
                             }
@@ -973,18 +1115,33 @@ export default function SchoolProfileForm({
                           if (courseInput.trim()) {
                             handleChange("courses", [
                               ...formData.courses,
-                              courseInput.trim(),
+                              { name: courseInput.trim(), accredited: true },
                             ]);
                             setCourseInput("");
                           }
                         }}
-                        className="px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-lg transition-all"
+                        className="px-3 py-2.5 bg-green-600 hover:bg-green-700 text-white text-xs font-semibold rounded-lg transition-all whitespace-nowrap"
                       >
-                        + Add
+                        + Accredited
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (courseInput.trim()) {
+                            handleChange("courses", [
+                              ...formData.courses,
+                              { name: courseInput.trim(), accredited: false },
+                            ]);
+                            setCourseInput("");
+                          }
+                        }}
+                        className="px-3 py-2.5 bg-red-500 hover:bg-red-600 text-white text-xs font-semibold rounded-lg transition-all whitespace-nowrap"
+                      >
+                        + Not Accredited
                       </button>
                     </div>
                     <p className="text-xs text-gray-400 mt-1.5">
-                      Press Enter or click Add to insert a course.
+                      Type a course name then click the green or red button to set its accreditation status.
                     </p>
                   </>
                 )}
@@ -1026,57 +1183,98 @@ export default function SchoolProfileForm({
               )}
             </div>
           )}
-        </div>
 
-        {/* License Information Section */}
-        <div className="bg-white text-sm rounded-xl shadow-md border border-gray-200 overflow-hidden">
-          <button
-            type="button"
-            onClick={() =>
-              setActiveSection(activeSection === "license" ? null : "license")
-            }
-            className="w-full px-6 py-4 flex items-center justify-between bg-gradient-to-r from-purple-50 to-pink-50 border-b border-gray-200 hover:from-purple-100 hover:to-pink-100 transition-colors"
-          >
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-purple-600 rounded-lg flex items-center justify-center">
-                <FileText className="w-5 h-5 text-white" />
-              </div>
-              <div className="text-left">
-                <h2 className="text-base font-semibold text-gray-900">
-                  Consent Certificate Information
+          {activeSection === "infrastructure" && (
+            <div className="p-6 space-y-6">
+              <div className="pb-4 border-b border-gray-100">
+                <h2 className="text-sm font-bold text-gray-800">
+                  Infrastructure & Facilities
                 </h2>
-                <p className="text-xs text-gray-600">
-                  Certificate status and payment details
+                <p className="text-xs text-gray-500 mt-0.5">
+                  Indicate whether the institution&apos;s laboratories,
+                  workshops, and library are physically available on the
+                  premises. Adequacy will be assessed separately by an
+                  inspector.
                 </p>
               </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-3">
+                    Laboratories / Workshop{" "}
+                    <span className="text-red-500">*</span>
+                  </label>
+                  <div className="flex gap-3">
+                    {["Available", "Not Available"].map((option) => (
+                      <label
+                        key={option}
+                        className={`flex-1 flex items-center gap-3 p-3 border-2 rounded-lg cursor-pointer transition-all ${
+                          formData.labStatus === option
+                            ? option === "Available"
+                              ? "border-green-500 bg-green-50"
+                              : "border-red-400 bg-red-50"
+                            : "border-gray-200 hover:border-gray-300"
+                        }`}
+                      >
+                        <input
+                          type="radio"
+                          value={option}
+                          checked={formData.labStatus === option}
+                          onChange={() => handleChange("labStatus", option)}
+                          className="w-4 h-4"
+                        />
+                        <span className="font-medium text-gray-900 text-sm">
+                          {option}
+                        </span>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-3">
+                    Library <span className="text-red-500">*</span>
+                  </label>
+                  <div className="flex gap-3">
+                    {["Available", "Not Available"].map((option) => (
+                      <label
+                        key={option}
+                        className={`flex-1 flex items-center gap-3 p-3 border-2 rounded-lg cursor-pointer transition-all ${
+                          formData.libraryStatus === option
+                            ? option === "Available"
+                              ? "border-green-500 bg-green-50"
+                              : "border-red-400 bg-red-50"
+                            : "border-gray-200 hover:border-gray-300"
+                        }`}
+                      >
+                        <input
+                          type="radio"
+                          value={option}
+                          checked={formData.libraryStatus === option}
+                          onChange={() => handleChange("libraryStatus", option)}
+                          className="w-4 h-4"
+                        />
+                        <span className="font-medium text-gray-900 text-sm">
+                          {option}
+                        </span>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+              </div>
             </div>
-            <div className="flex items-center gap-3">
-              {isLicenseComplete && (
-                <span className="flex items-center gap-1 text-green-600 text-sm font-medium">
-                  <CheckCircle className="w-4 h-4" />
-                  Complete
-                </span>
-              )}
-              <svg
-                className={`w-5 h-5 text-gray-400 transition-transform ${
-                  activeSection === "license" ? "rotate-180" : ""
-                }`}
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M19 9l-7 7-7-7"
-                />
-              </svg>
-            </div>
-          </button>
+          )}
 
           {activeSection === "license" && (
             <div className="p-6">
+              <div className="mb-5 pb-4 border-b border-gray-100">
+                <h2 className="text-sm font-bold text-gray-800">
+                  Consent Certificate
+                </h2>
+                <p className="text-xs text-gray-500 mt-0.5">
+                  Record the current status of the institution&apos;s
+                  consent-to-operate certificate issued by the Ministry
+                </p>
+              </div>
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-3">
                   Current Certificate Status{" "}
@@ -1145,41 +1343,339 @@ export default function SchoolProfileForm({
               <div className="mt-6 text-sm text-gray-600">
                 <p>
                   <span className="font-semibold text-red-500">Note:</span> If
-                  your license is currently active, you will be asked to upload
-                  it in the next step.
+                  your certificate is currently active, you will be asked to
+                  upload it in the next step.
+                </p>
+              </div>
+            </div>
+          )}
+
+          {activeSection === "people" && (
+            <div className="p-6 space-y-8">
+              <div className="pb-4 border-b border-gray-100">
+                <h2 className="text-sm font-bold text-gray-800">People</h2>
+                <p className="text-xs text-gray-500 mt-0.5">
+                  Board members, academic staff with qualifications, and
+                  non-academic staff with their roles
+                </p>
+              </div>
+
+              {/* Board Members */}
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  Board Members
+                </label>
+                {formData.boardMembers.length > 0 && (
+                  <div className="flex flex-wrap gap-2 mb-3">
+                    {formData.boardMembers.map((member, index) => (
+                      <span
+                        key={index}
+                        className="inline-flex items-center gap-1.5 bg-indigo-50 border border-indigo-200 text-indigo-700 text-sm px-3 py-1 rounded-full"
+                      >
+                        {member}
+                        <button
+                          type="button"
+                          onClick={() =>
+                            handleChange(
+                              "boardMembers",
+                              formData.boardMembers.filter(
+                                (_, i) => i !== index,
+                              ),
+                            )
+                          }
+                          className="text-indigo-400 hover:text-red-500 transition font-bold leading-none"
+                        >
+                          ×
+                        </button>
+                      </span>
+                    ))}
+                  </div>
+                )}
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    placeholder="e.g., Dr. Aisha Musa"
+                    value={boardMemberInput}
+                    onChange={(e) => setBoardMemberInput(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        e.preventDefault();
+                        if (boardMemberInput.trim()) {
+                          handleChange("boardMembers", [
+                            ...formData.boardMembers,
+                            boardMemberInput.trim(),
+                          ]);
+                          setBoardMemberInput("");
+                        }
+                      }
+                    }}
+                    className="flex-1 px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (boardMemberInput.trim()) {
+                        handleChange("boardMembers", [
+                          ...formData.boardMembers,
+                          boardMemberInput.trim(),
+                        ]);
+                        setBoardMemberInput("");
+                      }
+                    }}
+                    className="px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold rounded-lg transition-all"
+                  >
+                    + Add
+                  </button>
+                </div>
+                <p className="text-xs text-gray-400 mt-1.5">
+                  Press Enter or click Add to insert a member.
+                </p>
+              </div>
+
+              {/* Academic Staff */}
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <label className="block text-sm font-semibold text-gray-700">
+                    Academic Staff Disposition
+                  </label>
+                  {formData.academicStaff.length > 0 && (
+                    <span className="text-xs font-semibold text-indigo-600 bg-indigo-50 border border-indigo-200 px-2 py-0.5 rounded-full">
+                      {formData.academicStaff.length} staff
+                    </span>
+                  )}
+                </div>
+                {formData.academicStaff.length > 0 && (
+                  <div className="flex flex-wrap gap-2 mb-3">
+                    {formData.academicStaff.map((staff, index) => (
+                      <span
+                        key={index}
+                        className="inline-flex items-center gap-1.5 bg-green-50 border border-green-200 text-green-800 text-sm px-3 py-1 rounded-full"
+                      >
+                        <span className="font-medium">{staff.name}</span>
+                        <span className="text-xs text-green-600">
+                          — {staff.qualification}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() =>
+                            handleChange(
+                              "academicStaff",
+                              formData.academicStaff.filter(
+                                (_, i) => i !== index,
+                              ),
+                            )
+                          }
+                          className="text-green-400 hover:text-red-500 transition font-bold leading-none"
+                        >
+                          ×
+                        </button>
+                      </span>
+                    ))}
+                  </div>
+                )}
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    placeholder="Full name"
+                    value={academicStaffName}
+                    onChange={(e) => setAcademicStaffName(e.target.value)}
+                    className="flex-1 px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all"
+                  />
+                  <input
+                    type="text"
+                    placeholder="Qualification (e.g., Ph.D, M.Sc)"
+                    value={academicStaffQual}
+                    onChange={(e) => setAcademicStaffQual(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        e.preventDefault();
+                        if (
+                          academicStaffName.trim() &&
+                          academicStaffQual.trim()
+                        ) {
+                          handleChange("academicStaff", [
+                            ...formData.academicStaff,
+                            {
+                              name: academicStaffName.trim(),
+                              qualification: academicStaffQual.trim(),
+                            },
+                          ]);
+                          setAcademicStaffName("");
+                          setAcademicStaffQual("");
+                        }
+                      }
+                    }}
+                    className="flex-1 px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (
+                        academicStaffName.trim() &&
+                        academicStaffQual.trim()
+                      ) {
+                        handleChange("academicStaff", [
+                          ...formData.academicStaff,
+                          {
+                            name: academicStaffName.trim(),
+                            qualification: academicStaffQual.trim(),
+                          },
+                        ]);
+                        setAcademicStaffName("");
+                        setAcademicStaffQual("");
+                      }
+                    }}
+                    className="px-4 py-2.5 bg-green-600 hover:bg-green-700 text-white text-sm font-semibold rounded-lg transition-all"
+                  >
+                    + Add
+                  </button>
+                </div>
+                <p className="text-xs text-gray-400 mt-1.5">
+                  Enter name and qualification, then press Enter or click Add.
+                </p>
+              </div>
+
+              {/* Non-Academic Staff */}
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <label className="block text-sm font-semibold text-gray-700">
+                    Non-Academic Staff Disposition
+                  </label>
+                  {formData.nonAcademicStaff.length > 0 && (
+                    <span className="text-xs font-semibold text-gray-600 bg-gray-100 border border-gray-200 px-2 py-0.5 rounded-full">
+                      {formData.nonAcademicStaff.length} staff
+                    </span>
+                  )}
+                </div>
+                {formData.nonAcademicStaff.length > 0 && (
+                  <div className="flex flex-wrap gap-2 mb-3">
+                    {formData.nonAcademicStaff.map((staff, index) => (
+                      <span
+                        key={index}
+                        className="inline-flex items-center gap-1.5 bg-gray-100 border border-gray-200 text-gray-700 text-sm px-3 py-1 rounded-full"
+                      >
+                        <span className="font-medium">{staff.name}</span>
+                        <span className="text-xs text-gray-500">
+                          — {staff.role}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() =>
+                            handleChange(
+                              "nonAcademicStaff",
+                              formData.nonAcademicStaff.filter(
+                                (_, i) => i !== index,
+                              ),
+                            )
+                          }
+                          className="text-gray-400 hover:text-red-500 transition font-bold leading-none"
+                        >
+                          ×
+                        </button>
+                      </span>
+                    ))}
+                  </div>
+                )}
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    placeholder="Full name"
+                    value={nonAcademicStaffName}
+                    onChange={(e) => setNonAcademicStaffName(e.target.value)}
+                    className="flex-1 px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-400 focus:border-transparent transition-all"
+                  />
+                  <input
+                    type="text"
+                    placeholder="Role (e.g., Accountant, Librarian)"
+                    value={nonAcademicStaffRole}
+                    onChange={(e) => setNonAcademicStaffRole(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        e.preventDefault();
+                        if (
+                          nonAcademicStaffName.trim() &&
+                          nonAcademicStaffRole.trim()
+                        ) {
+                          handleChange("nonAcademicStaff", [
+                            ...formData.nonAcademicStaff,
+                            {
+                              name: nonAcademicStaffName.trim(),
+                              role: nonAcademicStaffRole.trim(),
+                            },
+                          ]);
+                          setNonAcademicStaffName("");
+                          setNonAcademicStaffRole("");
+                        }
+                      }
+                    }}
+                    className="flex-1 px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-400 focus:border-transparent transition-all"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (
+                        nonAcademicStaffName.trim() &&
+                        nonAcademicStaffRole.trim()
+                      ) {
+                        handleChange("nonAcademicStaff", [
+                          ...formData.nonAcademicStaff,
+                          {
+                            name: nonAcademicStaffName.trim(),
+                            role: nonAcademicStaffRole.trim(),
+                          },
+                        ]);
+                        setNonAcademicStaffName("");
+                        setNonAcademicStaffRole("");
+                      }
+                    }}
+                    className="px-4 py-2.5 bg-gray-600 hover:bg-gray-700 text-white text-sm font-semibold rounded-lg transition-all"
+                  >
+                    + Add
+                  </button>
+                </div>
+                <p className="text-xs text-gray-400 mt-1.5">
+                  Enter name and role, then press Enter or click Add.
                 </p>
               </div>
             </div>
           )}
         </div>
 
-        {/* Submit Button */}
-        <div className="flex justify-end gap-4">
+        {/* Step navigation */}
+        <div className="flex items-center justify-between">
           <button
             type="button"
-            onClick={() => window.history.back()}
-            className="px-6 py-3 border-2 text-sm border-gray-300 text-gray-700 font-semibold rounded-lg hover:bg-gray-50 transition-all flex items-center gap-2"
+            onClick={prevStep}
+            disabled={currentStepIndex <= 0}
+            className="px-5 py-2.5 border-2 text-sm border-gray-300 text-gray-700 font-semibold rounded-lg hover:bg-gray-50 transition-all flex items-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed"
           >
-            <X className="w-5 h-5" />
-            Cancel
+            ← Previous
           </button>
           <button
             type="button"
             onClick={handleSubmit}
             disabled={loading}
-            className="px-8 py-3 text-sm bg-gradient-to-r from-green-600 to-emerald-600 text-white font-semibold rounded-lg hover:from-green-700 hover:to-emerald-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 shadow-lg hover:shadow-xl"
+            className="px-8 py-2.5 text-sm bg-gradient-to-r from-green-600 to-emerald-600 text-white font-semibold rounded-lg hover:from-green-700 hover:to-emerald-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
           >
             {loading ? (
               <>
-                <Loader2 className="w-5 h-5 animate-spin" />
-                <span>Saving...</span>
+                <Loader2 className="w-4 h-4 animate-spin" />
+                Saving...
               </>
             ) : (
               <>
-                <Save className="w-5 h-5" />
-                <span>Save Profile</span>
+                <Save className="w-4 h-4" />
+                Save Profile
               </>
             )}
+          </button>
+          <button
+            type="button"
+            onClick={nextStep}
+            disabled={currentStepIndex >= STEPS.length - 1}
+            className="px-5 py-2.5 border-2 text-sm border-gray-300 text-gray-700 font-semibold rounded-lg hover:bg-gray-50 transition-all flex items-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed"
+          >
+            Next →
           </button>
         </div>
       </form>

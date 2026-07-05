@@ -17,6 +17,7 @@ import {
   Download,
   FileText,
   WalletCards,
+  ClipboardList,
 } from "lucide-react";
 
 type School = {
@@ -42,7 +43,7 @@ type School = {
   license_expiry_date: string | null;
   form_status: string;
   programmes: string[];
-  courses: string[];
+  courses: { name: string; accredited: boolean }[];
   mode_of_operation: string[];
   category: string | null;
   avg_fee: string | null;
@@ -63,6 +64,21 @@ type Document = {
   document_type: string;
   file_url: string;
   uploaded_at: string;
+};
+
+type Assessment = {
+  id: string;
+  inspector_name: string;
+  inspector_email: string;
+  lab_workshop_rating: "adequate" | "not_adequate" | null;
+  lab_workshop_note: string | null;
+  library_rating: "adequate" | "not_adequate" | null;
+  library_note: string | null;
+  academic_staff_rating: "full_complement" | "partial_presence" | "insufficient" | null;
+  academic_staff_note: string | null;
+  non_academic_staff_rating: "full_complement" | "partial_presence" | "insufficient" | null;
+  non_academic_staff_note: string | null;
+  visited_at: string;
 };
 
 function formatDate(d: string | null) {
@@ -137,22 +153,24 @@ function Field({ label, value }: { label: string; value: React.ReactNode }) {
 
 async function getSchool(
   school_id: string,
-): Promise<{ school: School | null; documents: Document[] }> {
+): Promise<{ school: School | null; documents: Document[]; assessment: Assessment | null }> {
   const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
   const encoded = encodeURIComponent(school_id);
 
-  // Fetch both in parallel
-  const [schoolRes, docsRes] = await Promise.all([
+  const [schoolRes, docsRes, assessmentRes] = await Promise.all([
     fetch(`${baseUrl}/api/admin/schools/${encoded}`, { cache: "no-store" }),
     fetch(`${baseUrl}/api/schools/${encoded}/documents`, { cache: "no-store" }),
+    fetch(`${baseUrl}/api/admin/schools/${encoded}/assessments`, { cache: "no-store" }),
   ]);
 
   const school = schoolRes.ok ? await schoolRes.json() : null;
   const docsData = docsRes.ok ? await docsRes.json() : { documents: [] };
+  const assessmentData = assessmentRes.ok ? await assessmentRes.json() : { assessment: null };
 
   return {
     school,
     documents: docsData.documents || [],
+    assessment: assessmentData.assessment ?? null,
   };
 }
 
@@ -162,7 +180,7 @@ export default async function InstitutionDetailPage({
   params: Promise<{ school_id: string }>; // ← Promise type
 }) {
   const { school_id } = await params;
-  const { school, documents } = await getSchool(school_id);
+  const { school, documents, assessment } = await getSchool(school_id);
 
   if (!school) notFound();
 
@@ -342,10 +360,19 @@ export default async function InstitutionDetailPage({
                 <div className="flex flex-wrap gap-2">
                   {school.courses.map((c) => (
                     <span
-                      key={c}
-                      className="text-xs font-medium bg-gray-100 text-gray-600 border border-gray-200 px-3 py-1 rounded-full"
+                      key={c.name}
+                      className={`inline-flex items-center gap-1 text-xs font-medium px-3 py-1 rounded-full border ${
+                        c.accredited
+                          ? "bg-green-50 border-green-200 text-green-800"
+                          : "bg-red-50 border-red-200 text-red-800"
+                      }`}
                     >
-                      {c}
+                      {c.name}
+                      <span className={`px-1 py-0.5 rounded-full text-[10px] font-bold ${
+                        c.accredited ? "bg-green-200 text-green-800" : "bg-red-200 text-red-800"
+                      }`}>
+                        {c.accredited ? "Accredited" : "Not Accredited"}
+                      </span>
                     </span>
                   ))}
                 </div>
@@ -428,6 +455,95 @@ export default async function InstitutionDetailPage({
               value={formatCurrency(school.total_revenue)}
             />
           </div>
+        </Section>
+
+        {/* Last Site Assessment */}
+        <Section icon={ClipboardList} title="Last Site Assessment">
+          {!assessment ? (
+            <p className="text-sm text-gray-400 italic">No site assessment on record for this institution.</p>
+          ) : (
+            <div className="space-y-4">
+              {/* Meta */}
+              <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-gray-500">
+                <span>
+                  <span className="font-semibold text-gray-700">Inspector:</span>{" "}
+                  {assessment.inspector_name}
+                </span>
+                <span>
+                  <span className="font-semibold text-gray-700">Visited:</span>{" "}
+                  {new Date(assessment.visited_at).toLocaleDateString("en-NG", {
+                    day: "numeric", month: "long", year: "numeric",
+                  })}
+                </span>
+              </div>
+
+              {/* Facilities row */}
+              <div>
+                <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-2">Facilities</p>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {(
+                    [
+                      { label: "Lab / Workshop", rating: assessment.lab_workshop_rating, note: assessment.lab_workshop_note },
+                      { label: "Library",         rating: assessment.library_rating,       note: assessment.library_note },
+                    ] as const
+                  ).map((f) => (
+                    <div key={f.label} className="bg-gray-50 rounded-xl px-4 py-3 border border-gray-100">
+                      <p className="text-xs text-gray-500 mb-1">{f.label}</p>
+                      {f.rating ? (
+                        <span className={`text-xs font-bold px-2.5 py-0.5 rounded-full ${
+                          f.rating === "adequate"
+                            ? "bg-green-100 text-green-700"
+                            : "bg-red-100 text-red-700"
+                        }`}>
+                          {f.rating === "adequate" ? "Adequate" : "Not Adequate"}
+                        </span>
+                      ) : (
+                        <span className="text-xs text-gray-400">Not rated</span>
+                      )}
+                      {f.note && <p className="text-xs text-gray-500 mt-1.5 italic">{f.note}</p>}
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Staff disposition row */}
+              <div>
+                <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-2">Staff Disposition</p>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {(
+                    [
+                      { label: "Academic Staff",     rating: assessment.academic_staff_rating,     note: assessment.academic_staff_note },
+                      { label: "Non-Academic Staff", rating: assessment.non_academic_staff_rating, note: assessment.non_academic_staff_note },
+                    ] as const
+                  ).map((s) => {
+                    const color =
+                      s.rating === "full_complement" ? "bg-green-100 text-green-700"
+                      : s.rating === "partial_presence" ? "bg-amber-100 text-amber-700"
+                      : s.rating === "insufficient" ? "bg-red-100 text-red-700"
+                      : null;
+                    const label =
+                      s.rating === "full_complement" ? "Full Complement"
+                      : s.rating === "partial_presence" ? "Partial Presence"
+                      : s.rating === "insufficient" ? "Insufficient"
+                      : null;
+                    return (
+                      <div key={s.label} className="bg-gray-50 rounded-xl px-4 py-3 border border-gray-100">
+                        <p className="text-xs text-gray-500 mb-1">{s.label}</p>
+                        {label && color ? (
+                          <span className={`text-xs font-bold px-2.5 py-0.5 rounded-full ${color}`}>
+                            {label}
+                          </span>
+                        ) : (
+                          <span className="text-xs text-gray-400">Not rated</span>
+                        )}
+                        {s.note && <p className="text-xs text-gray-500 mt-1.5 italic">{s.note}</p>}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+          )}
         </Section>
 
         {/* Record Info */}

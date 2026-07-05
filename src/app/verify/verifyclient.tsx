@@ -17,7 +17,7 @@ interface LicenseResult {
     ownership: string;
     property_type: string | null;
     license_expiry_date: string;
-    courses: string[];
+    courses: { name: string; accredited: boolean }[];
   };
 }
 
@@ -82,7 +82,7 @@ export default function VerifyForm() {
       className="flex flex-col min-h-screen bg-gray-50 bg-cover"
       style={{
         backgroundImage:
-          "linear-gradient(rgba(25,155,57,0.9), rgba(25,155,57,1.0)), url('/KD_logo.png')",
+          "linear-gradient(rgba(25,155,57,0.9), rgba(25,155,57,1.0)), url('/gombe_logo.png')",
         backgroundSize: "100vw",
         backgroundPosition: "center",
         backgroundRepeat: "no-repeat",
@@ -93,8 +93,8 @@ export default function VerifyForm() {
           {/* Top Logo */}
           <div className="w-20 h-20 rounded-2xl bg-white shadow-md border border-gray-100 flex items-center justify-center mx-auto overflow-hidden">
             <Image
-              src="/KD_logo.png"
-              alt="Kaduna State Ministry of Education"
+              src="/gombe_logo.png"
+              alt="Gombe State Ministry of Education"
               width={64}
               height={64}
               className="object-contain"
@@ -237,23 +237,31 @@ export default function VerifyForm() {
                   {/* Courses */}
                   <div className="bg-gray-50 rounded-xl px-4 py-3 border border-gray-100">
                     <p className="text-xs font-semibold uppercase tracking-widest text-gray-400 mb-2">
-                      Approved Courses
+                      Courses
                     </p>
                     {result.school.courses &&
                     result.school.courses.length > 0 ? (
-                      <ul className="space-y-1.5">
-                        {result.school.courses.map((course, index) => (
-                          <li
-                            key={index}
-                            className="flex items-center gap-2 text-sm text-gray-700"
+                      <div className="flex flex-wrap gap-1.5">
+                        {result.school.courses.map((course) => (
+                          <span
+                            key={course.name}
+                            className={`inline-flex items-center gap-1 text-xs font-medium px-2.5 py-1 rounded-full border ${
+                              course.accredited
+                                ? "bg-green-50 border-green-200 text-green-800"
+                                : "bg-red-50 border-red-200 text-red-800"
+                            }`}
                           >
-                            <span className="w-5 h-5 rounded-full bg-green-100 text-green-700 text-xs font-bold flex items-center justify-center shrink-0">
-                              {index + 1}
+                            {course.name}
+                            <span className={`px-1 py-0.5 rounded-full text-[10px] font-bold ${
+                              course.accredited
+                                ? "bg-green-200 text-green-800"
+                                : "bg-red-200 text-red-800"
+                            }`}>
+                              {course.accredited ? "Accredited" : "Not Accredited"}
                             </span>
-                            {course}
-                          </li>
+                          </span>
                         ))}
-                      </ul>
+                      </div>
                     ) : (
                       <p className="text-sm text-gray-400 italic">
                         No courses listed

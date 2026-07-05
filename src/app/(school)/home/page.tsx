@@ -190,7 +190,7 @@ export default async function SchoolOverviewDashboard(
           <div
             className="absolute inset-0 opacity-10"
             style={{
-              backgroundImage: "url('/KD_logo.png')",
+              backgroundImage: "url('/gombe_logo.png')",
               backgroundSize: "cover",
               backgroundPosition: "center",
             }}

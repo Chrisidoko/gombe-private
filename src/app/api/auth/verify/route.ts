@@ -83,19 +83,19 @@ export async function PATCH(req: Request) {
         process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
 
       await transporter.sendMail({
-        from: `"KAPTEMS" <${process.env.SMTP_USER}>`,
+        from: `"GAPTEMS" <${process.env.SMTP_USER}>`,
         to: user.email,
         subject:
           action === "approve"
-            ? "Account Approved — KAPTEMS Portal"
-            : "Account Update — KAPTEMS Portal",
+            ? "Account Approved — GAPTEMS Portal"
+            : "Account Update — GAPTEMS Portal",
         html:
           action === "approve"
             ? `
             <div style="font-family: Arial, sans-serif; max-width: 520px; margin: auto; line-height: 1.6;">
               <h2 style="color: #16a34a;">Account Approved</h2>
               <p>Dear <strong>${user.name}</strong>,</p>
-              <p>Your account on the Kaduna State Private Tertiary Institutions Portal has been <strong>approved</strong>. You can now log in and access all portal features.</p>
+              <p>Your account on the Gombe State Private Tertiary Institutions Portal has been <strong>approved</strong>. You can now log in and access all portal features.</p>
               <div style="margin: 24px 0;">
                 <a href="${portalUrl}"
                    style="display: inline-block; background-color: #16a34a; color: #ffffff;
@@ -104,7 +104,7 @@ export async function PATCH(req: Request) {
                   Login to Portal →
                 </a>
               </div>
-              <p>Best Regards,<br/>KAPTEMS Team</p>
+              <p>Best Regards,<br/>GAPTEMS Team</p>
             </div>
           `
             : `
@@ -112,7 +112,7 @@ export async function PATCH(req: Request) {
               <h2 style="color: #dc2626;">Account Not Approved</h2>
               <p>Dear <strong>${user.name}</strong>,</p>
               <p>Unfortunately your account application has not been approved at this time. Please contact the Ministry for further information.</p>
-              <p>Best Regards,<br/>KAPTEMS Team</p>
+              <p>Best Regards,<br/>GAPTEMS Team</p>
             </div>
           `,
       });

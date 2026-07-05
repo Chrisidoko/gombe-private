@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import {
   Search,
   Building2,
@@ -10,7 +10,20 @@ import {
   Send,
   CheckCircle2,
   Settings2,
+  Clock,
+  Check,
+  XCircle,
 } from "lucide-react";
+
+type PendingNotice = {
+  id: number;
+  school_name: string;
+  title: string;
+  amount: string;
+  status: string;
+  rejection_reason: string | null;
+  created_at: string;
+};
 
 type School = {
   school_id: string;
@@ -21,12 +34,6 @@ type School = {
 };
 
 const FEE_OPTIONS = [
-  // {
-  //   id: "tuition_5pct",
-  //   label: "5% of Tuition Fee",
-  //   amount: null,
-  //   note: "Calculated from student tuition records",
-  // },
   {
     id: "annual_renewal",
     label: "Annual Consent Certificate Renewal",
@@ -39,12 +46,6 @@ const FEE_OPTIONS = [
     amount: null,
     note: "Custom amount required",
   },
-  // {
-  //   id: "inspection_levy",
-  //   label: "Inspection Levy",
-  //   amount: 50000,
-  //   note: "Ministry inspection charge",
-  // },
   {
     id: "custom",
     label: "Custom Fee",
@@ -52,6 +53,14 @@ const FEE_OPTIONS = [
     note: "Enter a custom amount and description",
   },
 ];
+
+function formatDate(s: string) {
+  return new Date(s).toLocaleDateString("en-NG", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  });
+}
 
 export default function FixedAssessmentsPage() {
   const [query, setQuery] = useState("");
@@ -66,9 +75,23 @@ export default function FixedAssessmentsPage() {
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState("");
   const [successMsg, setSuccessMsg] = useState("");
+  const [notices, setNotices] = useState<PendingNotice[]>([]);
 
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const wrapperRef = useRef<HTMLDivElement>(null);
+
+  const loadNotices = useCallback(async () => {
+    try {
+      const res = await fetch("/api/operator/invoices/demand-notice");
+      if (res.ok) setNotices(await res.json());
+    } catch {
+      // silently fail
+    }
+  }, []);
+
+  useEffect(() => {
+    loadNotices();
+  }, [loadNotices]);
 
   // Close dropdown on outside click
   useEffect(() => {
@@ -99,12 +122,11 @@ export default function FixedAssessmentsPage() {
           `/api/inspector/search?q=${encodeURIComponent(query)}`,
         );
         if (res.ok) {
-          const data = await res.json();
-          setResults(data);
+          setResults(await res.json());
           setShowDropdown(true);
         }
       } catch {
-        // silently fail
+        /* silently fail */
       } finally {
         setSearching(false);
       }
@@ -154,19 +176,18 @@ export default function FixedAssessmentsPage() {
 
       const data = await res.json();
       if (!res.ok) {
-        setSubmitError(data.error || "Failed to send demand notice");
+        setSubmitError(data.error || "Failed to submit demand notice");
         return;
       }
 
-      setSuccessMsg(
-        `Notice sent — ${data.invoice.invoice_number} · ${selected.name}`,
-      );
+      setSuccessMsg(`Notice submitted for review — ${selected.name}`);
       setSelected(null);
       setQuery("");
       setSelectedFee("");
       setCustomAmount("");
       setCustomDesc("");
       setNarration("");
+      loadNotices();
     } catch {
       setSubmitError("Something went wrong. Please try again.");
     } finally {
@@ -182,7 +203,6 @@ export default function FixedAssessmentsPage() {
       ? `₦${Number(customAmount).toLocaleString()}`
       : "—";
 
-  // Form is ready when school + fee + amount (if required) + name (if custom) are all filled
   const isReady =
     !!selected &&
     !!selectedFee &&
@@ -213,7 +233,7 @@ export default function FixedAssessmentsPage() {
                 New Demand Notice
               </h2>
               <p className="text-xs text-green-300 mt-0.5">
-                Kaduna State Ministry of Education
+                Submitted for Operator 2 review before reaching the Institution
               </p>
             </div>
           </div>
@@ -249,7 +269,6 @@ export default function FixedAssessmentsPage() {
                   </div>
                 </div>
 
-                {/* Dropdown */}
                 {showDropdown && !selected && (
                   <div className="absolute top-full left-0 right-0 mt-1.5 bg-white rounded-xl border border-gray-200 shadow-xl z-50 overflow-hidden">
                     {results.length === 0 ? (
@@ -283,7 +302,6 @@ export default function FixedAssessmentsPage() {
                 )}
               </div>
 
-              {/* Selected school pill */}
               {selected && (
                 <div className="mt-2 flex items-center gap-2 bg-green-50 border border-green-200 rounded-xl px-4 py-2.5">
                   <CheckCircle2 className="w-4 h-4 text-green-600 shrink-0" />
@@ -347,11 +365,12 @@ export default function FixedAssessmentsPage() {
               </div>
             </div>
 
-            {/* Step 3 — Amount + name/description (if custom/variable) */}
+            {/* Step 3 — Amount + name/description */}
             {selectedFee && needsAmount && (
               <div className="space-y-3">
                 <label className="block text-xs font-bold uppercase tracking-widest text-gray-500">
-                  Step 3 — Enter Amount{selectedFee === "custom" ? " & Fee Name" : " & Description"}
+                  Step 3 — Enter Amount
+                  {selectedFee === "custom" ? " & Fee Name" : " & Description"}
                 </label>
                 <div className="relative">
                   <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-500 text-sm font-semibold">
@@ -432,13 +451,15 @@ export default function FixedAssessmentsPage() {
             )}
 
             {successMsg && (
-              <div className="flex items-center gap-2 bg-green-50 border border-green-200 rounded-xl px-4 py-3">
-                <CheckCircle2 className="w-4 h-4 text-green-600 shrink-0" />
-                <p className="text-sm font-medium text-green-700">{successMsg}</p>
+              <div className="flex items-center gap-2 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3">
+                <CheckCircle2 className="w-4 h-4 text-amber-600 shrink-0" />
+                <p className="text-sm font-medium text-amber-700">
+                  {successMsg} — awaiting Operator 2 approval
+                </p>
               </div>
             )}
 
-            {/* Send button */}
+            {/* Submit button */}
             <button
               onClick={handleSend}
               disabled={!isReady || submitting}
@@ -449,10 +470,64 @@ export default function FixedAssessmentsPage() {
               ) : (
                 <Send className="w-4 h-4" />
               )}
-              {submitting ? "Sending..." : "Send Demand Notice"}
+              {submitting ? "Submitting..." : "Submit for Review"}
             </button>
           </div>
         </div>
+
+        {/* Submitted notices history */}
+        {notices.length > 0 && (
+          <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
+            <div className="px-6 py-4 border-b border-gray-100 bg-gray-50 flex items-center justify-between">
+              <h2 className="text-sm font-bold text-gray-700 uppercase tracking-widest">
+                Submitted Notices
+              </h2>
+              <span className="text-xs text-gray-400">
+                {notices.length} total
+              </span>
+            </div>
+            <div className="divide-y divide-gray-100">
+              {notices.map((n) => (
+                <div
+                  key={n.id}
+                  className="px-6 py-4 flex items-center justify-between gap-4 hover:bg-gray-50 transition"
+                >
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <p className="text-sm font-bold text-gray-800 truncate">
+                        {n.title}
+                      </p>
+                      {n.status === "approved" ? (
+                        <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-green-100 text-green-700 border border-green-200">
+                          <Check className="w-3 h-3" /> Approved
+                        </span>
+                      ) : n.status === "rejected" ? (
+                        <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-red-100 text-red-700 border border-red-200">
+                          <XCircle className="w-3 h-3" /> Rejected
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 border border-amber-200">
+                          <Clock className="w-3 h-3" /> Pending Review
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-xs text-gray-400 mt-0.5">
+                      {n.school_name} · {formatDate(n.created_at)}
+                    </p>
+                    {n.status === "rejected" && n.rejection_reason && (
+                      <p className="text-xs text-red-500 mt-1">
+                        Reason: {n.rejection_reason}
+                      </p>
+                    )}
+                  </div>
+                  <p className="text-sm font-black text-gray-700 shrink-0">
+                    ₦{Number(n.amount).toLocaleString()}
+                  </p>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

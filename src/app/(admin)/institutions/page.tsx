@@ -267,10 +267,11 @@ export default function InstitutionsPage() {
           <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
             {/* Table head */}
             <div className="grid grid-cols-12 px-6 py-3 bg-gray-50 border-b border-gray-100 text-[10px] font-bold uppercase tracking-widest text-gray-400">
-              <div className="col-span-6">Institution</div>
+              <div className="col-span-5">Institution</div>
               <div className="col-span-2">LGA</div>
               <div className="col-span-2">Approval</div>
               <div className="col-span-2">Certificate</div>
+              <div className="col-span-1" />
             </div>
 
             {/* Table rows */}
@@ -283,10 +284,10 @@ export default function InstitutionsPage() {
                       `/institutions/${encodeURIComponent(inst.school_id)}`,
                     )
                   }
-                  className="grid grid-cols-12 px-6 py-4 items-center hover:bg-gray-50 transition-colors cursor-pointer"
+                  className="grid grid-cols-12 px-6 py-4 items-center hover:bg-green-50 transition-colors cursor-pointer group"
                 >
                   {/* Name + email */}
-                  <div className="col-span-6 flex items-center gap-3 min-w-0">
+                  <div className="col-span-5 flex items-center gap-3 min-w-0">
                     <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-green-50 border border-green-100 shrink-0">
                       <Building2 className="w-4 h-4 text-green-600" />
                     </div>
@@ -316,6 +317,11 @@ export default function InstitutionsPage() {
                       value={inst.license_status || "Inactive"}
                       type="license"
                     />
+                  </div>
+
+                  {/* Click affordance */}
+                  <div className="col-span-1 flex justify-end">
+                    <ChevronRight className="w-4 h-4 text-gray-300 group-hover:text-green-500 transition-colors" />
                   </div>
                 </div>
               ))}

@@ -86,7 +86,7 @@ export default function LoginPage() {
       <main className="flex justify-center mt-[3%] w-[86vw] sm:w-[60vw] mx-auto rounded-3xl border border-[#e6e7eb] shadow-xl">
         <div className="w-full px-6 py-14">
           <Image
-            src="/KD_logo.png"
+            src="/gombe_logo.png"
             alt="Logo"
             className="mx-auto"
             width={76}

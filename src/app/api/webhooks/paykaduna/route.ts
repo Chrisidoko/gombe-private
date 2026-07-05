@@ -4,7 +4,16 @@ import pool from "@/lib/db";
 import crypto from "crypto";
 import { activateLicense } from "@/lib/activateLicense";
 
+const GATEWAY_ACTIVE = process.env.PAYKADUNA_WEBHOOK_API_KEY !== "STUB_NOT_ACTIVE";
+
 export async function POST(req: Request) {
+  if (!GATEWAY_ACTIVE) {
+    return NextResponse.json(
+      { status: "error", message: "Payment gateway not yet configured for Gombe State." },
+      { status: 503 },
+    );
+  }
+
   const client = await pool.connect();
 
   try {

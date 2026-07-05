@@ -22,7 +22,7 @@ export default function VerificationSuccess() {
       {/* 3. Content Container: This is your white box, placed on top. */}
       <div className="relative z-10 p-8 md:p-12 bg-white rounded-xl shadow-2xl max-w-sm md:max-w-lg w-full m-4">
         <Image
-          src="/KD_logo.png"
+          src="/gombe_logo.png"
           alt="Logo"
           className="mx-auto"
           width={76}

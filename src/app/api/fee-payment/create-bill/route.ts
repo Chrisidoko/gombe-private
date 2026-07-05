@@ -50,7 +50,7 @@ export async function POST(req: Request) {
         firstName: firstName,
         middleName: middleName,
         lastName: lastName,
-        address: school.address || "Kaduna, Nigeria",
+        address: school.address || "Gombe, Nigeria",
         telephone: school.phone || "08000000000",
         esBillDetailsDto: [
           {

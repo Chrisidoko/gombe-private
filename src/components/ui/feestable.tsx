@@ -221,7 +221,7 @@ export default function FeeTable({
               Compliance Standing Schedule
             </h3>
             <p className="text-xs text-green-300">
-              Kaduna State Ministry of Education — Private Tertiary Institutions
+              Gombe State Ministry of Education — Private Tertiary Institutions
             </p>
           </div>
         </div>

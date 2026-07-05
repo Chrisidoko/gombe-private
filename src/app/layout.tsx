@@ -10,9 +10,9 @@ const poppins = Poppins({
 });
 
 export const metadata: Metadata = {
-  title: "Kaduna STATE IRS",
+  title: "Gombe STATE IRS",
   description:
-    "Kaduna State Private Tertiary Institutions Electronic Management System",
+    "Gombe State Private Tertiary Institutions Electronic Management System",
 };
 
 export default function RootLayout({

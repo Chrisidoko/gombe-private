@@ -65,6 +65,9 @@ export async function POST(req: Request) {
       session_end: current.session_end ?? "",
       programmes: current.programmes ?? [],
       courses: current.courses ?? [],
+      total_students: current.total_students?.toString() ?? "",
+      enrollment_snapshot_date: current.enrollment_snapshot_date ?? "",
+      graduated_count: current.graduated_count?.toString() ?? "",
     };
 
     // Replace any existing pending request for this school

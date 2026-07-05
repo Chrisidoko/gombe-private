@@ -62,7 +62,25 @@ export interface School {
   session_start: string | null;
   session_end: string | null;
   programmes: string[];
-  courses: string[];
+  courses: { name: string; accredited: boolean }[];
+
+  // Gombe — General additions
+  vc_name: string | null;
+  gsm_no: string | null;
+
+  // Gombe — Academic additions
+  total_students: number | null;
+  enrollment_snapshot_date: string | null;
+  graduated_count: number | null;
+
+  // Gombe — Infrastructure
+  lab_status: string | null;
+  library_status: string | null;
+
+  // Gombe — People
+  board_members: string[];
+  academic_staff: { name: string; qualification: string }[];
+  non_academic_staff: { name: string; role: string }[];
 
   // Payment Info
   method_of_collection: string[];

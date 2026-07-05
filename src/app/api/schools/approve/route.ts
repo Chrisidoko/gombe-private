@@ -43,34 +43,34 @@ export async function POST(req: Request) {
     if (hasActiveLicense) {
       // License is active — send standard approval email
       await transporter.sendMail({
-        from: `"KAPTEMS" <${process.env.SMTP_USER}>`,
+        from: `"GAPTEMS" <${process.env.SMTP_USER}>`,
         to: email,
         subject: "Your School Registration Has Been Approved",
         html: `
           <div style="font-family: Arial, sans-serif; line-height: 1.6; max-width: 560px; margin: auto;">
-            <h2 style="color: #16a34a;">Kaduna Private Tertiary Institution Portal</h2>
+            <h2 style="color: #16a34a;">Gombe Private Tertiary Institution Portal</h2>
             <p>Dear <strong>${name}</strong>,</p>
-            <p>Your institution has been successfully approved on the Kaduna Private Tertiary Institution Portal.</p>
+            <p>Your institution has been successfully approved on the Gombe Private Tertiary Institution Portal.</p>
             <p>You can now continue using the portal to handle your certificate management and school assessments.</p>
             <br />
-            <p>Best Regards,<br>KAPTEMS Assessment Team</p>
+            <p>Best Regards,<br>GAPTEMS Assessment Team</p>
           </div>
         `,
       });
     } else {
       // License is not active — prompt school to purchase license
       await transporter.sendMail({
-        from: `"KAPTEMS" <${process.env.SMTP_USER}>`,
+        from: `"GAPTEMS" <${process.env.SMTP_USER}>`,
         to: email,
         subject: "Action Required: Purchase Your Consent Certificate ",
         html: `
         <div style="font-family: Arial, sans-serif; line-height: 1.6; max-width: 560px; margin: auto;">
-          <h2 style="color: #16a34a;">Kaduna Private Tertiary Institution Portal</h2>
+          <h2 style="color: #16a34a;">Gombe Private Tertiary Institution Portal</h2>
             <p>Dear <strong>${name}</strong>,</p>
-            <p>Your institution has been approved on the Kaduna Private Tertiary Institution Portal.</p>
+            <p>Your institution has been approved on the Gombe Private Tertiary Institution Portal.</p>
             <p>To fully access all portal features and remain compliant, please login and navigate to compliance standing to purchase your Consent Certificate</p>
             <br />
-            <p>Best Regards,<br>KAPTEMS Assessment Team</p>
+            <p>Best Regards,<br>GAPTEMS Assessment Team</p>
           </div>
 `,
       });

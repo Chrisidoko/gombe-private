@@ -3,14 +3,16 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
+import { Lock } from "lucide-react";
 import LogoutButton from "@/components/ui/logoutbutton";
 
 interface NavigationProps {
   collapsed: boolean;
   setCollapsed: (val: boolean) => void;
+  isApproved?: boolean;
 }
 
-const Navigation: React.FC<NavigationProps> = ({ collapsed, setCollapsed }) => {
+const Navigation: React.FC<NavigationProps> = ({ collapsed, setCollapsed, isApproved = true }) => {
   const pathname = usePathname();
   const [isMobileOpen, setIsMobileOpen] = useState(false);
 
@@ -18,6 +20,7 @@ const Navigation: React.FC<NavigationProps> = ({ collapsed, setCollapsed }) => {
     {
       href: "/home",
       label: "Overview",
+      requiresApproval: false,
       icon: (
         <svg
           className="w-5 h-5"
@@ -37,6 +40,7 @@ const Navigation: React.FC<NavigationProps> = ({ collapsed, setCollapsed }) => {
     {
       href: "/assessment",
       label: "Assessment",
+      requiresApproval: true,
       icon: (
         <svg
           className="w-5 h-5"
@@ -56,6 +60,7 @@ const Navigation: React.FC<NavigationProps> = ({ collapsed, setCollapsed }) => {
     {
       href: "/fees",
       label: "Compliance Standing",
+      requiresApproval: true,
       // badge: 3,
       icon: (
         <svg
@@ -76,6 +81,7 @@ const Navigation: React.FC<NavigationProps> = ({ collapsed, setCollapsed }) => {
     {
       href: "/Invoices",
       label: "Demand Notices",
+      requiresApproval: true,
       // badge: 3,
       icon: (
         <svg
@@ -96,6 +102,7 @@ const Navigation: React.FC<NavigationProps> = ({ collapsed, setCollapsed }) => {
     {
       href: "/history",
       label: "Transactions",
+      requiresApproval: true,
       icon: (
         <svg
           className="w-5 h-5"
@@ -145,7 +152,7 @@ const Navigation: React.FC<NavigationProps> = ({ collapsed, setCollapsed }) => {
               }`}
             >
               <img
-                src="/KD_logo.png"
+                src="/gombe_logo.png"
                 alt="KIRS logo"
                 className={`flex-shrink-0 transition-all ${
                   collapsed ? "w-10 h-10" : "w-12 h-12"
@@ -154,7 +161,7 @@ const Navigation: React.FC<NavigationProps> = ({ collapsed, setCollapsed }) => {
               {!collapsed && (
                 <div className="min-w-0">
                   <h1 className="font-bold text-sm text-gray-900 leading-tight">
-                    Kaduna State Private
+                    Gombe State Private
                   </h1>
                   <p className="text-xs text-gray-600">
                     Tertiary Institutions Portal
@@ -196,23 +203,25 @@ const Navigation: React.FC<NavigationProps> = ({ collapsed, setCollapsed }) => {
           <nav className="flex-1 px-4 py-6 space-y-2 overflow-y-auto">
             {navItems.map((item) => {
               const isActive = pathname === item.href;
-              return (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  onClick={() => setIsMobileOpen(false)}
-                  className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 group relative ${
-                    isActive
-                      ? "bg-green-600 text-white shadow-md"
-                      : "text-gray-700 hover:bg-gray-100"
-                  } ${collapsed ? "justify-center" : ""}`}
-                  title={collapsed ? item.label : ""}
-                >
+              const locked = item.requiresApproval && !isApproved;
+
+              const sharedClass = `flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 group relative ${
+                locked
+                  ? "opacity-50 cursor-not-allowed text-gray-400"
+                  : isActive
+                    ? "bg-green-600 text-white shadow-md"
+                    : "text-gray-700 hover:bg-gray-100"
+              } ${collapsed ? "justify-center" : ""}`;
+
+              const content = (
+                <>
                   <span
                     className={`flex-shrink-0 ${
-                      isActive
-                        ? "text-white"
-                        : "text-gray-500 group-hover:text-green-600"
+                      locked
+                        ? "text-gray-400"
+                        : isActive
+                          ? "text-white"
+                          : "text-gray-500 group-hover:text-green-600"
                     }`}
                   >
                     {item.icon}
@@ -222,32 +231,32 @@ const Navigation: React.FC<NavigationProps> = ({ collapsed, setCollapsed }) => {
                       <span className="flex-1 font-medium text-sm">
                         {item.label}
                       </span>
-                      {/* {item.badge && (
-                        <span
-                          className={`flex items-center justify-center w-6 h-6 text-xs font-bold rounded-full ${
-                            isActive
-                              ? "bg-white text-green-600"
-                              : "bg-red-500 text-white"
-                          }`}
-                        >
-                          {item.badge}
-                        </span>
-                      )} */}
+                      {locked && <Lock className="w-3.5 h-3.5 text-gray-400 shrink-0" />}
                     </>
                   )}
-                  {/* {collapsed && item.badge && (
-                    <span className="absolute -top-1 -right-1 flex items-center justify-center w-5 h-5 text-xs font-bold rounded-full bg-red-500 text-white">
-                      {item.badge}
-                    </span>
-                  )} */}
 
-                  {/* Tooltip for collapsed state */}
-                  {collapsed && (
-                    <div className="absolute left-full ml-2 px-3 py-2 bg-yellow-500 text-white text-sm rounded-lg opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity whitespace-nowrap z-50">
-                      {item.label}
-                      <div className="absolute top-1/2 -left-1 -translate-y-1/2 w-2 h-2 bg-yellow-500 rotate-45"></div>
+                  {/* Tooltip */}
+                  {(collapsed || locked) && (
+                    <div className="absolute left-full ml-2 px-3 py-2 bg-gray-800 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity whitespace-nowrap z-50">
+                      {locked ? "Available after approval" : item.label}
+                      <div className="absolute top-1/2 -left-1 -translate-y-1/2 w-2 h-2 bg-gray-800 rotate-45" />
                     </div>
                   )}
+                </>
+              );
+
+              return locked ? (
+                <div key={item.href} className={sharedClass}>
+                  {content}
+                </div>
+              ) : (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  onClick={() => setIsMobileOpen(false)}
+                  className={sharedClass}
+                >
+                  {content}
                 </Link>
               );
             })}
@@ -332,7 +341,7 @@ const Navigation: React.FC<NavigationProps> = ({ collapsed, setCollapsed }) => {
           </button>
 
           <div className="flex items-center gap-2">
-            <img src="/KD_logo.png" alt="KIRS logo" className="w-8 h-8" />
+            <img src="/gombe_logo.png" alt="KIRS logo" className="w-8 h-8" />
             <span className="font-bold text-sm text-gray-900">KIRS Portal</span>
           </div>
 

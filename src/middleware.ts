@@ -45,7 +45,8 @@ export async function middleware(req: NextRequest) {
     const isFinance = institution === "CBS_Finance";
     const isInspector = institution === "CBS_Inspector";
     const isOperator = institution === "CBS_Operator";
-    const isSchool = !isAdmin && !isFinance && !isInspector && !isOperator;
+    const isOperator2 = institution === "CBS_Operator2";
+    const isSchool = !isAdmin && !isFinance && !isInspector && !isOperator && !isOperator2;
 
     // ── Helper — where to redirect a non-authorised user ─────────────────
     function defaultRedirect() {
@@ -53,6 +54,7 @@ export async function middleware(req: NextRequest) {
       if (isFinance) return "/finance";
       if (isInspector) return "/inspector";
       if (isOperator) return "/operator-Invoices";
+      if (isOperator2) return "/review-bulk";
       return "/home"; // school
     }
 
@@ -81,6 +83,18 @@ export async function middleware(req: NextRequest) {
       url.startsWith("/records")
     ) {
       if (!isOperator) {
+        return NextResponse.redirect(new URL(defaultRedirect(), req.url));
+      }
+      return NextResponse.next();
+    }
+
+    // ── Operator 2 routes ─────────────────────────────────────────────────
+    if (
+      url.startsWith("/review-bulk") ||
+      url.startsWith("/review-evaluations") ||
+      url.startsWith("/review-demand-notices")
+    ) {
+      if (!isOperator2) {
         return NextResponse.redirect(new URL(defaultRedirect(), req.url));
       }
       return NextResponse.next();

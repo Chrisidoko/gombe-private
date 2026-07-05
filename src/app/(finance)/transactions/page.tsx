@@ -144,10 +144,8 @@ export default function Transactions() {
                 >
                   <option value="">All LGAs</option>
                   {[
-                    "Birnin Gwari","Chikun","Giwa","Igabi","Ikara","Jaba",
-                    "Jema'a","Kachia","Kaduna North","Kaduna South","Kagarko",
-                    "Kajuru","Kaura","Kauru","Kubau","Kudan","Lere","Makarfi",
-                    "Sabon Gari","Sanga","Soba","Zangon Kataf","Zaria",
+                    "Akko","Balanga","Billiri","Dukku","Funakaye",
+                    "Gombe","Kaltungo","Kwami","Nafada","Shongom","Yamaltu/Deba",
                   ]
                     .sort()
                     .map((l) => (

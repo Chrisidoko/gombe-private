@@ -17,16 +17,16 @@ import {
 // ── Slide data — replace src with your actual images ─────────────────────────
 const SLIDES = [
   {
-    src: "/slides/slide1.jpg",
+    src: "/slides/slide1.jpeg",
     title: "Streamlined Institutions",
     caption:
       "A unified platform for private tertiary institutions to manage consent certificates, compliance fees, and annual renewals with full transparency.",
   },
   {
-    src: "/slides/slide5.jpg",
-    title: "Kaduna State Education Modernization",
+    src: "/slides/slide5.jpeg",
+    title: "Gombe State Education Modernization",
     caption:
-      "Kaduna State will accelerate the transition of the education system to a technology-driven and a globally competitive sector",
+      "Gombe State will accelerate the transition of the education system to a technology-driven and a globally competitive sector",
   },
   {
     src: "/slides/slide2.jpg",
@@ -34,12 +34,12 @@ const SLIDES = [
     caption:
       "Meaningful progress requires collaboration among government, communities, faith-based organizations, and private institutions",
   },
-  {
-    src: "/slides/slide4.jpg",
-    title: "Automating Tax Administration",
-    caption:
-      "'Tax For Service', revenue generation should not be a burden but a shared responsibility that allows the government to deliver roads, schools, and infrastructure.",
-  },
+  // {
+  //   src: "/slides/slide4.jpg",
+  //   title: "Automating Tax Administration",
+  //   caption:
+  //     "'Tax For Service', revenue generation should not be a burden but a shared responsibility that allows the government to deliver roads, schools, and infrastructure.",
+  // },
 ];
 
 const ROLES = [
@@ -172,7 +172,7 @@ export default function OnboardingPage() {
         {/* Top-left branding on mobile */}
         <div className="absolute top-6 left-6 lg:hidden">
           <span className="text-white font-black text-lg tracking-tight">
-            KAPTEMS
+            GAPTEMS
           </span>
         </div>
       </div>
@@ -188,8 +188,8 @@ export default function OnboardingPage() {
           <div className="mb-5">
             <div className="w-20 h-20 rounded-2xl bg-white shadow-md border border-gray-100 flex items-center justify-center mx-auto overflow-hidden">
               <Image
-                src="/KD_logo.png"
-                alt="Kaduna State Ministry of Education"
+                src="/gombe_logo.png"
+                alt="Gombe State Ministry of Education"
                 width={64}
                 height={64}
                 className="object-contain"
@@ -198,7 +198,7 @@ export default function OnboardingPage() {
           </div>
 
           <p className="text-xs font-bold uppercase tracking-[0.2em] text-green-700 mb-1">
-            Kaduna State
+            Gombe State
           </p>
           <h1 className="text-2xl lg:text-3xl font-black text-gray-900 leading-tight mb-2">
             Ministry of Education
@@ -207,7 +207,7 @@ export default function OnboardingPage() {
             Private Tertiary Institutions Portal
           </p>
           <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest">
-            KAPTEMS
+            GAPTEMS
           </p>
 
           {/* CTA */}
@@ -280,7 +280,7 @@ export default function OnboardingPage() {
 
           {/* Footer */}
           <p className="flex items-center justify-center text-[11px] text-gray-300 mt-6">
-            © {new Date().getFullYear()} Kaduna State Ministry of Education. All
+            © {new Date().getFullYear()} Gombe State Ministry of Education. All
             rights reserved. Powered by {""}
             <Image
               src="/paypro.png"

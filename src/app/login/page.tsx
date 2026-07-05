@@ -78,8 +78,8 @@ const Page = () => {
               className="w-20 h-20 rounded-2xl bg-white shadow-md border border-gray-100 flex items-center justify-center mx-auto overflow-hidden"
             >
               <Image
-                src="/KD_logo.png"
-                alt="Kaduna State Ministry of Education"
+                src="/gombe_logo.png"
+                alt="Gombe State Ministry of Education"
                 width={64}
                 height={64}
                 className="object-contain"
@@ -173,7 +173,7 @@ const Page = () => {
         className="w-full sm:w-[55%] relative bg-[#199b39] bg-cover bg-center sm:order-2 order-1"
         style={{
           backgroundImage:
-            "linear-gradient(rgba(25,155,57,0.9), rgba(25,155,57,1.0)), url('/KD_logo.png')",
+            "linear-gradient(rgba(25,155,57,0.9), rgba(25,155,57,1.0)), url('/gombe_logo.png')",
           backgroundSize: "620px",
           backgroundPosition: "center",
           backgroundRepeat: "no-repeat",

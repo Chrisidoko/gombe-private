@@ -152,7 +152,7 @@ export default function AssessmentPage() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error);
 
-      setSuccessCount(data.total_invoices);
+      setSuccessCount(data.total_schools);
       setShowConfirm(false);
 
       // Reset form
@@ -166,7 +166,7 @@ export default function AssessmentPage() {
       // Refresh history
       fetchData();
       toast.success(
-        `Assessment sent — ${data.total_invoices} invoices created`,
+        `Assessment submitted — awaiting Operator 2 approval`,
       );
     } catch (err) {
       toast.error(
@@ -209,19 +209,18 @@ export default function AssessmentPage() {
 
         {/* Success banner */}
         {successCount !== null && (
-          <div className="flex items-center gap-3 bg-green-50 border border-green-200 rounded-xl px-5 py-4">
-            <CheckCircle2 className="w-5 h-5 text-green-600 shrink-0" />
+          <div className="flex items-center gap-3 bg-amber-50 border border-amber-200 rounded-xl px-5 py-4">
+            <CheckCircle2 className="w-5 h-5 text-amber-600 shrink-0" />
             <div>
-              <p className="text-sm font-bold text-green-800">
-                Assessment sent successfully
+              <p className="text-sm font-bold text-amber-800">
+                Assessment submitted for review
               </p>
-              <p className="text-xs text-green-700 mt-0.5">
-                {successCount} invoices have been created and are now visible to
-                institutions.
+              <p className="text-xs text-amber-700 mt-0.5">
+                {successCount} schools queued — Operator 2 must approve before invoices are sent.
               </p>
             </div>
             <button onClick={() => setSuccessCount(null)} className="ml-auto">
-              <X className="w-4 h-4 text-green-400" />
+              <X className="w-4 h-4 text-amber-400" />
             </button>
           </div>
         )}
@@ -478,7 +477,7 @@ export default function AssessmentPage() {
                   className="w-full flex items-center justify-center gap-2 bg-[#1a5c2e] hover:bg-[#166534] text-white font-bold py-3 rounded-xl text-sm transition disabled:opacity-40 disabled:cursor-not-allowed mt-2"
                 >
                   <Send className="w-4 h-4" />
-                  Send Assessment
+                  Submit for Review
                 </button>
                 {!isFormReady && (
                   <p className="text-[10px] text-gray-400 text-center">
@@ -519,13 +518,26 @@ export default function AssessmentPage() {
                           <p className="text-sm font-bold text-gray-800">
                             {a.title}
                           </p>
-                          <span className="text-[10px] font-bold text-green-700 bg-green-100 border border-green-200 px-2 py-0.5 rounded-full uppercase">
-                            {a.status}
+                          <span
+                            className={`text-[10px] font-bold px-2 py-0.5 rounded-full uppercase border ${
+                              a.status === "approved" || a.status === "sent"
+                                ? "text-green-700 bg-green-100 border-green-200"
+                                : a.status === "rejected"
+                                  ? "text-red-700 bg-red-100 border-red-200"
+                                  : "text-amber-700 bg-amber-100 border-amber-200"
+                            }`}
+                          >
+                            {a.status === "pending_approval" ? "Pending Review" : a.status}
                           </span>
                         </div>
                         <p className="text-xs text-gray-400 mt-0.5">
                           {formatDate(a.created_at)} · {a.total_schools} schools
                         </p>
+                        {a.status === "rejected" && (a as Assessment & { rejection_reason?: string }).rejection_reason && (
+                          <p className="text-xs text-red-500 mt-1">
+                            Rejected: {(a as Assessment & { rejection_reason?: string }).rejection_reason}
+                          </p>
+                        )}
                         <div className="flex items-center gap-3 mt-2 text-xs text-gray-500">
                           {a.tier_1_fee && <span>T1: {fmt(a.tier_1_fee)}</span>}
                           {a.tier_2_fee && <span>T2: {fmt(a.tier_2_fee)}</span>}
@@ -614,9 +626,8 @@ export default function AssessmentPage() {
             </div>
 
             <p className="text-xs text-gray-400 mb-5 leading-relaxed">
-              Invoices will be immediately visible to institutions on their
-              dashboard. Bill references will be created when each school
-              initiates payment. This action cannot be undone.
+              This assessment will be sent to Operator 2 for review. Invoices
+              will only be created and sent to schools after Operator 2 approves.
             </p>
 
             <div className="flex items-center gap-3">
@@ -634,11 +645,11 @@ export default function AssessmentPage() {
               >
                 {submitting ? (
                   <>
-                    <Loader2 className="w-4 h-4 animate-spin" /> Sending...
+                    <Loader2 className="w-4 h-4 animate-spin" /> Submitting...
                   </>
                 ) : (
                   <>
-                    <Send className="w-4 h-4" /> Confirm & Send
+                    <Send className="w-4 h-4" /> Submit for Review
                   </>
                 )}
               </button>

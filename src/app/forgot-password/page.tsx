@@ -43,7 +43,7 @@ export default function ForgotPasswordPage() {
       className="flex flex-col min-h-screen bg-gray-50 bg-cover"
       style={{
         backgroundImage:
-          "linear-gradient(rgba(25,155,57,0.9), rgba(25,155,57,1.0)), url('/KD_logo.png')",
+          "linear-gradient(rgba(25,155,57,0.9), rgba(25,155,57,1.0)), url('/gombe_logo.png')",
         backgroundSize: "100vw",
         backgroundPosition: "center",
         backgroundRepeat: "no-repeat",
@@ -53,7 +53,7 @@ export default function ForgotPasswordPage() {
         <div className="bg-white w-full max-w-md rounded-2xl border border-gray-200 shadow-xl px-8 py-10">
           {/* Logo */}
           <div className="flex justify-center mb-6">
-            <Image src="/KD_logo.png" alt="Logo" width={64} height={64} />
+            <Image src="/gombe_logo.png" alt="Logo" width={64} height={64} />
           </div>
 
           {success ? (

@@ -62,12 +62,17 @@ export async function POST(req: Request) {
 
     if (!school) throw new Error("School not found");
 
-    // Step 4: Create bill with 3rd party API
+    // Step 4: Create bill with 3rd party API (skipped when gateway is not yet configured)
+    const GATEWAY_ACTIVE = process.env.PAYKADUNA_API_KEY !== "STUB_NOT_ACTIVE";
     let billReference = null;
     let billStatus = null;
     let tpui = null;
 
-    try {
+    if (!GATEWAY_ACTIVE) {
+      console.log("⚠️ Payment gateway not configured — invoice created without bill reference.");
+    }
+
+    if (GATEWAY_ACTIVE) try {
       const billPayload = {
         engineCode: process.env.PAYKADUNA_ENGINE_CODE,
         identifier: school.school_id, // Using school_id as identifier
@@ -76,7 +81,7 @@ export async function POST(req: Request) {
         lastName:
           school.name.split(" ").slice(2).join(" ") ||
           school.name.split(" ")[0],
-        address: school.address || "Kaduna, Nigeria",
+        address: school.address || "Gombe, Nigeria",
         telephone: school.phone || "08000000000",
         esBillDetailsDto: [
           {
@@ -186,7 +191,7 @@ export async function POST(req: Request) {
     });
 
     await transporter.sendMail({
-      from: `"KAPTEMS" <${process.env.SMTP_USER}>`,
+      from: `"GAPTEMS" <${process.env.SMTP_USER}>`,
       to: school.email,
       subject: `Invoice for School Assessment (${school.name})`,
       html: `

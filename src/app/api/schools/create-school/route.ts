@@ -14,7 +14,7 @@ function generateEmail(name: string): string {
     .split(/\s+/)
     .slice(0, 3)
     .join("");
-  return `${slug}@kaptems.edu.ng`;
+  return `${slug}@gesms.edu.ng`;
 }
 
 export async function POST(req: Request) {

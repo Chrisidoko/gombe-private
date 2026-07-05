@@ -112,8 +112,8 @@ export default function SignUpForm() {
             className="w-20 h-20 rounded-2xl bg-white shadow-md border border-gray-100 flex items-center justify-center mx-auto overflow-hidden"
           >
             <Image
-              src="/KD_logo.png"
-              alt="Kaduna State Ministry of Education"
+              src="/gombe_logo.png"
+              alt="Gombe State Ministry of Education"
               width={64}
               height={64}
               className="object-contain"

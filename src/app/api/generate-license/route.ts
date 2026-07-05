@@ -125,7 +125,7 @@ export async function GET() {
       // }),
 
       // lga: "Sample LGA",
-      address: "123 Road Giwa Street, Kaduna State",
+      address: "123 Road, Gombe State",
       courses: [
         // ← sample courses for preview
         "Bachelor of Science in Nursing",

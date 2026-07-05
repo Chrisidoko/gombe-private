@@ -112,8 +112,8 @@ const Navigation: React.FC<NavigationProps> = ({ collapsed, setCollapsed }) => {
               }`}
             >
               <img
-                src="/KD_logo.png"
-                alt="Kaduna State logo"
+                src="/gombe_logo.png"
+                alt="Gombe State logo"
                 className={`flex-shrink-0 transition-all ${
                   collapsed ? "w-10 h-10" : "w-12 h-12"
                 }`}
@@ -121,7 +121,7 @@ const Navigation: React.FC<NavigationProps> = ({ collapsed, setCollapsed }) => {
               {!collapsed && (
                 <div className="min-w-0">
                   <h1 className="font-bold text-sm text-gray-900 leading-tight">
-                    Kaduna State Private
+                    Gombe State Private
                   </h1>
                   <p className="text-xs text-gray-600">
                     Tertiary Institutions Portal
@@ -297,7 +297,7 @@ const Navigation: React.FC<NavigationProps> = ({ collapsed, setCollapsed }) => {
           </button>
 
           <div className="flex items-center gap-2">
-            <img src="/KD_logo.png" alt="KIRS logo" className="w-8 h-8" />
+            <img src="/gombe_logo.png" alt="KIRS logo" className="w-8 h-8" />
             <span className="font-bold text-sm text-gray-900">KIRS Portal</span>
           </div>
 
