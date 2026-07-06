@@ -1,11 +1,11 @@
 module.exports = {
   apps: [
     {
-      name: "kaptems",
+      name: "higheredu",
       script: "npm",
       args: "run start",
       env: {
-        PORT: 4003, // Set the port environment variable here
+        PORT: 4004, // Set the port environment variable here
       },
     },
   ],
