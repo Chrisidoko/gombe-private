@@ -149,13 +149,13 @@ export async function PATCH(
     });
 
     await transporter.sendMail({
-      from: `"GAPTEMS" <${process.env.SMTP_USER}>`,
+      from: `"GESMS" <${process.env.SMTP_USER}>`,
       to: school.email,
       subject: `${notice.title} — ${school.name}`,
       html: `
         <h2>${notice.title}</h2>
         <p>Dear ${school.name},</p>
-        <p>A demand notice has been issued to your institution by the Gombe State Private Tertiary Education Management System (GAPTEMS).</p>
+        <p>A demand notice has been issued to your institution by the Gombe State Private Tertiary Education Management System (GESMS).</p>
         <table style="border-collapse:collapse;width:100%;max-width:480px;margin-top:16px;">
           <tr>
             <td style="padding:8px 12px;background:#f9fafb;border:1px solid #e5e7eb;font-weight:600;font-size:13px;">Notice</td>

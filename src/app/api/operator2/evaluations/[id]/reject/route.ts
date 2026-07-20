@@ -55,7 +55,7 @@ export async function PATCH(
       });
 
       await transporter.sendMail({
-        from: `"GAPTEMS" <${process.env.SMTP_USER}>`,
+        from: `"GESMS" <${process.env.SMTP_USER}>`,
         to: school.email,
         subject: `Assessment Review Update for ${school.name}`,
         html: `
@@ -65,7 +65,7 @@ export async function PATCH(
           ${reason ? `<p><strong>Reason:</strong> ${reason}</p>` : ""}
           <p>Please review your submission and reapply if applicable.</p>
           <br/>
-          <p>Best regards,<br/>GAPTEMS Assessment Team</p>
+          <p>Best regards,<br/>GESMS Assessment Team</p>
         `,
       });
     }

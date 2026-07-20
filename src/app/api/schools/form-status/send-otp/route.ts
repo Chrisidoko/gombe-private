@@ -69,12 +69,12 @@ export async function POST(req: Request) {
         <h3 style="color: #333; font-size: 22px;">${otp}</h3>
         <p>This code will expire in 10 minutes. Do not share it with anyone.</p>
         <br />
-        <p>Best regards,<br/>GAPTEMS Assesment Team</p>
+        <p>Best regards,<br/>GESMS Assesment Team</p>
       </div>
     `;
 
     await transporter.sendMail({
-      from: `"GAPTEMS" <${process.env.SMTP_USER}>`,
+      from: `"GESMS" <${process.env.SMTP_USER}>`,
       to: email,
       subject: "Your OTP Code",
       html: htmlContent,

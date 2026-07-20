@@ -83,12 +83,12 @@ export async function PATCH(req: Request) {
         process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
 
       await transporter.sendMail({
-        from: `"GAPTEMS" <${process.env.SMTP_USER}>`,
+        from: `"GESMS" <${process.env.SMTP_USER}>`,
         to: user.email,
         subject:
           action === "approve"
-            ? "Account Approved — GAPTEMS Portal"
-            : "Account Update — GAPTEMS Portal",
+            ? "Account Approved — GESMS Portal"
+            : "Account Update — GESMS Portal",
         html:
           action === "approve"
             ? `
@@ -104,7 +104,7 @@ export async function PATCH(req: Request) {
                   Login to Portal →
                 </a>
               </div>
-              <p>Best Regards,<br/>GAPTEMS Team</p>
+              <p>Best Regards,<br/>GESMS Team</p>
             </div>
           `
             : `
@@ -112,7 +112,7 @@ export async function PATCH(req: Request) {
               <h2 style="color: #dc2626;">Account Not Approved</h2>
               <p>Dear <strong>${user.name}</strong>,</p>
               <p>Unfortunately your account application has not been approved at this time. Please contact the Ministry for further information.</p>
-              <p>Best Regards,<br/>GAPTEMS Team</p>
+              <p>Best Regards,<br/>GESMS Team</p>
             </div>
           `,
       });

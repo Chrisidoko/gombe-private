@@ -57,9 +57,9 @@ export async function POST(req: Request) {
     });
 
     await transporter.sendMail({
-      from: `"GAPTEMS" <${process.env.SMTP_USER}>`,
+      from: `"GESMS" <${process.env.SMTP_USER}>`,
       to: user.email,
-      subject: "Password Reset Request — GAPTEMS",
+      subject: "Password Reset Request — GESMS",
       html: `
         <div style="font-family: Arial, sans-serif; max-width: 520px; margin: auto; line-height: 1.6;">
           <h2 style="color: #16a34a;">Password Reset</h2>
@@ -82,7 +82,7 @@ export async function POST(req: Request) {
             <span style="color: #16a34a;">${resetUrl}</span>
           </p>
           <br/>
-          <p>Best Regards,<br/>GAPTEMS Team</p>
+          <p>Best Regards,<br/>GESMS Team</p>
         </div>
       `,
     });

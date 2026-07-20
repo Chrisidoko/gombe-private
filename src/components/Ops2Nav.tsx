@@ -226,7 +226,7 @@ const Ops2Navigation: React.FC<NavigationProps> = ({
           <div className="flex items-center gap-2">
             <img src="/gombe_logo.png" alt="logo" className="w-8 h-8" />
             <span className="font-bold text-sm text-gray-900">
-              GAPTEMS — Reviewer
+              GESMS — Reviewer
             </span>
           </div>
           <div className="w-10" />

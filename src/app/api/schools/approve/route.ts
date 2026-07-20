@@ -43,7 +43,7 @@ export async function POST(req: Request) {
     if (hasActiveLicense) {
       // License is active — send standard approval email
       await transporter.sendMail({
-        from: `"GAPTEMS" <${process.env.SMTP_USER}>`,
+        from: `"GESMS" <${process.env.SMTP_USER}>`,
         to: email,
         subject: "Your School Registration Has Been Approved",
         html: `
@@ -53,14 +53,14 @@ export async function POST(req: Request) {
             <p>Your institution has been successfully approved on the Gombe Private Tertiary Institution Portal.</p>
             <p>You can now continue using the portal to handle your certificate management and school assessments.</p>
             <br />
-            <p>Best Regards,<br>GAPTEMS Assessment Team</p>
+            <p>Best Regards,<br>GESMS Assessment Team</p>
           </div>
         `,
       });
     } else {
       // License is not active — prompt school to purchase license
       await transporter.sendMail({
-        from: `"GAPTEMS" <${process.env.SMTP_USER}>`,
+        from: `"GESMS" <${process.env.SMTP_USER}>`,
         to: email,
         subject: "Action Required: Purchase Your Consent Certificate ",
         html: `
@@ -70,7 +70,7 @@ export async function POST(req: Request) {
             <p>Your institution has been approved on the Gombe Private Tertiary Institution Portal.</p>
             <p>To fully access all portal features and remain compliant, please login and navigate to compliance standing to purchase your Consent Certificate</p>
             <br />
-            <p>Best Regards,<br>GAPTEMS Assessment Team</p>
+            <p>Best Regards,<br>GESMS Assessment Team</p>
           </div>
 `,
       });
