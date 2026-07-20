@@ -2,10 +2,12 @@ module.exports = {
   apps: [
     {
       name: "higheredu",
-      script: "npm",
-      args: "run start",
+      script: "./node_modules/next/dist/bin/next", // Runs Next.js directly instead of npm
+      args: "start",
+      instances: "max", // Spawns a process for every CPU core
+      exec_mode: "cluster", // Enables cluster mode for zero-downtime
       env: {
-        PORT: 4004, // Set the port environment variable here
+        PORT: 4004,
       },
     },
   ],
