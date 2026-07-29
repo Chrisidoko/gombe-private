@@ -10,10 +10,7 @@ import {
   Info,
   Lock,
   XCircle,
-  Download,
-  Upload,
   CreditCard,
-  // CreditCard,
 } from "lucide-react";
 
 type Fee = {
@@ -26,9 +23,6 @@ type Fee = {
   status: "paid" | "unpaid" | "pending";
   stage: number;
   reference?: string | null;
-  tpui?: string | null;
-  document_url?: string;
-  doc_approval?: "pending" | "approved" | "rejected";
   db_id?: number | null;
 };
 
@@ -41,18 +35,15 @@ type FeeGroup = {
 };
 
 export default function FeeTable({
-  programmes,
   school_id,
   license_status,
   approval_status,
 }: {
-  programmes?: string[];
   school_id: string;
   license_status?: string;
   approval_status?: string;
 }) {
   const [feeGroups, setFeeGroups] = useState<FeeGroup[]>([]);
-  const [uploading, setUploading] = useState<number | null>(null); // tracks which fee_id is uploading
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [checkoutLoading, setCheckoutLoading] = useState(false);
@@ -70,8 +61,6 @@ export default function FeeTable({
     async function fetchFees() {
       try {
         const params = new URLSearchParams();
-        if (programmes?.length)
-          params.set("programmes", JSON.stringify(programmes));
         params.set("school_id", school_id);
         if (showCertificateFee) params.set("show_certificate", "true");
         if (license_status) params.set("license_status", license_status);
@@ -102,54 +91,7 @@ export default function FeeTable({
     .filter((f) => f.status === "paid")
     .reduce((sum, f) => sum + f.amount, 0);
 
-  async function handleUploadForm(file: File, feeId: number) {
-    setUploading(feeId);
-    try {
-      // Step 1 — upload the file
-      const payload = new FormData();
-      payload.append("file", file);
-      payload.append("type", "Application Form");
-      payload.append("school_id", school_id);
-
-      const uploadRes = await fetch("/api/upload", {
-        method: "POST",
-        body: payload,
-      });
-      const uploadResult = await uploadRes.json();
-
-      if (!uploadResult.success) {
-        toast.error("Upload failed.");
-        return;
-      }
-
-      // Step 2 — update DB to record document has been uploaded
-      const updateRes = await fetch("/api/schools/fees/upload-doc", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          school_id,
-          fee_id: feeId,
-          document_url: uploadResult.url, // save the uploaded file URL too
-        }),
-      });
-
-      if (updateRes.ok) {
-        toast.success("Form uploaded successfully.");
-      } else {
-        toast.error("Failed to record upload.");
-      }
-    } catch {
-      toast.error("Something went wrong.");
-    } finally {
-      setUploading(null);
-    }
-  }
-
   async function handleMakePayment(fee: Fee) {
-    console.log("fee.id (definition):", fee.id);
-    console.log("fee.db_id (table row):", fee.db_id);
-    console.log("fee.reference:", fee.reference);
-    console.log("fee.tpui:", fee.tpui);
     setCheckoutLoading(true);
 
     try {
@@ -345,57 +287,6 @@ export default function FeeTable({
                     <p className="text-xs text-gray-400 mt-0.5 leading-relaxed">
                       {fee.description}
                     </p>
-
-                    {/* Document actions — visible only when paid */}
-                    {fee.status === "paid" && fee.document_url && (
-                      <div className="flex items-center gap-3 mt-2 flex-wrap">
-                        {/* Download — all paid fees with a document */}
-                        <a
-                          href={fee.document_url}
-                          download
-                          className="inline-flex items-center gap-1.5 text-xs font-semibold text-blue-600 hover:text-blue-800 transition"
-                        >
-                          <Download className="w-3.5 h-3.5" />
-                          Download Document
-                        </a>
-
-                        {/* Upload inside document actions */}
-                        {fee.id === 4 && (
-                          <>
-                            {fee.doc_approval === "approved" ? (
-                              // Doc approved by ministry
-                              <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-green-600">
-                                <CheckCircle2 className="w-3.5 h-3.5" />
-                                Accepted
-                              </span>
-                            ) : fee.doc_approval === "pending" ? (
-                              // Doc uploaded — awaiting ministry approval
-                              <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-yellow-600">
-                                <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                                Awaiting Approval
-                              </span>
-                            ) : (
-                              // No doc yet — show upload button
-                              <label className="inline-flex items-center gap-1.5 text-xs font-semibold text-green-600 hover:text-green-800 transition cursor-pointer">
-                                <Upload className="w-3.5 h-3.5" />
-                                {uploading === fee.id
-                                  ? "Uploading..."
-                                  : "Upload Completed Form"}
-                                <input
-                                  type="file"
-                                  accept=".pdf,.doc,.docx"
-                                  className="hidden"
-                                  onChange={(e) => {
-                                    const file = e.target.files?.[0];
-                                    if (file) handleUploadForm(file, fee.id);
-                                  }}
-                                />
-                              </label>
-                            )}
-                          </>
-                        )}
-                      </div>
-                    )}
                   </div>
                 </div>
 

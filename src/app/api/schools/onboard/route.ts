@@ -2,6 +2,7 @@
 import { NextResponse } from "next/server";
 import pool from "@/lib/db";
 import { generateSchoolID } from "@/lib/generateSchoolID";
+import { findLGA, findCategory } from "@/lib/schoolIdConstants";
 
 export async function POST(req: Request) {
   const client = await pool.connect();
@@ -24,10 +25,19 @@ export async function POST(req: Request) {
         lastTaxFiling,
         licenseNumber,
         lastLicenseRenewal,
+        lga,
         category,
       } = body;
 
-      const school_id = await generateSchoolID(officialName);
+      if (!lga || !findLGA(lga) || !category || !findCategory(category)) {
+        await client.query("ROLLBACK");
+        return NextResponse.json(
+          { success: false, error: "Valid LGA and school category are required" },
+          { status: 400 },
+        );
+      }
+
+      const school_id = await generateSchoolID(lga, category);
 
       const query = `
         INSERT INTO schoolskano (
@@ -38,9 +48,10 @@ export async function POST(req: Request) {
           last_tax_filing,
           license_number,
           last_license_renewal,
+          lga,
           category
         )
-        VALUES ($1,$2,$3,$4,$5,$6,$7,$8)
+        VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)
         RETURNING school_id;
       `;
 
@@ -52,6 +63,7 @@ export async function POST(req: Request) {
         sanitize(lastTaxFiling),
         sanitize(licenseNumber),
         sanitize(lastLicenseRenewal),
+        sanitize(lga),
         sanitize(category), // since category is now SINGLE VALUE
       ];
 

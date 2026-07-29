@@ -208,7 +208,7 @@ export default function AccountApprovalsPage() {
             {accounts.map((account) => (
               <div
                 key={account.id}
-                className="bg-white rounded-2xl border border-gray-200 shadow-sm px-5 py-4"
+                className="bg-white rounded-2xl border border-gray-200 shadow-xs px-5 py-4"
               >
                 <div className="flex items-start justify-between gap-4 flex-wrap">
                   {/* Left — account info */}
@@ -221,26 +221,17 @@ export default function AccountApprovalsPage() {
                         <p className="text-sm font-bold text-gray-800">
                           {account.school_name || account.name}
                         </p>
-                        {/* Verified badge */}
-                        {account.is_verified ? (
-                          <span className="inline-flex items-center gap-1 text-[10px] font-bold text-green-600 bg-green-50 border border-green-200 px-2 py-0.5 rounded-full">
-                            <CheckCircle2 className="w-3 h-3" />
-                            Email Verified
-                          </span>
-                        ) : (
-                          <span className="inline-flex items-center gap-1 text-[10px] font-bold text-yellow-600 bg-yellow-50 border border-yellow-200 px-2 py-0.5 rounded-full">
-                            <Clock className="w-3 h-3" />
-                            Unverified
-                          </span>
-                        )}
                       </div>
-
-                      <span
-                        className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold border mt-0.5 ${institutionBadge(account.institution).cls}`}
-                      >
-                        {institutionBadge(account.institution).label}
-                      </span>
-
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span
+                          className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold border mt-0.5 ${institutionBadge(account.institution).cls}`}
+                        >
+                          {institutionBadge(account.institution).label}
+                        </span>
+                        <p className="text-[10px] text-gray-400 mt-1.5">
+                          Registered {formatDate(account.created_at)}
+                        </p>
+                      </div>
                       <div className="flex flex-wrap items-center gap-3 mt-2">
                         <div className="flex items-center gap-1.5 text-xs text-gray-500">
                           <Mail className="w-3 h-3 text-gray-400" />
@@ -253,10 +244,6 @@ export default function AccountApprovalsPage() {
                           </div>
                         )}
                       </div>
-
-                      <p className="text-[10px] text-gray-400 mt-1.5">
-                        Registered {formatDate(account.created_at)}
-                      </p>
                     </div>
                   </div>
 

@@ -5,20 +5,18 @@ import { Loader2, AlertTriangle, CheckCircle2, Circle } from "lucide-react";
 
 type Milestone = {
   label: string;
-  detail: string;
+  detail?: string;
   completed: boolean;
   score: number;
 };
 
 type ComplianceData = {
   complianceScore: number;
-  consentLetterPaid: boolean;
+  applicationFormPaid: boolean;
   guidelinesPaid: boolean;
-  applicationPaid: boolean;
-  assessmentComplete: boolean;
-  questionnaireUploaded: boolean;
-  adminApproved: boolean;
+  registrationPaid: boolean;
   certificatePaid: boolean;
+  annualComplianceCurrent: boolean;
   milestones: Milestone[];
   totalFees: number;
   paidFees: number;
@@ -65,7 +63,7 @@ export default function ComplyCard({ school_id }: { school_id: string }) {
   }
 
   const score = data?.complianceScore ?? 0;
-  const consentUnpaid = !data?.consentLetterPaid;
+  const applicationFormUnpaid = !data?.applicationFormPaid;
   const milestones = data?.milestones ?? [];
 
   const ringColor =
@@ -79,15 +77,15 @@ export default function ComplyCard({ school_id }: { school_id: string }) {
 
   return (
     <div className="relative">
-      {/* ── Red overlay — consent letter unpaid ────────────────────────── */}
-      {consentUnpaid && (
+      {/* ── Red overlay — application form unpaid ────────────────────────── */}
+      {applicationFormUnpaid && (
         <div className="absolute inset-0 z-10 rounded-xl bg-red-500/10 backdrop-blur-[2px] flex items-center justify-center border border-red-200">
           <div className="mx-4 bg-white border border-red-200 rounded-xl shadow-md px-5 py-4 text-center max-w-xs">
             <div className="flex items-center justify-center w-10 h-10 rounded-full bg-red-100 mx-auto mb-3">
               <AlertTriangle className="w-5 h-5 text-red-600" />
             </div>
             <p className="text-sm font-bold text-red-700 mb-1">
-              Establishment Fee Unpaid
+              Application Form Unpaid
             </p>
             {/* <p className="text-xs text-red-500 leading-relaxed">
               Please visit the Consent Letter fee payment page to

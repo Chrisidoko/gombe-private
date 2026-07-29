@@ -11,7 +11,10 @@ import {
   Copy,
   Check,
   RefreshCw,
+  MapPin,
+  GraduationCap,
 } from "lucide-react";
+import { GOMBE_LGAS, SCHOOL_CATEGORIES } from "@/lib/schoolIdConstants";
 
 type Result = {
   school_id: string;
@@ -34,6 +37,8 @@ function generatePreviewEmail(name: string): string {
 
 export default function CreateSchoolPage() {
   const [schoolName, setSchoolName] = useState("");
+  const [lga, setLga] = useState("");
+  const [category, setCategory] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [result, setResult] = useState<Result | null>(null);
@@ -48,13 +53,15 @@ export default function CreateSchoolPage() {
     setResult(null);
 
     if (!schoolName.trim()) return setError("Please enter a school name.");
+    if (!lga) return setError("Please select an LGA.");
+    if (!category) return setError("Please select a school category.");
 
     setLoading(true);
     try {
       const res = await fetch("/api/schools/create-school", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: schoolName }),
+        body: JSON.stringify({ name: schoolName, lga, category }),
       });
 
       const data = await res.json();
@@ -76,6 +83,8 @@ export default function CreateSchoolPage() {
 
   function handleReset() {
     setSchoolName("");
+    setLga("");
+    setCategory("");
     setResult(null);
     setError("");
   }
@@ -117,6 +126,50 @@ export default function CreateSchoolPage() {
                     className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition"
                     autoFocus
                   />
+                </div>
+              </div>
+
+              {/* LGA */}
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-1.5">
+                  LGA <span className="text-red-500">*</span>
+                </label>
+                <div className="relative">
+                  <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                  <select
+                    value={lga}
+                    onChange={(e) => setLga(e.target.value)}
+                    className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition bg-white"
+                  >
+                    <option value="">Select LGA</option>
+                    {GOMBE_LGAS.map((option) => (
+                      <option key={option} value={option}>
+                        {option}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              {/* Category */}
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-1.5">
+                  School Category <span className="text-red-500">*</span>
+                </label>
+                <div className="relative">
+                  <GraduationCap className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                  <select
+                    value={category}
+                    onChange={(e) => setCategory(e.target.value)}
+                    className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition bg-white"
+                  >
+                    <option value="">Select Category</option>
+                    {SCHOOL_CATEGORIES.map((option) => (
+                      <option key={option} value={option}>
+                        {option}
+                      </option>
+                    ))}
+                  </select>
                 </div>
               </div>
 

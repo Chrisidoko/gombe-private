@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import pool from "@/lib/db";
 import { generateSchoolID } from "@/lib/generateSchoolID";
+import { findLGA, findCategory } from "@/lib/schoolIdConstants";
 
 export async function POST(req: Request) {
   const client = await pool.connect(); // get client for transaction
@@ -26,8 +27,8 @@ export async function POST(req: Request) {
         lastLicenseRenewal,
         ownershipType,
         lastTaxFiling,
-        state,
         lga,
+        category,
         address,
         email,
         phone,
@@ -53,8 +54,8 @@ export async function POST(req: Request) {
             last_license_renewal = COALESCE($8, last_license_renewal),
             ownership = COALESCE($9, ownership),
             last_tax_filing = COALESCE($10, last_tax_filing),
-            state = COALESCE($11, state),
-            lga = COALESCE($12, lga),
+            lga = COALESCE($11, lga),
+            category = COALESCE($12, category),
             address = COALESCE($13, address),
             email = COALESCE($14, email),
             phone = COALESCE($15, phone),
@@ -72,8 +73,8 @@ export async function POST(req: Request) {
             sanitize(lastLicenseRenewal),
             sanitize(ownershipType),
             sanitize(lastTaxFiling),
-            sanitize(state),
             sanitize(lga),
+            sanitize(category),
             sanitize(address),
             sanitize(email),
             sanitize(phone),
@@ -83,7 +84,23 @@ export async function POST(req: Request) {
 
         console.log(`✅ Section A updated rows: ${result.rowCount}`);
       } else {
-        const school_id = await generateSchoolID(officialName);
+        if (!lga || !findLGA(lga)) {
+          await client.query("ROLLBACK");
+          return NextResponse.json(
+            { success: false, error: "Valid LGA is required" },
+            { status: 400 }
+          );
+        }
+
+        if (!category || !findCategory(category)) {
+          await client.query("ROLLBACK");
+          return NextResponse.json(
+            { success: false, error: "Valid school category is required" },
+            { status: 400 }
+          );
+        }
+
+        const school_id = await generateSchoolID(lga, category);
         await client.query(
           `
           INSERT INTO schoolskano (
@@ -100,12 +117,13 @@ export async function POST(req: Request) {
             last_tax_filing,
             state,
             lga,
+            category,
             address,
             email,
             phone,
             website
           )
-          VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17)
+          VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18)
           `,
           [
             tin,
@@ -119,8 +137,9 @@ export async function POST(req: Request) {
             sanitize(lastLicenseRenewal),
             sanitize(ownershipType),
             sanitize(lastTaxFiling),
-            sanitize(state),
+            "Gombe",
             sanitize(lga),
+            sanitize(category),
             sanitize(address),
             sanitize(email),
             sanitize(phone),

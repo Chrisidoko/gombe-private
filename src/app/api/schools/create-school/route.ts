@@ -5,6 +5,7 @@ import pool from "@/lib/db";
 import bcrypt from "bcryptjs";
 import { generateSchoolID } from "@/lib/generateSchoolID";
 import { getUserFromCookie } from "@/lib/auth";
+import { findLGA, findCategory } from "@/lib/schoolIdConstants";
 
 function generateEmail(name: string): string {
   const slug = name
@@ -22,7 +23,7 @@ export async function POST(req: Request) {
     const user = await getUserFromCookie();
     const enumeratorName = user?.name ?? null;
 
-    const { name } = await req.json();
+    const { name, lga, category } = await req.json();
 
     if (!name || !name.trim()) {
       return NextResponse.json(
@@ -31,8 +32,19 @@ export async function POST(req: Request) {
       );
     }
 
+    if (!lga || !findLGA(lga)) {
+      return NextResponse.json({ error: "Valid LGA is required" }, { status: 400 });
+    }
+
+    if (!category || !findCategory(category)) {
+      return NextResponse.json(
+        { error: "Valid school category is required" },
+        { status: 400 },
+      );
+    }
+
     const officialName = name.trim();
-    const school_id = await generateSchoolID(officialName);
+    const school_id = await generateSchoolID(lga, category);
     const email = generateEmail(officialName);
     const plainPassword = "Password@123";
     const hashedPassword = await bcrypt.hash(plainPassword, 10);
@@ -42,9 +54,9 @@ export async function POST(req: Request) {
     try {
       // 1. Insert into schoolskano
       await pool.query(
-        `INSERT INTO schoolskano (school_id, name, email, enumerator_name)
-         VALUES ($1, $2, $3, $4)`,
-        [school_id, officialName, email, enumeratorName],
+        `INSERT INTO schoolskano (school_id, name, email, enumerator_name, state, lga, category)
+         VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+        [school_id, officialName, email, enumeratorName, "Gombe", lga, category],
       );
 
       // 2. Insert into userskano

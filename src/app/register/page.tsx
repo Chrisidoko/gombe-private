@@ -7,6 +7,7 @@ import toast from "react-hot-toast";
 import { useRouter } from "next/navigation";
 
 import Link from "next/link";
+import { GOMBE_LGAS, SCHOOL_CATEGORIES } from "@/lib/schoolIdConstants";
 
 type FormData = {
   A: {
@@ -22,7 +23,7 @@ type FormData = {
     lastTaxFiling: string;
     address: string;
     lga: string;
-    state: string;
+    category: string;
     email: string;
     confirmemail: string;
     phone: string;
@@ -109,7 +110,7 @@ export default function PrivateInstitutionsForm() {
       lastTaxFiling: "",
       address: "",
       lga: "",
-      state: "",
+      category: "",
       email: "",
       confirmemail: "",
       phone: "",
@@ -529,23 +530,42 @@ export default function PrivateInstitutionsForm() {
               </div>
               <div className="flex flex-col gap-2">
                 <label className="text-sm font-medium">LGA</label>
-                <input
-                  type="text"
-                  placeholder="LGA"
+                <select
                   value={formData.A.lga}
                   onChange={(e) => handleChange("A", "lga", e.target.value)}
                   className="w-full p-2 border border-gray-400 rounded"
-                />
+                >
+                  <option value="">Select LGA</option>
+                  {GOMBE_LGAS.map((option) => (
+                    <option key={option} value={option}>
+                      {option}
+                    </option>
+                  ))}
+                </select>
               </div>
-              <div className="flex flex-col gap-2">
-                <label className="text-sm font-medium">State</label>
-                <input
-                  type="text"
-                  placeholder="State"
-                  value={formData.A.state}
-                  onChange={(e) => handleChange("A", "state", e.target.value)}
-                  className="w-full p-2 border border-gray-400 rounded"
-                />
+              <div className="w-full md:col-span-3">
+                <h3 className="font-semibold mb-2">Category</h3>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
+                  {SCHOOL_CATEGORIES.map((prog) => (
+                    <label key={prog} className="flex items-center gap-2">
+                      <input
+                        type="radio"
+                        name="category"
+                        checked={formData.A.category === prog}
+                        onChange={() =>
+                          setFormData((prev) => ({
+                            ...prev,
+                            A: {
+                              ...prev.A,
+                              category: prog,
+                            },
+                          }))
+                        }
+                      />
+                      {prog}
+                    </label>
+                  ))}
+                </div>
               </div>
               <div className="flex flex-col gap-2">
                 <label className="text-sm font-medium">

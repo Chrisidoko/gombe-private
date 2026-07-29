@@ -4,17 +4,20 @@ import { NextResponse } from "next/server";
 import pool from "@/lib/db";
 
 /*
-  Compliance Score Progression (Ministry Defined):
+  Compliance Score Progression (Gombe fee structure):
   ─────────────────────────────────────────────────
-  0%  → Default (nothing paid)
-  40% → Consent Letter fee paid (₦300,000)         fee_id: 6
-  44% → Compliance Guidelines fee paid (₦10,000)   fee_id: 5
-  50% → Self Assessment Questionnaire paid     
-  55% → Questionnaire uploaded/doc uploaded         fee_id: 4, doc_approval =  'pending'
-  60% → Admin approves everything                   fee_id: 4, doc_approval =  'approved'
-  100% → Certificate fee invoice paid (₦300,000+)   fee_id: 1 | 2 | 3
- 
+  0%   → Default (nothing paid)
+  25%  → Application Form paid                       fee_id: 1
+  40%  → + Guideline Booklet paid                     fee_id: 2
+  65%  → + Registration paid                          fee_id: 3
+  100% → + Certificate issued/paid (or license Active) fee_id: 4
+
+  Annual Compliance (Monitoring & Evaluation + Annual Renewal, fee_id: 5 & 6)
+  is reported separately as `annualComplianceCurrent` — it's a recurring
+  obligation once registered, not part of the one-time 0-100 ladder.
 */
+
+const CURRENT_YEAR_FEE_IDS = [5, 6]; // recurring — only this year's row counts
 
 export async function GET(req: Request) {
   try {
@@ -28,12 +31,14 @@ export async function GET(req: Request) {
       );
     }
 
-    // ── Fetch payment records ─────────────────────────────────────────────
+    const currentYear = new Date().getFullYear();
+
+    // ── Fetch payment records (current-year row for recurring fees) ────────
     const paymentsResult = await pool.query(
-      `SELECT fee_id, status, doc_approval
+      `SELECT fee_id, status
        FROM schoolkano_payments
-       WHERE school_id = $1`,
-      [school_id],
+       WHERE school_id = $1 AND (fee_year IS NULL OR fee_year = $2)`,
+      [school_id, currentYear],
     );
     // ── Fetch school license status ───────────────────────────────────────
     const schoolResult = await pool.query(
@@ -46,90 +51,62 @@ export async function GET(req: Request) {
     const school = schoolResult.rows[0] ?? {};
 
     // ── Individual checks ─────────────────────────────────────────────────
-    const consentPaid = fees.find((f) => f.fee_id === 6)?.status === "paid";
-    const guidelinesPaid = fees.find((f) => f.fee_id === 5)?.status === "paid";
-    const applicationFee = fees.find((f) => f.fee_id === 4);
-    const applicationPaid = applicationFee?.status === "paid";
-    const questionnaireUploaded =
-      applicationFee?.doc_approval === "pending" ||
-      applicationFee?.doc_approval === "approved";
-    const certificateFee = fees.find((f) => [1, 2, 3].includes(f.fee_id));
-    // ── Certificate is satisfied if fee is paid OR license is already Active
+    const applicationFormPaid = fees.find((f) => f.fee_id === 1)?.status === "paid";
+    const guidelinesPaid = fees.find((f) => f.fee_id === 2)?.status === "paid";
+    const registrationPaid = fees.find((f) => f.fee_id === 3)?.status === "paid";
+    const certificateFee = fees.find((f) => f.fee_id === 4);
     const certificatePaid =
       certificateFee?.status === "paid" || school.license_status === "Active";
 
-    // ── Score calculation (ministry progression) ──────────────────────────
-    let complianceScore = 0;
+    const annualComplianceCurrent = CURRENT_YEAR_FEE_IDS.every(
+      (id) => fees.find((f) => f.fee_id === id)?.status === "paid",
+    );
 
-    if (consentPaid) complianceScore = 40; // Step 1 — ₦300,000 consent letter
-    if (consentPaid && guidelinesPaid) complianceScore = 44; // Step 2 — ₦10,000 guidelines
-    if (consentPaid && guidelinesPaid && applicationPaid) complianceScore = 50; // Step 3 — SAQ  paid
+    // ── Score calculation ───────────────────────────────────────────────
+    let complianceScore = 0;
+    if (applicationFormPaid) complianceScore = 25;
+    if (applicationFormPaid && guidelinesPaid) complianceScore = 40;
+    if (applicationFormPaid && guidelinesPaid && registrationPaid)
+      complianceScore = 65;
     if (
-      consentPaid &&
+      applicationFormPaid &&
       guidelinesPaid &&
-      applicationPaid &&
-      questionnaireUploaded
-    )
-      complianceScore = 55; // Step 4 — SAQ uploaded
-    if (consentPaid && guidelinesPaid && applicationPaid && certificatePaid)
-      complianceScore = 90; // Step 5 — Admin approved
-    if (
-      consentPaid &&
-      guidelinesPaid &&
-      applicationPaid &&
-      questionnaireUploaded &&
+      registrationPaid &&
       certificatePaid
     )
-      complianceScore = 100; // Step 6 — Certificate paid
+      complianceScore = 100;
 
     // ── Build milestone list for UI ───────────────────────────────────────
     const milestones = [
       {
-        label: "Establishment Fee",
-        // detail: "₦300,000",
-        completed: consentPaid,
-        score: 40,
+        label: "Application Form",
+        completed: applicationFormPaid,
+        score: 25,
       },
       {
-        label: "Compliance Guidelines Fee",
-        // detail: "₦10,000",
+        label: "Guideline Booklet",
         completed: guidelinesPaid,
-        score: 4,
+        score: 15,
       },
       {
-        label: "Self Assessment Questionnaire",
-        // detail: "₦50,000",
-        completed: applicationPaid,
-        score: 6,
-      },
-      //   {
-      //     label: "Questionnaire Uploaded",
-      //     detail: "Document submitted",
-      //     completed: questionnaireUploaded,
-      //     score: 55,
-      //   },
-      {
-        label: "Ministry Approval",
-        // detail: "Admin review complete",
-        completed: questionnaireUploaded, // Show as completed once uploaded, since admin approval is internal
-        score: 10,
+        label: "Registration",
+        completed: registrationPaid,
+        score: 25,
       },
       {
-        label: "Certificate Fee Paid",
-        // detail: "₦300,000 – ₦1,000,000",
+        label: "Certificate Issued",
         completed: certificatePaid,
-        score: 40,
+        score: 35,
       },
     ];
 
     return NextResponse.json({
       complianceScore,
-      consentLetterPaid: consentPaid,
+      applicationFormPaid,
       guidelinesPaid,
-      applicationPaid,
-      questionnaireUploaded,
-      //   questionnaireApproved,
+      registrationPaid,
       certificatePaid,
+      annualComplianceCurrent,
       milestones,
       totalFees: fees.length,
       paidFees: fees.filter((f) => f.status === "paid").length,

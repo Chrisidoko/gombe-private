@@ -7,6 +7,7 @@ import { CircleX, Loader2, CircleCheck, FileUp } from "lucide-react";
 import toast from "react-hot-toast";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { GOMBE_LGAS, SCHOOL_CATEGORIES } from "@/lib/schoolIdConstants";
 
 // Type definitions
 interface PendingDocument {
@@ -28,6 +29,7 @@ type FormData = {
     proprietorName: string;
     address: string;
     lga: string;
+    category: string;
     email: string;
     confirmemail: string;
     phone: string;
@@ -39,7 +41,6 @@ type FormData = {
     contact_person_designation: string;
     contact_person_phone: string;
     ownershipType: string;
-    category: string;
   };
 
   C: {
@@ -51,20 +52,6 @@ type FormData = {
   // ✅ Safely allow dynamic string keys for toggleCheckbox
   [key: string]: Record<string, unknown>;
 };
-
-const lgas = [
-  "Akko",
-  "Balanga",
-  "Billiri",
-  "Dukku",
-  "Funakaye",
-  "Gombe",
-  "Kaltungo",
-  "Kwami",
-  "Nafada",
-  "Shongom",
-  "Yamaltu/Deba",
-];
 
 const sections = [
   { id: "A", title: "New Registration A - Registration Details" },
@@ -88,6 +75,7 @@ export default function PrivateInstitutionsForm() {
       proprietorName: "",
       address: "",
       lga: "",
+      category: "",
       email: "",
       confirmemail: "",
       phone: "",
@@ -98,7 +86,6 @@ export default function PrivateInstitutionsForm() {
       contact_person_designation: "",
       contact_person_phone: "",
       ownershipType: "",
-      category: "",
     },
 
     C: {
@@ -579,12 +566,38 @@ export default function PrivateInstitutionsForm() {
                   required
                 >
                   <option value="">Select LGA</option>
-                  {lgas.sort().map((lga) => (
+                  {GOMBE_LGAS.map((lga) => (
                     <option key={lga} value={lga}>
                       {lga}
                     </option>
                   ))}
                 </select>
+              </div>
+
+              <div className="w-full md:col-span-3">
+                <h3 className="font-semibold mb-2">Category</h3>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
+                  {SCHOOL_CATEGORIES.map((prog) => (
+                    <label key={prog} className="flex items-center gap-2">
+                      <input
+                        type="radio"
+                        name="category"
+                        checked={formData.A.category === prog}
+                        onChange={() =>
+                          setFormData((prev) => ({
+                            ...prev,
+                            A: {
+                              ...prev.A,
+                              category: prog,
+                            },
+                          }))
+                        }
+                      />
+                      {prog}
+                    </label>
+                  ))}
+                </div>
               </div>
 
               <div className="flex flex-col gap-2">
@@ -788,72 +801,6 @@ export default function PrivateInstitutionsForm() {
                       <option value="Faith-Based">Faith-Based</option>
                       <option value="Corporate Body">Corporate Body</option>
                     </select>
-                  </div>
-                  <div className="w-full md:col-span-3">
-                    <h3 className="font-semibold mb-2">Category</h3>
-
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
-                      {[
-                        "College of Education",
-                        "Polytechnic",
-                        "University",
-                      ].map((prog) => (
-                        <label key={prog} className="flex items-center gap-2">
-                          <input
-                            type="radio"
-                            name="category"
-                            checked={formData.B.category === prog}
-                            onChange={() =>
-                              setFormData((prev) => ({
-                                ...prev,
-                                B: {
-                                  ...prev.B,
-                                  category: prog,
-                                },
-                              }))
-                            }
-                          />
-                          {prog}
-                        </label>
-                      ))}
-
-                      {/* ✅ Other Option */}
-                      <div className="flex items-center gap-2 col-span-1 md:col-span-2">
-                        <input
-                          type="radio"
-                          name="category"
-                          checked={formData.B.category?.startsWith("Other:")}
-                          onChange={() =>
-                            setFormData((prev) => ({
-                              ...prev,
-                              B: { ...prev.B, category: "Other:" },
-                            }))
-                          }
-                        />
-                        <span>Other:</span>
-
-                        <input
-                          type="text"
-                          placeholder="Specify"
-                          value={
-                            formData.B.category?.startsWith("Other:")
-                              ? formData.B.category.split("Other:")[1] || ""
-                              : ""
-                          }
-                          onChange={(e) => {
-                            const val = e.target.value;
-                            setFormData((prev) => ({
-                              ...prev,
-                              B: {
-                                ...prev.B,
-                                category: val ? `Other:${val}` : "Other:",
-                              },
-                            }));
-                          }}
-                          className="border rounded p-1 w-full md:w-auto"
-                        />
-                      </div>
-                    </div>
                   </div>
                 </div>
               </div>

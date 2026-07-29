@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import pool from "@/lib/db";
 import { generateSchoolID } from "@/lib/generateSchoolID";
+import { findLGA, findCategory } from "@/lib/schoolIdConstants";
 
 export async function POST(req: Request) {
   const client = await pool.connect();
@@ -24,8 +25,25 @@ export async function POST(req: Request) {
         licenseNumber,
         lastLicenseRenewal,
         licenseExpiry,
+        lga,
         category,
       } = body;
+
+      if (!lga || !findLGA(lga)) {
+        await client.query("ROLLBACK");
+        return NextResponse.json(
+          { success: false, message: "Valid LGA is required" },
+          { status: 400 },
+        );
+      }
+
+      if (!category || !findCategory(category)) {
+        await client.query("ROLLBACK");
+        return NextResponse.json(
+          { success: false, message: "Valid school category is required" },
+          { status: 400 },
+        );
+      }
 
       // // ✅ 1. Check if school already exists using license number
       // const checkQuery = `
@@ -49,7 +67,7 @@ export async function POST(req: Request) {
       // }
 
       // ✅ 2. Generate school ID
-      const school_id = await generateSchoolID(officialName);
+      const school_id = await generateSchoolID(lga, category);
 
       // ✅ 3. Insert new school
       const insertQuery = `
@@ -62,9 +80,11 @@ export async function POST(req: Request) {
           license_number,
           last_license_renewal,
           license_expiry_date,
+          state,
+          lga,
           category
         )
-        VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)
+        VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)
         RETURNING school_id;
       `;
 
@@ -77,6 +97,8 @@ export async function POST(req: Request) {
         sanitize(licenseNumber),
         sanitize(lastLicenseRenewal),
         sanitize(licenseExpiry),
+        "Gombe",
+        sanitize(lga),
         sanitize(category),
       ];
 

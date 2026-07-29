@@ -7,6 +7,7 @@ import { CircleX, Loader2, CircleCheck, FileUp } from "lucide-react";
 import toast from "react-hot-toast";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { GOMBE_LGAS, SCHOOL_CATEGORIES } from "@/lib/schoolIdConstants";
 
 interface DocumentItem {
   type: string;
@@ -22,6 +23,7 @@ type FormData = {
     licenseNumber: string;
     lastLicenseRenewal: string;
     licenseExpiry: string;
+    lga: string;
     category: string;
   };
 
@@ -76,6 +78,7 @@ export default function PrivateInstitutionsForm() {
       licenseNumber: "",
       lastLicenseRenewal: "",
       licenseExpiry: "",
+      lga: "",
       category: "",
     },
     B: {
@@ -536,68 +539,45 @@ export default function PrivateInstitutionsForm() {
                 />
               </div>
 
+              <div className="flex flex-col gap-2">
+                <label className="text-sm font-medium">LGA</label>
+                <select
+                  value={formData.A.lga}
+                  onChange={(e) => handleChange("A", "lga", e.target.value)}
+                  className="w-full p-2 border border-gray-400 rounded bg-white"
+                >
+                  <option value="">Select LGA</option>
+                  {GOMBE_LGAS.map((option) => (
+                    <option key={option} value={option}>
+                      {option}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
               <div className="w-full md:col-span-3">
                 <h3 className="font-semibold mb-2">Category</h3>
 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
-                  {["College of Education", "Polytechnic", "University"].map(
-                    (prog) => (
-                      <label key={prog} className="flex items-center gap-2">
-                        <input
-                          type="radio"
-                          name="category"
-                          checked={formData.A.category === prog}
-                          onChange={() =>
-                            setFormData((prev) => ({
-                              ...prev,
-                              A: {
-                                ...prev.A,
-                                category: prog,
-                              },
-                            }))
-                          }
-                        />
-                        {prog}
-                      </label>
-                    )
-                  )}
-
-                  {/* ✅ Other Option */}
-                  <div className="flex items-center gap-2 col-span-1 md:col-span-2">
-                    <input
-                      type="radio"
-                      name="category"
-                      checked={formData.A.category?.startsWith("Other:")}
-                      onChange={() =>
-                        setFormData((prev) => ({
-                          ...prev,
-                          A: { ...prev.A, category: "Other:" },
-                        }))
-                      }
-                    />
-                    <span>Other:</span>
-
-                    <input
-                      type="text"
-                      placeholder="Specify"
-                      value={
-                        formData.A.category?.startsWith("Other:")
-                          ? formData.A.category.split("Other:")[1] || ""
-                          : ""
-                      }
-                      onChange={(e) => {
-                        const val = e.target.value;
-                        setFormData((prev) => ({
-                          ...prev,
-                          A: {
-                            ...prev.A,
-                            category: val ? `Other:${val}` : "Other:",
-                          },
-                        }));
-                      }}
-                      className="border rounded p-1 w-full md:w-auto"
-                    />
-                  </div>
+                  {SCHOOL_CATEGORIES.map((prog) => (
+                    <label key={prog} className="flex items-center gap-2">
+                      <input
+                        type="radio"
+                        name="category"
+                        checked={formData.A.category === prog}
+                        onChange={() =>
+                          setFormData((prev) => ({
+                            ...prev,
+                            A: {
+                              ...prev.A,
+                              category: prog,
+                            },
+                          }))
+                        }
+                      />
+                      {prog}
+                    </label>
+                  ))}
                 </div>
               </div>
             </div>

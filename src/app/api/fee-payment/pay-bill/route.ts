@@ -28,10 +28,10 @@ export async function POST(req: Request) {
       );
     }
 
-    // Fetch fee details including tpui and bill_reference
+    // Fetch fee details including bill_reference
     const feeRes = await client.query(
-      `SELECT id, fee_id, status, reference, tpui 
-   FROM schoolkano_payments 
+      `SELECT id, fee_id, status, reference
+   FROM schoolkano_payments
    WHERE id = $1 AND school_id = $2`, // ← query by fee_id + school_id
       [db_id, school_id],
     );
@@ -56,16 +56,8 @@ export async function POST(req: Request) {
       );
     }
 
-    if (!fee.tpui) {
-      return NextResponse.json(
-        { error: "TPUI not found. Please contact support." },
-        { status: 400 },
-      );
-    }
-
     // Create checkout session with PayKaduna
     const checkoutPayload = {
-      tpui: fee.tpui,
       billReference: fee.reference,
     };
 

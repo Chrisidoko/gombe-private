@@ -5,128 +5,179 @@ import pool from "@/lib/db";
 import crypto from "crypto";
 
 /*
-3-stage fee progression:
-Stage 1 — Establishment Letter Fee (₦300,000) — every school pays this first, regardless of category. This is the entry-level fee that's been owed since inception. Show this to all schools always.
-Stage 2 — Administrative Fees — processing, inspection etc. These show after or alongside Stage 1. Still visible to all schools.
-Stage 3 — Consent Certificate Fee (₦300k / ₦350k / ₦1,000,000) — this only becomes visible when BOTH conditions are met:
-* license_status !== "Active" — they don't already have an active license
-* approval_status === "approved" — the ministry has reviewed and approved their assessment form
-So the certificate fee is essentially locked/hidden until the school has fulfilled the earlier stages and received ministry approval. This prevents schools from seeing or attempting to pay the final fee before they're eligible.
+3-stage fee structure (Gombe State):
+Stage 1 — Application Fees (Application Form + Guideline Booklet) — every school pays this first. Always visible.
+Stage 2 — Registration — shown once Stage 1 is fully paid. Contains three line items:
+  * Registration — one-time, unlocks the stage itself.
+  * Monitoring, Supervision & Evaluation — visible from the moment Stage 2 unlocks, same as
+    Registration — no dependency between the two, the school can pay either first. Recurs
+    annually: once paid, it's due again exactly one year after that payment.
+  * Annual Renewal of Registration — only exists once Registration itself has been paid (it's a
+    renewal *of* the registration). Recurs annually: due one year after Registration was paid,
+    then one year after each subsequent Renewal payment.
+  Neither recurring fee is ever shown as a locked preview — each is fully omitted from the
+  response until its own cycle is actually due, so schools never see next year's fee ahead of time.
+
+  PENDING: the Ministry may want Monitoring & Evaluation (and possibly Renewal) aligned to a
+  fixed, shared calendar window instead of a per-school anniversary — e.g. to coordinate
+  inspector field visits. This per-school-anniversary model is an interim placeholder; revisit
+  once that feedback lands.
+Stage 3 — Certificate Fee (Issuing of Certificate) — locked until ALL of:
+  * Registration paid
+  * license_status !== "Active" — no active license already
+  * approval_status === "approved" — ministry has reviewed and approved the assessment form
+
+Pricing is tiered by school category:
+  - "university" tier: University
+  - "hnd" tier: Polytechnic, College, School of Health Technology, Exam Center
 */
 
-type Fee = {
+type FeeTier = "university" | "hnd";
+
+type FeeDefinition = {
   id: number;
   name: string;
   description: string;
-  amount: number;
-  category: string;
+  group: string;
+  stage: number;
   mandatory: boolean;
-  stage: number;
-  status: "paid" | "unpaid" | "pending";
-  reference?: string | null; // ← add
-  tpui?: string | null; // ← add
-  db_id?: number | null;
+  recurring: boolean;
+  amounts: Record<FeeTier, number>;
 };
 
-type FeeGroup = {
-  category: string;
-  stage: number;
-  fees: Fee[];
-  locked: boolean;
-  lockReason?: "active_license" | "assessment_pending" | "stage_incomplete";
-};
-
-// ── Fee definitions ────────────────────────────────────────────────────────────
-const ALL_FEES = [
-  // Stage 1 — Consent Letter (every school pays this first)
+const FEE_DEFINITIONS: FeeDefinition[] = [
+  // Stage 1 — Application Fees
   {
-    id: 6,
-    name: "Establishment Fee",
-    description:
-      "Ministry's approval of consent for establishment of your institution. Required by all institutions.",
-    amount: 300000,
-    category: "Consent Letter",
-    mdasId: 3651,
-    mandatory: true,
+    id: 1,
+    name: "Application Form",
+    description: "One-time application form fee for institution registration.",
+    group: "Application Fees",
     stage: 1,
+    mandatory: true,
+    recurring: false,
+    amounts: { university: 50000, hnd: 50000 },
+  },
+  {
+    id: 2,
+    name: "Guideline Booklet",
+    description: "Covers the cost of the issued guideline booklet.",
+    group: "Application Fees",
+    stage: 1,
+    mandatory: true,
+    recurring: false,
+    amounts: { university: 60000, hnd: 60000 },
   },
 
-  // Stage 2 — Administrative Fees
+  // Stage 2 — Registration
   {
-    id: 4,
-    name: "Self Assessment Questionnaire",
-    description:
-      "One-time fee covering administrative processing of institution assessment/registration.",
-    amount: 20000,
-    category: "Administrative Fees",
-    mdasId: 3649,
-    document_url: "/application-form.docx",
-    mandatory: true,
+    id: 3,
+    name: "Registration",
+    description: "One-time institution registration fee.",
+    group: "Registration",
     stage: 2,
-  },
-  {
-    id: 5,
-    name: "Compliance Guidelines Fee",
-    description: "Covers the cost of issued compliance guidelines document.",
-    amount: 10000,
-    category: "Administrative Fees",
-    mdasId: 3650,
-    document_url: "/guidelines.pdf",
     mandatory: true,
-    stage: 2,
+    recurring: false,
+    amounts: { university: 300000, hnd: 200000 },
   },
 
   // Stage 3 — Certificate Fee (locked until assessment approved)
   {
-    id: 1,
-    name: "Certificate Fee — Category 1",
-    description: "Certificate fee for NCE / National Diploma institutions.",
-    amount: 300000,
-    category: "Certificate Fee",
-    mdasId: 3652,
-    mandatory: true,
+    id: 4,
+    name: "Issuing of Certificate",
+    description: "Ministry's issuance of the institution's certificate of registration.",
+    group: "Certificate Fee",
     stage: 3,
+    mandatory: true,
+    recurring: false,
+    amounts: { university: 40000, hnd: 40000 },
   },
+
+  // Recurs every year, only visible once Registration is paid — same bracket as Registration
   {
-    id: 2,
-    name: "Certificate Fee — Category 2",
-    description: "Certificate fee for HND / Bachelor's Degree institutions.",
-    amount: 350000,
-    category: "Certificate Fee",
-    mdasId: 3652,
+    id: 5,
+    name: "Monitoring, Supervision and Evaluation",
+    description: "Annual monitoring, supervision and evaluation fee.",
+    group: "Registration",
+    stage: 2,
     mandatory: true,
-    stage: 3,
+    recurring: true,
+    amounts: { university: 60000, hnd: 60000 },
   },
+  // Recurs annually, but only becomes due one year after Registration — omitted until then
   {
-    id: 3,
-    name: "Certificate Fee — Category 3",
-    description: "Certificate fee for Master's Degree / PhD institutions.",
-    amount: 1000000,
-    category: "Certificate Fee",
-    mdasId: 3652,
+    id: 6,
+    name: "Annual Renewal of Registration",
+    description: "Annual renewal of the institution's registration.",
+    group: "Registration",
+    stage: 2,
     mandatory: true,
-    stage: 3,
+    recurring: true,
+    amounts: { university: 150000, hnd: 100000 },
   },
 ];
 
-// ── Programme tier mapping ─────────────────────────────────────────────────────
-const PROGRAMME_TIERS: Record<string, number> = {
-  "National Diploma / NCE": 1,
-  "Professional Certifications": 1,
-  "Higher National Diploma (HND)": 2,
-  "Bachelor's Degree": 2,
-  "Postgraduate Diploma (PGD)": 2,
-  "Master's Degree": 3,
-  "Doctorate Degree (Ph.D.)": 3,
-};
+const GROUP_ORDER = ["Application Fees", "Registration", "Certificate Fee"];
 
-function getCertificateFeeId(programmes: string[]): number {
-  if (!programmes.length) return 1;
-  return programmes.reduce((max, p) => {
-    const tier = PROGRAMME_TIERS[p.trim()] ?? 1;
-    return Math.max(max, tier);
-  }, 1);
+const REGISTRATION_FEE_ID = 3;
+const MONITORING_FEE_ID = 5;
+const RENEWAL_FEE_ID = 6;
+const ONE_YEAR_MS = 365 * 24 * 60 * 60 * 1000;
+
+function resolveTier(category: string | null): FeeTier {
+  return category === "University" ? "university" : "hnd";
 }
+
+// ── Local payment reference generation ──────────────────────────────────────
+// Replaces the old PayKaduna CreateESBill call — we mint our own reference so
+// it can be handed to whichever payment gateway Gombe State ultimately wires up.
+const REFERENCE_CHARS = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"; // no 0/O/1/I
+const REFERENCE_LENGTH = 10;
+const MAX_REFERENCE_ATTEMPTS = 20;
+
+function randomReference(): string {
+  let ref = "";
+  for (let i = 0; i < REFERENCE_LENGTH; i++) {
+    ref += REFERENCE_CHARS[crypto.randomInt(REFERENCE_CHARS.length)];
+  }
+  return ref;
+}
+
+async function generateUniquePaymentReference(): Promise<string> {
+  for (let attempt = 0; attempt < MAX_REFERENCE_ATTEMPTS; attempt++) {
+    const candidate = randomReference();
+    const existing = await pool.query(
+      `SELECT 1 FROM schoolkano_payments WHERE reference = $1
+       UNION ALL
+       SELECT 1 FROM transactionskano WHERE reference = $1
+       LIMIT 1`,
+      [candidate],
+    );
+    if (existing.rows.length === 0) return candidate;
+  }
+  throw new Error(
+    "Could not generate a unique payment reference after multiple attempts.",
+  );
+}
+
+type FeeGroup = {
+  category: string;
+  stage: number;
+  fees: {
+    id: number;
+    name: string;
+    description: string;
+    category: string;
+    mandatory: boolean;
+    recurring: boolean;
+    stage: number;
+    amount: number;
+    status: "paid" | "unpaid" | "pending";
+    reference: string | null;
+    db_id: number | null;
+  }[];
+  locked: boolean;
+  lockReason?: "active_license" | "assessment_pending" | "stage_incomplete";
+};
 
 export async function GET(req: Request) {
   try {
@@ -134,234 +185,191 @@ export async function GET(req: Request) {
     const school_id = searchParams.get("school_id");
     const showCertificate = searchParams.get("show_certificate") === "true";
 
-    let programmes: string[] = [];
-    const programmesParam = searchParams.get("programmes");
-    if (programmesParam) {
-      try {
-        programmes = JSON.parse(programmesParam);
-      } catch {
-        programmes = [];
-      }
-    }
-
-    // Which certificate fee tier applies to this school
-    const certFeeId = getCertificateFeeId(programmes);
-    const certFeeIds = [1, 2, 3];
-
-    // Build the applicable fee list
-    const applicableFees = ALL_FEES.filter((fee) => {
-      // Certificate fees — only include the right tier
-      if (certFeeIds.includes(fee.id)) {
-        return fee.id === certFeeId;
-      }
-      return true;
-    });
-
-    // Fetch existing payment statuses from DB
-    const paymentMap: Record<number, "paid" | "unpaid" | "pending"> = {};
-    const docApprovalMap: Record<number, string> = {}; // ← add this
-    const referenceMap: Record<number, string | null> = {}; // ← add
-    const tpuiMap: Record<number, string | null> = {};
-    const dbIdMap: Record<number, number> = {}; // fee_id → table row id
+    // Determine fee tier from the school's category
+    let category: string | null = null;
     if (school_id) {
+      const schoolRes = await pool.query(
+        `SELECT category FROM schoolskano WHERE school_id = $1`,
+        [school_id],
+      );
+      category = schoolRes.rows[0]?.category ?? null;
+    }
+    const tier = resolveTier(category);
+
+    const applicableFees = FEE_DEFINITIONS.map((def) => ({
+      id: def.id,
+      name: def.name,
+      description: def.description,
+      category: def.group,
+      stage: def.stage,
+      mandatory: def.mandatory,
+      recurring: def.recurring,
+      amount: def.amounts[tier],
+    }));
+
+    // Fetch current payment state
+    const paymentMap: Record<number, "paid" | "unpaid" | "pending"> = {};
+    const referenceMap: Record<number, string | null> = {};
+    const dbIdMap: Record<number, number> = {};
+
+    // Determine due dates for the two annual fees. Each recurs independently off
+    // its own last payment — see the PENDING note above re: ministry alignment.
+    let registrationPaid = false;
+    let monitoringDue = false;
+    let monitoringFeeYear: number | null = null;
+    let renewalDue = false;
+    let renewalFeeYear: number | null = null;
+
+    if (school_id) {
+      const currentYear = new Date().getFullYear();
+      const paidRows = await pool.query(
+        `SELECT fee_id, paid_at FROM schoolkano_payments
+         WHERE school_id = $1 AND fee_id = ANY($2) AND status = 'paid'
+         ORDER BY paid_at DESC`,
+        [school_id, [REGISTRATION_FEE_ID, MONITORING_FEE_ID, RENEWAL_FEE_ID]],
+      );
+
+      const registrationPaidAt = paidRows.rows.find(
+        (r) => r.fee_id === REGISTRATION_FEE_ID,
+      )?.paid_at as Date | undefined;
+      registrationPaid = !!registrationPaidAt;
+
+      // Most recent payment per fee (rows are already ordered by paid_at DESC)
+      const lastMonitoringPaidAt = paidRows.rows.find(
+        (r) => r.fee_id === MONITORING_FEE_ID,
+      )?.paid_at as Date | undefined;
+      const lastRenewalPaidAt = paidRows.rows.find(
+        (r) => r.fee_id === RENEWAL_FEE_ID,
+      )?.paid_at as Date | undefined;
+
+      // Monitoring & Evaluation — visible immediately, no prerequisite. Once paid,
+      // due again exactly one year later.
+      if (lastMonitoringPaidAt) {
+        const nextDue = new Date(
+          new Date(lastMonitoringPaidAt).getTime() + ONE_YEAR_MS,
+        );
+        monitoringDue = Date.now() >= nextDue.getTime();
+        monitoringFeeYear = nextDue.getFullYear();
+      } else {
+        monitoringDue = true; // first cycle — always due/visible
+        monitoringFeeYear = currentYear;
+      }
+
+      // Annual Renewal — only exists once Registration has been paid.
+      if (registrationPaidAt) {
+        const referenceDate = lastRenewalPaidAt ?? registrationPaidAt;
+        const nextDue = new Date(
+          new Date(referenceDate).getTime() + ONE_YEAR_MS,
+        );
+        renewalDue = Date.now() >= nextDue.getTime();
+        renewalFeeYear = nextDue.getFullYear();
+      }
+
+      // Pull every existing row for this school and keep only the "current" one per
+      // fee: one-time fees have a single (fee_year IS NULL) row; Monitoring/Renewal
+      // use whichever cycle year was just computed above.
       const existing = await pool.query(
-        `SELECT id, fee_id, status, doc_approval FROM schoolkano_payments WHERE school_id = $1`,
+        `SELECT id, fee_id, fee_year, status, reference FROM schoolkano_payments WHERE school_id = $1`,
         [school_id],
       );
       existing.rows.forEach((row) => {
+        const isCurrent =
+          row.fee_year === null ||
+          (row.fee_id === MONITORING_FEE_ID && row.fee_year === monitoringFeeYear) ||
+          (row.fee_id === RENEWAL_FEE_ID && row.fee_year === renewalFeeYear);
+        if (!isCurrent) return;
         paymentMap[row.fee_id] = row.status;
-        docApprovalMap[row.fee_id] = row.doc_approval ?? "not_required"; // ← add this
-        referenceMap[row.fee_id] = row.reference ?? null; // ← add
-        tpuiMap[row.fee_id] = row.tpui ?? null; // ← add
-        dbIdMap[row.fee_id] = row.id; // ← add this
+        referenceMap[row.fee_id] = row.reference ?? null;
+        dbIdMap[row.fee_id] = row.id;
       });
 
-      // Upsert unpaid records and generate bill reference if not already created
+      // Upsert unpaid records and generate a local reference if not already created
       for (const fee of applicableFees) {
-        // Step 1 — insert if not exists
+        // Neither annual fee is created/referenced until its own cycle is due
+        if (fee.id === RENEWAL_FEE_ID && !renewalDue) continue;
+        if (fee.id === MONITORING_FEE_ID && !monitoringDue) continue;
+
+        const feeYear =
+          fee.id === MONITORING_FEE_ID
+            ? monitoringFeeYear
+            : fee.id === RENEWAL_FEE_ID
+              ? renewalFeeYear
+              : null;
+
+        // Step 1 — insert if not exists (for this fee/period)
         await pool.query(
-          `INSERT INTO schoolkano_payments (school_id, fee_id, fee_name, amount, status)
-     VALUES ($1, $2, $3, $4, 'unpaid')
-     ON CONFLICT (school_id, fee_id) DO NOTHING`,
-          [school_id, fee.id, fee.name, fee.amount],
+          `INSERT INTO schoolkano_payments (school_id, fee_id, fee_year, fee_name, amount, status)
+           VALUES ($1, $2, $3, $4, $5, 'unpaid')
+           ON CONFLICT (school_id, fee_id, COALESCE(fee_year, 0)) DO NOTHING`,
+          [school_id, fee.id, feeYear, fee.name, fee.amount],
         );
 
-        // Step 2 — check if this row already has a reference
-        const existing = await pool.query(
-          `SELECT reference FROM schoolkano_payments 
-            WHERE school_id = $1 AND fee_id = $2`,
-          [school_id, fee.id],
+        // Step 2 — skip if this row already has a reference
+        if (referenceMap[fee.id]) continue;
+
+        const row = await pool.query(
+          `SELECT id, reference FROM schoolkano_payments
+           WHERE school_id = $1 AND fee_id = $2 AND fee_year IS NOT DISTINCT FROM $3`,
+          [school_id, fee.id, feeYear],
+        );
+        if (row.rows.length === 0 || row.rows[0].reference) continue;
+
+        // Step 3 — generate and store our own reference
+        const reference = await generateUniquePaymentReference();
+        await pool.query(
+          `UPDATE schoolkano_payments SET reference = $1
+           WHERE school_id = $2 AND fee_id = $3 AND fee_year IS NOT DISTINCT FROM $4`,
+          [reference, school_id, fee.id, feeYear],
         );
 
-        const alreadyHasReference = existing.rows[0]?.reference;
-        if (alreadyHasReference) continue; // ← skip, reference already exists
-
-        // Step 3 — fetch school info for bill payload
-        const schoolRes = await pool.query(
-          `SELECT email, name, phone, lga, address FROM schoolskano WHERE school_id = $1`,
-          [school_id],
-        );
-        if (schoolRes.rows.length === 0) continue;
-        const school = schoolRes.rows[0];
-
-        // Step 4 — build and send bill to payment gateway (skipped when not configured)
-        const GATEWAY_ACTIVE = process.env.PAYKADUNA_API_KEY !== "STUB_NOT_ACTIVE";
-        if (!GATEWAY_ACTIVE) continue;
-        try {
-          const nameParts = school.name.split(" ");
-          const firstName = nameParts[0] || school.name;
-          const middleName = nameParts[1] || "";
-          const lastName =
-            nameParts.length > 2 ? nameParts.slice(2).join(" ") : nameParts[0];
-
-          const billPayload = {
-            engineCode: process.env.PAYKADUNA_ENGINE_CODE,
-            // identifier: `${school_id}-${fee.id}-${Date.now()}`, // unique per fee
-            identifier: `${school_id}`, // stable per school, remains the same all through, allows idempotency
-            firstName,
-            middleName,
-            lastName,
-            address: school.address || "Gombe, Nigeria",
-            telephone: school.phone || "08000000000",
-            esBillDetailsDto: [
-              {
-                amount: fee.amount,
-                mdasId: fee.mdasId,
-                narration: `${fee.name} - ${school.name}`,
-              },
-            ],
-          };
-
-          const jsonPayload = JSON.stringify(billPayload);
-          const signature = crypto
-            .createHmac("sha256", process.env.PAYKADUNA_API_KEY!)
-            .update(jsonPayload)
-            .digest("base64");
-
-          const billResponse = await fetch(
-            `${process.env.NEXT_PUBLIC_PAYKADUNA_URL}api/ESBills/CreateESBill`,
-            {
-              method: "POST",
-              headers: {
-                "Content-Type": "application/json",
-                "X-Api-Signature": signature,
-              },
-              body: jsonPayload,
-            },
-          );
-
-          if (billResponse.ok) {
-            const billData = await billResponse.json();
-            const billReference = billData.bill?.billReference || null;
-            const tpui = billData.bill?.tpui || null;
-
-            // Step 5 — store reference back to this specific fee row
-            if (billReference) {
-              await pool.query(
-                `UPDATE schoolkano_payments 
-           SET reference = $1, tpui = $2, lga = $3
-           WHERE school_id = $4 AND fee_id = $5`,
-                [billReference, tpui, school.lga, school_id, fee.id],
-              );
-
-              // Update paymentMap so the response reflects the new reference
-              paymentMap[fee.id] = paymentMap[fee.id] ?? "unpaid";
-            }
-          } else {
-            console.error(
-              `Bill creation failed for fee ${fee.id}:`,
-              await billResponse.text(),
-            );
-          }
-        } catch (billErr) {
-          // Don't crash the whole fees fetch if bill creation fails for one fee
-          console.error(`Bill error for fee ${fee.id}:`, billErr);
-        }
+        referenceMap[fee.id] = reference;
+        dbIdMap[fee.id] = row.rows[0].id;
+        paymentMap[fee.id] = paymentMap[fee.id] ?? "unpaid";
       }
     }
 
-    // Check if Stage 1 is fully paid (required to determine Stage 2 lock)
-    const stage1Fees = applicableFees.filter((f) => f.stage === 1);
-    const stage1Paid = stage1Fees.every((f) => paymentMap[f.id] === "paid");
+    // Stage completion checks
+    const stage1Paid = applicableFees
+      .filter((f) => f.stage === 1)
+      .every((f) => paymentMap[f.id] === "paid");
 
-    // Check if Stage 1 + 2 are fully paid (required to unlock Stage 3)
-    const stage2Fees = applicableFees.filter((f) => f.stage === 2);
-    const stage2Paid = stage2Fees.every((f) => paymentMap[f.id] === "paid");
+    const groups: FeeGroup[] = GROUP_ORDER.map((groupName) => {
+      const fees = applicableFees
+        .filter((f) => f.category === groupName)
+        // Neither annual fee is ever shown as a locked preview — fully omitted until due
+        .filter((f) => !(f.id === RENEWAL_FEE_ID && !renewalDue))
+        .filter((f) => !(f.id === MONITORING_FEE_ID && !monitoringDue))
+        .map((f) => ({
+          ...f,
+          status: (paymentMap[f.id] ?? "unpaid") as "paid" | "unpaid" | "pending",
+          reference: referenceMap[f.id] ?? null,
+          db_id: dbIdMap[f.id] ?? null,
+        }));
 
-    // Build fee groups with lock state and payment status
-    const groupOrder = [
-      "Consent Letter",
-      "Administrative Fees",
-      "Certificate Fee",
-    ];
+      if (!fees.length) return null;
 
-    const groups: FeeGroup[] = groupOrder
-      .map((category) => {
-        const fees = applicableFees
-          .filter((f) => f.category === category)
-          .map((f) => ({
-            ...f,
-            status: (paymentMap[f.id] ?? "unpaid") as
-              | "paid"
-              | "unpaid"
-              | "pending",
+      const stage = fees[0].stage;
+      let locked = false;
+      let lockReason: FeeGroup["lockReason"];
 
-            doc_approval: docApprovalMap[f.id] ?? "not_required", // ← add this
-            reference: referenceMap[f.id] ?? null, // ← add
-            tpui: tpuiMap[f.id] ?? null, // ← add
-            db_id: dbIdMap[f.id] ?? null, // ← add this
-          }));
-
-        if (!fees.length) return null;
-
-        const stage = fees[0].stage;
-
-        // Determine if this group is locked
-        let locked = false;
-        let lockReason:
-          | "active_license"
-          | "assessment_pending"
-          | "stage_incomplete"
-          | undefined;
-        if (stage === 2) locked = !stage1Paid;
-        if (stage === 3) {
-          const licenseStatus = searchParams.get("license_status");
-          if (licenseStatus === "Active") {
-            locked = true;
-            lockReason = "active_license";
-          } else {
-            locked = !stage2Paid || !showCertificate;
-            lockReason = !showCertificate
-              ? "assessment_pending"
-              : "stage_incomplete";
-          }
-        }
-
-        return { category, stage, fees, locked, lockReason };
-      })
-      .filter(Boolean) as FeeGroup[];
-
-    // Always include Certificate Fee group even when locked, so user sees it's coming
-    const hasCertGroup = groups.some((g) => g.category === "Certificate Fee");
-    if (!hasCertGroup) {
-      const certFee = applicableFees.find((f) => certFeeIds.includes(f.id));
-      if (certFee) {
-        groups.push({
-          category: "Certificate Fee",
-          stage: 3,
-          locked: true,
-          fees: [
-            {
-              ...certFee,
-              status: (paymentMap[certFee.id] ?? "unpaid") as
-                | "paid"
-                | "unpaid"
-                | "pending",
-            },
-          ],
-        });
+      if (stage === 2) {
+        locked = !stage1Paid;
+        lockReason = "stage_incomplete";
       }
-    }
+
+      if (stage === 3) {
+        const licenseStatus = searchParams.get("license_status");
+        if (licenseStatus === "Active") {
+          locked = true;
+          lockReason = "active_license";
+        } else {
+          locked = !registrationPaid || !showCertificate;
+          lockReason = !showCertificate ? "assessment_pending" : "stage_incomplete";
+        }
+      }
+
+      return { category: groupName, stage, fees, locked, lockReason };
+    }).filter(Boolean) as FeeGroup[];
 
     return NextResponse.json(groups);
   } catch (error) {

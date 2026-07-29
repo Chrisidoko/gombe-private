@@ -7,7 +7,6 @@ import ComplianceDocs from "@/components/ui/ComplianceDocs";
 
 type School = {
   school_id: string;
-  programmes: string[];
   license_status: string;
   approval_status: string;
   license_number: string;
@@ -46,7 +45,6 @@ export default function FeesPageClient({ school }: { school: School }) {
       {/* Tab content */}
       {activeTab === "fees" && (
         <FeeTable
-          programmes={school.programmes}
           school_id={school.school_id}
           license_status={school.license_status}
           approval_status={school.approval_status}
