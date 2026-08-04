@@ -18,8 +18,8 @@ export default function FeesPageClient({ school }: { school: School }) {
   const [activeTab, setActiveTab] = useState<Tab>("fees");
 
   const tabs = [
-    { id: "fees", label: "Payment Schedule", icon: ListChecks },
-    { id: "documents", label: "Compliance Docs", icon: FileDown },
+    { id: "fees", label: "Payment Schedule", icon: ListChecks, disabled: false },
+    { id: "documents", label: "Compliance Docs", icon: FileDown, disabled: true },
   ];
 
   return (
@@ -29,9 +29,12 @@ export default function FeesPageClient({ school }: { school: School }) {
         {tabs.map((tab) => (
           <button
             key={tab.id}
-            onClick={() => setActiveTab(tab.id as Tab)}
+            disabled={tab.disabled}
+            onClick={() => !tab.disabled && setActiveTab(tab.id as Tab)}
             className={`inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold transition-all ${
-              activeTab === tab.id
+              tab.disabled
+                ? "text-gray-300 cursor-not-allowed"
+                : activeTab === tab.id
                 ? "bg-white text-green-700 shadow-sm"
                 : "text-gray-500 hover:text-gray-700"
             }`}
