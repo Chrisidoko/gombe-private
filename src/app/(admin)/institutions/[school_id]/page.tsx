@@ -55,6 +55,8 @@ type School = {
   total_staff: number | null;
   total_academic_staff: number | null;
   enumerator_name: string | null;
+  assigned_inspector_name: string | null;
+  assigned_inspector_email: string | null;
   created_at: string;
   updated_at: string | null;
 };
@@ -555,6 +557,25 @@ export default async function InstitutionDetailPage({
             />
             <Field label="Last Updated" value={formatDate(school.updated_at)} />
             <Field label="Registered By (Enumerator)" value={school.enumerator_name} />
+            <Field
+              label="Assigned Inspector"
+              value={
+                school.assigned_inspector_name ? (
+                  school.assigned_inspector_email ? (
+                    <a
+                      href={`mailto:${school.assigned_inspector_email}`}
+                      className="text-blue-600 hover:underline"
+                    >
+                      {school.assigned_inspector_name}
+                    </a>
+                  ) : (
+                    school.assigned_inspector_name
+                  )
+                ) : (
+                  "Not yet assigned"
+                )
+              }
+            />
           </div>
         </Section>
       </div>

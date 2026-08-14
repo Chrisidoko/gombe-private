@@ -21,11 +21,22 @@ interface LicenseResult {
   };
 }
 
+interface SchoolSuggestion {
+  school_id: string;
+  name: string;
+  license_number: string;
+}
+
 export default function VerifyForm() {
+  const [mode, setMode] = useState<"license" | "name">("license");
   const [license, setLicense] = useState("");
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<LicenseResult | null>(null);
   const [error, setError] = useState<string | null>(null);
+
+  const [schoolName, setSchoolName] = useState("");
+  const [suggestions, setSuggestions] = useState<SchoolSuggestion[]>([]);
+  const [searching, setSearching] = useState(false);
 
   const searchParams = useSearchParams();
 
@@ -70,11 +81,71 @@ export default function VerifyForm() {
     handleVerifyWithValue(license);
   }
 
+  async function handleVerifyBySchoolId(schoolId: string) {
+    setLoading(true);
+    setError(null);
+    setResult(null);
+    setSuggestions([]);
+
+    try {
+      const res = await fetch(
+        `/api/schools/verify-license?school_id=${encodeURIComponent(schoolId)}`,
+      );
+      const data = await res.json();
+
+      if (!res.ok) {
+        setError(data.error || "Something went wrong");
+        toast.error(data.error || "Something went wrong");
+      } else {
+        setResult(data);
+      }
+    } catch (err) {
+      setError(
+        err instanceof Error ? err.message : "Failed to connect to server",
+      );
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  // ── Debounced school-name search ──
+  useEffect(() => {
+    if (mode !== "name" || schoolName.trim().length < 2) {
+      setSuggestions([]);
+      return;
+    }
+
+    const timeout = setTimeout(async () => {
+      setSearching(true);
+      try {
+        const res = await fetch(
+          `/api/schools/search-by-name?q=${encodeURIComponent(schoolName.trim())}`,
+        );
+        const data = await res.json();
+        setSuggestions(res.ok ? data : []);
+      } catch {
+        setSuggestions([]);
+      } finally {
+        setSearching(false);
+      }
+    }, 350);
+
+    return () => clearTimeout(timeout);
+  }, [schoolName, mode]);
+
   function handleBack() {
     // reset view to form mode
     setResult(null);
     setLicense("");
+    setSchoolName("");
+    setSuggestions([]);
     setError(null);
+  }
+
+  function handleModeChange(next: "license" | "name") {
+    setMode(next);
+    setError(null);
+    setSuggestions([]);
   }
 
   return (
@@ -89,7 +160,7 @@ export default function VerifyForm() {
       }}
     >
       <main className="flex-grow">
-        <div className="relative flex flex-col items-center bg-white mt-[16%] sm:mt-[3%] w-[86vw] sm:w-[40vw] mx-auto rounded-xl border border-gray-300 shadow-xl px-8 py-12">
+        <div className="relative flex flex-col items-center bg-white mt-[16%] sm:mt-[3%] mb-10 sm:mb-12 w-[86vw] sm:w-[40vw] mx-auto rounded-xl border border-gray-300 shadow-xl px-8 py-12">
           {/* Top Logo */}
           <div className="w-20 h-20 rounded-2xl bg-white shadow-md border border-gray-100 flex items-center justify-center mx-auto overflow-hidden">
             <Image
@@ -109,27 +180,118 @@ export default function VerifyForm() {
           {!result ? (
             // Input Mode
             <div className="flex flex-col gap-4 w-full">
-              <div className="px-6 text-sm text-center font-medium text-gray-600">
-                Enter your Certificate Number to see your institution&apos;s
-                details
+              {/* Search mode tabs */}
+              <div className="flex w-full rounded-lg bg-gray-100 p-1">
+                <button
+                  type="button"
+                  onClick={() => handleModeChange("license")}
+                  className={`flex-1 py-1.5 text-sm font-semibold rounded-md transition ${
+                    mode === "license"
+                      ? "bg-white text-green-700 shadow-sm"
+                      : "text-gray-500 hover:text-gray-700"
+                  }`}
+                >
+                  Certificate Number
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleModeChange("name")}
+                  className={`flex-1 py-1.5 text-sm font-semibold rounded-md transition ${
+                    mode === "name"
+                      ? "bg-white text-green-700 shadow-sm"
+                      : "text-gray-500 hover:text-gray-700"
+                  }`}
+                >
+                  Institution Name
+                </button>
               </div>
 
-              <input
-                type="text"
-                placeholder="(e.g MOE/H/163939)"
-                value={license}
-                onChange={(e) => setLicense(e.target.value)}
-                className="p-2 border rounded text-center"
-              />
+              {mode === "license" ? (
+                <>
+                  <div className="px-6 text-sm text-center font-medium text-gray-600">
+                    Enter your Certificate Number to see your institution&apos;s
+                    details
+                  </div>
 
-              <button
-                onClick={handleVerify}
-                disabled={loading}
-                className="px-6 py-2 bg-green-600 text-white rounded flex justify-center items-center gap-2"
-              >
-                {loading && <Loader2 className="animate-spin w-4 h-4" />}
-                {loading ? "Checking" : "Proceed and Confirm"}
-              </button>
+                  <input
+                    type="text"
+                    placeholder="(e.g MOE/H/163939)"
+                    value={license}
+                    onChange={(e) => setLicense(e.target.value)}
+                    className="p-2 border rounded text-center"
+                  />
+
+                  <button
+                    onClick={handleVerify}
+                    disabled={loading}
+                    className="px-6 py-2 bg-green-600 text-white rounded flex justify-center items-center gap-2"
+                  >
+                    {loading && <Loader2 className="animate-spin w-4 h-4" />}
+                    {loading ? "Checking" : "Proceed and Confirm"}
+                  </button>
+                </>
+              ) : (
+                <>
+                  <div className="px-6 text-sm text-center font-medium text-gray-600">
+                    Start typing your institution&apos;s name and select it from
+                    the list
+                  </div>
+
+                  <div className="relative">
+                    <input
+                      type="text"
+                      placeholder="(e.g Gombe Model Institution)"
+                      value={schoolName}
+                      onChange={(e) => setSchoolName(e.target.value)}
+                      className="p-2 border rounded text-center w-full"
+                    />
+
+                    {searching && (
+                      <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                        <Loader2 className="animate-spin w-4 h-4 text-gray-400" />
+                      </div>
+                    )}
+
+                    {suggestions.length > 0 && (
+                      <ul className="absolute z-10 mt-1 w-full bg-white border border-gray-200 rounded-lg shadow-lg max-h-56 overflow-y-auto text-left">
+                        {suggestions.map((s) => (
+                          <li key={s.school_id}>
+                            <button
+                              type="button"
+                              onClick={() =>
+                                handleVerifyBySchoolId(s.school_id)
+                              }
+                              className="w-full px-4 py-2 text-sm hover:bg-green-50 transition"
+                            >
+                              <p className="font-semibold text-gray-800">
+                                {s.name}
+                              </p>
+                              <p className="text-xs text-gray-400">
+                                {s.license_number}
+                              </p>
+                            </button>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+
+                    {!searching &&
+                      schoolName.trim().length >= 2 &&
+                      suggestions.length === 0 && (
+                        <p className="absolute z-10 mt-1 w-full bg-white border border-gray-200 rounded-lg shadow-lg px-4 py-2 text-sm text-gray-400 text-center">
+                          No matching school found
+                        </p>
+                      )}
+                  </div>
+
+                  {loading && (
+                    <div className="flex justify-center">
+                      <Loader2 className="animate-spin w-4 h-4 text-green-600" />
+                    </div>
+                  )}
+                </>
+              )}
+
               <div className="text-center">
                 <Link
                   href="/"
@@ -252,12 +414,16 @@ export default function VerifyForm() {
                             }`}
                           >
                             {course.name}
-                            <span className={`px-1 py-0.5 rounded-full text-[10px] font-bold ${
-                              course.accredited
-                                ? "bg-green-200 text-green-800"
-                                : "bg-red-200 text-red-800"
-                            }`}>
-                              {course.accredited ? "Accredited" : "Not Accredited"}
+                            <span
+                              className={`px-1 py-0.5 rounded-full text-[10px] font-bold ${
+                                course.accredited
+                                  ? "bg-green-200 text-green-800"
+                                  : "bg-red-200 text-red-800"
+                              }`}
+                            >
+                              {course.accredited
+                                ? "Accredited"
+                                : "Not Accredited"}
                             </span>
                           </span>
                         ))}

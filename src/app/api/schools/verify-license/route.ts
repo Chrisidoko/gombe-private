@@ -5,21 +5,22 @@ export async function GET(req: Request) {
   try {
     const { searchParams } = new URL(req.url);
     const license = searchParams.get("license");
+    const schoolId = searchParams.get("school_id");
 
-    if (!license) {
+    if (!license && !schoolId) {
       return NextResponse.json(
-        { error: "License number is required" },
+        { error: "License number or school is required" },
         { status: 400 },
       );
     }
 
-    // Query database for the license
+    // Query database for the license or school
     const result = await pool.query(
       `SELECT id, name, school_id, state, lga, address, ownership, property_type,
               courses, license_number, license_status, license_expiry_date
        FROM schoolskano
-       WHERE license_number = $1`,
-      [license],
+       WHERE ${schoolId ? "school_id = $1" : "license_number = $1"}`,
+      [schoolId || license],
     );
 
     if (result.rows.length === 0) {

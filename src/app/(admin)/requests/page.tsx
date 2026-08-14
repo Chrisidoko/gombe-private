@@ -19,6 +19,7 @@ import {
   BookOpen,
   CheckCircle,
   XCircle,
+  UserCheck,
 } from "lucide-react";
 import { formatDate } from "@/lib/formatDate";
 
@@ -82,6 +83,12 @@ interface SchoolDocument {
   school_id: string;
   document_type: string;
   file_url: string;
+}
+
+interface Inspector {
+  id: number;
+  name: string;
+  email: string;
 }
 
 // ─── Academic change-request types ───────────────────────────────────────────
@@ -287,6 +294,8 @@ export default function Requests() {
     id: number | null;
     action: string | null;
   }>({ id: null, action: null });
+  const [inspectors, setInspectors] = useState<Inspector[]>([]);
+  const [selectedInspectorEmail, setSelectedInspectorEmail] = useState("");
 
   // ── Academic requests state
   const [academicRequests, setAcademicRequests] = useState<AcademicRequest[]>(
@@ -316,6 +325,14 @@ export default function Requests() {
       .then((data) => setAcademicRequests(data.requests || []))
       .catch(console.error)
       .finally(() => setAcademicLoading(false));
+  }, []);
+
+  // ── Fetch approved inspectors (for the "assign inspector" dropdown)
+  useEffect(() => {
+    fetch("/api/admin/inspectors")
+      .then((r) => r.json())
+      .then((data) => setInspectors(data.inspectors || []))
+      .catch(console.error);
   }, []);
 
   // ── Fetch school details when one is selected
@@ -348,16 +365,29 @@ export default function Requests() {
     try {
       const endpoint =
         action === "approve" ? "/api/schools/approve" : "/api/schools/reject";
+      const selectedInspector = inspectors.find(
+        (i) => i.email === selectedInspectorEmail,
+      );
       const res = await fetch(endpoint, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ school_id, reason }),
+        body: JSON.stringify({
+          school_id,
+          reason,
+          ...(action === "approve" && selectedInspector
+            ? {
+                inspector_name: selectedInspector.name,
+                inspector_email: selectedInspector.email,
+              }
+            : {}),
+        }),
       });
       const result = await res.json();
       if (!res.ok) throw new Error(result.error);
       setSchools((prev) => prev.filter((s) => s.school_id !== school_id));
       setSelectedSchool(null);
       setSchoolDetails(null);
+      setSelectedInspectorEmail("");
     } catch (error) {
       console.error(error);
     } finally {
@@ -394,6 +424,7 @@ export default function Requests() {
     setSelectedSchool(null);
     setSchoolDetails(null);
     setDocuments([]);
+    setSelectedInspectorEmail("");
   };
 
   // ─── Render ────────────────────────────────────────────────────────────────
@@ -880,6 +911,38 @@ export default function Requests() {
                         <p>No documents uploaded</p>
                       </div>
                     )}
+                  </div>
+
+                  {/* Assign inspector */}
+                  <div className="mb-6">
+                    <h4 className="text-lg font-semibold text-gray-900 mb-3">
+                      Assign Inspector
+                    </h4>
+                    <div className="bg-gray-50 rounded-lg p-4">
+                      <div className="flex items-start gap-2">
+                        <UserCheck className="w-4 h-4 text-gray-500 mt-1" />
+                        <div className="flex-1">
+                          <label className="text-xs font-medium text-gray-500 block mb-1">
+                            Inspector responsible for this institution
+                            (optional)
+                          </label>
+                          <select
+                            value={selectedInspectorEmail}
+                            onChange={(e) =>
+                              setSelectedInspectorEmail(e.target.value)
+                            }
+                            className="w-full bg-white border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-green-500"
+                          >
+                            <option value="">No inspector assigned</option>
+                            {inspectors.map((i) => (
+                              <option key={i.id} value={i.email}>
+                                {i.name} ({i.email})
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                      </div>
+                    </div>
                   </div>
 
                   {/* Actions */}

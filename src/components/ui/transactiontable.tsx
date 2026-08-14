@@ -3,8 +3,7 @@
 import { useEffect, useState } from "react";
 import {
   // Layers,
-  X,
-  ExternalLink,
+  Download,
 } from "lucide-react";
 
 import * as XLSX from "xlsx";
@@ -92,7 +91,6 @@ export default function TransactionsTable({ schoolId }: { schoolId: string }) {
     "all",
   );
   const [searchTerm, setSearchTerm] = useState("");
-  const [receiptUrl, setReceiptUrl] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
 
@@ -389,18 +387,14 @@ export default function TransactionsTable({ schoolId }: { schoolId: string }) {
                       </p>
                     </td>
                     <td className="px-6 py-4">
-                      {txn.reference ? (
-                        <button
-                          onClick={() =>
-                            setReceiptUrl(
-                              `https://paykaduna.com/payment_summary_open?billReference=${txn.reference}&ref=${txn.reference}`,
-                            )
-                          }
-                          className="inline-flex items-center gap-1.5 text-xs font-semibold text-blue-600 hover:text-blue-800 transition"
+                      {txn.status.toLowerCase() === "paid" ? (
+                        <a
+                          href={`/api/transactions/receipt?id=${txn.id}`}
+                          className="inline-flex items-center gap-1.5 text-xs font-semibold text-green-600 hover:text-green-800 transition"
                         >
-                          <ExternalLink className="w-3.5 h-3.5" />
-                          View
-                        </button>
+                          <Download className="w-3.5 h-3.5" />
+                          Download
+                        </a>
                       ) : (
                         <span className="text-sm text-gray-300">—</span>
                       )}
@@ -411,40 +405,6 @@ export default function TransactionsTable({ schoolId }: { schoolId: string }) {
             </table>
           )}
         </div>
-
-        {/* Receipt Modal */}
-        {receiptUrl && (
-          <div
-            className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm"
-            onClick={() => setReceiptUrl(null)}
-          >
-            <div
-              className="relative bg-white rounded-2xl shadow-2xl w-full max-w-3xl mx-4 overflow-hidden"
-              style={{ height: "85vh" }}
-              onClick={(e) => e.stopPropagation()}
-            >
-              {/* Modal header */}
-              <div className="flex items-center justify-between px-5 py-3 border-b border-gray-100">
-                <p className="text-sm font-semibold text-gray-700">
-                  Payment Receipt
-                </p>
-                <button
-                  onClick={() => setReceiptUrl(null)}
-                  className="text-gray-400 hover:text-gray-600 transition"
-                >
-                  <X className="w-5 h-5" />
-                </button>
-              </div>
-
-              {/* iframe */}
-              <iframe
-                src={receiptUrl}
-                className="w-full h-full border-0"
-                title="Payment Receipt"
-              />
-            </div>
-          </div>
-        )}
 
         {/* Pagination */}
         {totalPages > 1 && (

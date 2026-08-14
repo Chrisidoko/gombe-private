@@ -5,14 +5,16 @@ import nodemailer from "nodemailer";
 
 export async function POST(req: Request) {
   try {
-    const { school_id } = await req.json();
+    const { school_id, inspector_name, inspector_email } = await req.json();
 
     const result = await pool.query(
-      `UPDATE schoolskano 
-       SET approval_status = 'approved'
+      `UPDATE schoolskano
+       SET approval_status = 'approved',
+           assigned_inspector_name = COALESCE($2, assigned_inspector_name),
+           assigned_inspector_email = COALESCE($3, assigned_inspector_email)
        WHERE school_id = $1
        RETURNING email, name, license_status`,
-      [school_id],
+      [school_id, inspector_name || null, inspector_email || null],
     );
 
     if (result.rowCount === 0) {

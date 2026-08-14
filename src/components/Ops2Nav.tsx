@@ -8,6 +8,7 @@ import {
   ChartNoAxesGantt,
   FileText,
   Settings2,
+  Target,
 } from "lucide-react";
 import LogoutButton from "@/components/ui/logoutbutton";
 
@@ -38,6 +39,11 @@ const Ops2Navigation: React.FC<NavigationProps> = ({
       href: "/review-demand-notices",
       label: "Review Demand Notices",
       icon: <Settings2 size={18} />,
+    },
+    {
+      href: "/revenue-targets",
+      label: "Revenue Targets",
+      icon: <Target size={18} />,
     },
   ];
 
@@ -84,9 +90,9 @@ const Ops2Navigation: React.FC<NavigationProps> = ({
           {/* Role badge */}
           {!collapsed && (
             <div className="px-4 py-2 border-b border-gray-100">
-              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-amber-50 border border-amber-200 text-xs font-semibold text-amber-700">
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-green-50 border border-green-200 text-xs font-semibold text-green-700">
                 <FileText size={11} />
-                Reviewer — Operator 2
+                Reviewer — Director
               </span>
             </div>
           )}
@@ -126,13 +132,13 @@ const Ops2Navigation: React.FC<NavigationProps> = ({
                   onClick={() => setIsMobileOpen(false)}
                   className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 group relative ${
                     isActive
-                      ? "bg-amber-600 text-white shadow-md"
+                      ? "bg-[#28a745] text-white shadow-md"
                       : "text-gray-700 hover:bg-gray-100"
                   } ${collapsed ? "justify-center" : ""}`}
                   title={collapsed ? item.label : ""}
                 >
                   <span
-                    className={`flex-shrink-0 ${isActive ? "text-white" : "text-gray-500 group-hover:text-amber-600"}`}
+                    className={`flex-shrink-0 ${isActive ? "text-white" : "text-gray-500 group-hover:text-[#28a745]"}`}
                   >
                     {item.icon}
                   </span>
@@ -142,9 +148,9 @@ const Ops2Navigation: React.FC<NavigationProps> = ({
                     </span>
                   )}
                   {collapsed && (
-                    <div className="absolute left-full ml-2 px-3 py-2 bg-amber-600 text-white text-sm rounded-lg opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity whitespace-nowrap z-50">
+                    <div className="absolute left-full ml-2 px-3 py-2 bg-[#28a745] text-white text-sm rounded-lg opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity whitespace-nowrap z-50">
                       {item.label}
-                      <div className="absolute top-1/2 -left-1 -translate-y-1/2 w-2 h-2 bg-amber-600 rotate-45" />
+                      <div className="absolute top-1/2 -left-1 -translate-y-1/2 w-2 h-2 bg-[#28a745] rotate-45" />
                     </div>
                   )}
                 </Link>
@@ -157,9 +163,9 @@ const Ops2Navigation: React.FC<NavigationProps> = ({
             className={`p-4 border-t border-gray-200 ${collapsed ? "px-2" : ""}`}
           >
             {!collapsed ? (
-              <div className="mb-3 p-3 bg-gradient-to-r from-amber-50 to-orange-50 rounded-lg">
+              <div className="mb-3 p-3 bg-green-50 rounded-lg">
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-gradient-to-br from-amber-500 to-orange-600 rounded-full flex items-center justify-center text-white font-bold flex-shrink-0">
+                  <div className="w-10 h-10 bg-[#28a745] rounded-full flex items-center justify-center text-white font-bold flex-shrink-0">
                     <svg
                       className="w-6 h-6"
                       fill="currentColor"
@@ -182,7 +188,7 @@ const Ops2Navigation: React.FC<NavigationProps> = ({
               </div>
             ) : (
               <div className="mb-3 flex justify-center">
-                <div className="w-10 h-10 bg-gradient-to-br from-amber-500 to-orange-600 rounded-full flex items-center justify-center text-white font-bold">
+                <div className="w-10 h-10 bg-[#28a745] rounded-full flex items-center justify-center text-white font-bold">
                   <svg
                     className="w-6 h-6"
                     fill="currentColor"

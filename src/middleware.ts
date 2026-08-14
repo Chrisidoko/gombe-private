@@ -92,7 +92,8 @@ export async function middleware(req: NextRequest) {
     if (
       url.startsWith("/review-bulk") ||
       url.startsWith("/review-evaluations") ||
-      url.startsWith("/review-demand-notices")
+      url.startsWith("/review-demand-notices") ||
+      url.startsWith("/revenue-targets")
     ) {
       if (!isOperator2) {
         return NextResponse.redirect(new URL(defaultRedirect(), req.url));
