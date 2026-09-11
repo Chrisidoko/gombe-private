@@ -25,6 +25,7 @@ export async function GET(req: Request) {
          SUM(amount::numeric) AS actual
        FROM transactionskano
        WHERE status = 'Paid'
+         AND source = 'private-uni'
          AND paid_at >= DATE_TRUNC('year', $1::date)
          AND paid_at < DATE_TRUNC('year', $1::date) + INTERVAL '1 year'
        GROUP BY EXTRACT(QUARTER FROM paid_at)`,

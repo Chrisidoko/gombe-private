@@ -12,6 +12,7 @@ export async function GET() {
     MAX(paid_at)         AS last_payment
   FROM transactionskano
   WHERE status = 'Paid'
+    AND source = 'private-uni'
     AND lga IS NOT NULL
     AND lga <> ''
     AND paid_at >= DATE_TRUNC('year', NOW())

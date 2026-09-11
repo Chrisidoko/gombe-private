@@ -39,13 +39,15 @@ export async function POST(req: Request) {
       );
     }
 
-    // 3️⃣ Check if account is approved
+    // 3️⃣ Check if account is approved / not disabled
     if (user.status !== "approved") {
       return NextResponse.json(
         {
           success: false,
           message:
-            "Your account is pending approval. Please wait for your institution to verify your account.",
+            user.status === "disabled"
+              ? "Your account has been disabled. Contact your administrator."
+              : "Your account is pending approval. Please wait for your institution to verify your account.",
         },
         { status: 403 },
       );

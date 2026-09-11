@@ -1,18 +1,14 @@
 // app/api/generate-license/route.ts
 import { NextRequest, NextResponse } from "next/server";
-// import { PDFFont, RGB } from "pdf-lib";
 import pool from "@/lib/db";
 
 interface LicenseData {
   school_name: string;
   license_number: string;
   issue_date: string;
+  expiry_date: string;
   proprietor_name: string;
-  // expiry_date: string;
-  // lga: string;
-  serial_number: string;
-  address: string;
-  courses?: string[]; // ← added
+  courses?: string[];
 }
 
 // ── POST — generate real license from DB ──────────────────────────────────────
@@ -29,11 +25,11 @@ export async function POST(request: NextRequest) {
     }
 
     const result = await pool.query(
-      `SELECT 
-        school_id, 
-        name, 
-        license_number, 
-        last_license_renewal, 
+      `SELECT
+        school_id,
+        name,
+        license_number,
+        last_license_renewal,
         license_expiry_date,
         state,
         lga,
@@ -43,7 +39,7 @@ export async function POST(request: NextRequest) {
         phone,
         email,
         courses
-       FROM schoolskano 
+       FROM schoolskano
        WHERE school_id = $1`,
       [school_id],
     );
@@ -68,12 +64,9 @@ export async function POST(request: NextRequest) {
       school_name: schoolData.name,
       license_number: schoolData.license_number,
       issue_date: formatDate(schoolData.last_license_renewal),
+      expiry_date: formatDate(schoolData.license_expiry_date),
       proprietor_name: schoolData.proprietor_name,
-      // expiry_date: formatDate(schoolData.license_expiry_date),
-      serial_number: `SN/H/${schoolData.license_number.split("-").slice(-1)[0]}`, // e.g. SN-0001
-      // lga: schoolData.lga,
-      address: schoolData.address,
-      courses: schoolData.courses || [], // ← from DB
+      courses: schoolData.courses || [],
     };
 
     const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000/";
@@ -109,36 +102,27 @@ export async function GET() {
     const sampleData: LicenseData = {
       school_name: "Marayam Abacha College of Health",
       license_number: "MOE/H/001234",
-      serial_number: "SN/H/0001",
       proprietor_name: "Dr. Mariam Abacha",
       issue_date: new Date().toLocaleDateString("en-US", {
         year: "numeric",
         month: "short",
         day: "numeric",
       }),
-      // expiry_date: new Date(
-      //   Date.now() + 365 * 24 * 60 * 60 * 1000,
-      // ).toLocaleDateString("en-US", {
-      //   year: "numeric",
-      //   month: "short",
-      //   day: "numeric",
-      // }),
-
-      // lga: "Sample LGA",
-      address: "123 Road, Gombe State",
+      expiry_date: new Date(
+        Date.now() + 365 * 24 * 60 * 60 * 1000,
+      ).toLocaleDateString("en-US", {
+        year: "numeric",
+        month: "short",
+        day: "numeric",
+      }),
       courses: [
-        // ← sample courses for preview
         "Bachelor of Science in Nursing",
         "Diploma in Community Health",
         "Certificate in Medical Laboratory Science",
-        "Certificate in Medical Laboratory Science",
-        "Certificate in Medical Laboratory Science",
-        "Certificate in Medical Laboratory Science",
-        "Certificate in Medical Laboratory Science",
-        "Certificate in Medical Laboratory Science",
-        "Certificate in Medical Laboratory Science",
-        "Certificate in Medical Laboratory Science",
-        "Certificate in Medical Laboratory Science",
+        "Diploma in Public Health",
+        "Certificate in Pharmacy Technician Studies",
+        "Diploma in Environmental Health Technology",
+        "Certificate in Health Information Management",
       ],
     };
 
@@ -184,120 +168,130 @@ async function generateQRCode(data: string): Promise<string> {
   }
 }
 
-// ── Helper: PDF generator (both pages) ───────────────────────────────────────
+// ── Helper: PDF generator ─────────────────────────────────────────────────────
+// Single-page Gombe State "Certificate of Registration" template
+// (public/certificate-empty-state.pdf). The underlines, table borders, and
+// every static label are already part of that artwork — this only draws the
+// per-school values into the blank spaces. Coordinates were measured against
+// the actual template (pdftotext -bbox cross-checked with a 150 DPI render,
+// scale 2.0833 px/pt), not eyeballed — but a design this pixel-specific may
+// still need a small nudge after the first real preview.
 async function createLicensePDF(
   data: LicenseData & { qrCode: string },
 ): Promise<Buffer> {
-  const { PDFDocument, rgb } = await import("pdf-lib");
-  const fontkit = await import("@pdf-lib/fontkit");
+  const { PDFDocument, StandardFonts, rgb } = await import("pdf-lib");
   const fs = await import("fs");
   const path = await import("path");
 
   const templatePath = path.join(
     process.cwd(),
     "public",
-    "consent-certificate.pdf",
+    "certificate-empty-state.pdf",
   );
   const existingPdfBytes = fs.readFileSync(templatePath);
 
   const pdfDoc = await PDFDocument.load(existingPdfBytes);
-  pdfDoc.registerFontkit(fontkit.default);
-  const pages = pdfDoc.getPages();
-  const firstPage = pages[0];
-  const secondPage = pages[1]; // page 2 of your template
+  const page = pdfDoc.getPages()[0];
+  const { width, height } = page.getSize();
 
-  const { width, height } = firstPage.getSize();
+  // Times matches the template's own serif body text far better than a
+  // sans-serif face would.
+  const font = await pdfDoc.embedFont(StandardFonts.TimesRoman);
+  const boldFont = await pdfDoc.embedFont(StandardFonts.TimesRomanBold);
 
-  // REPLACE with these
-  const fontBytes = fs.readFileSync(
-    path.join(process.cwd(), "public", "fonts", "poppins-regular.ttf"),
-  );
-  const boldFontBytes = fs.readFileSync(
-    path.join(process.cwd(), "public", "fonts", "poppins-bold.ttf"),
-  );
-
-  const font = await pdfDoc.embedFont(fontBytes);
-  const boldFont = await pdfDoc.embedFont(boldFontBytes);
+  const dark = rgb(0.1, 0.1, 0.1);
+  const accent = rgb(0.75, 0.15, 0.15); // matches the template's red date/ref accents
 
   const drawCentered = (
-    page: typeof firstPage,
     text: string,
     y: number,
     size: number,
     f: typeof font,
-    color = rgb(0, 0, 0),
+    color = dark,
   ) => {
     const textWidth = f.widthOfTextAtSize(text, size);
-    page.drawText(text, {
-      x: (width - textWidth) / 2,
-      y,
-      size,
-      font: f,
-      color,
-    });
+    page.drawText(text, { x: (width - textWidth) / 2, y, size, font: f, color });
   };
 
-  // ── Helper to wrap long text into two lines
-  const drawWrappedText = (
-    page: typeof firstPage,
+  // Wraps text onto up to `maxLines` centered lines at `size`. A school's
+  // official name must never be cut off (unlike a course name in the
+  // Programs table, where an ellipsis is fine), so this only reports
+  // whether it fit — the caller shrinks the font size and retries rather
+  // than truncating.
+  const wrapLines = (
     text: string,
-    x: number,
-    y: number,
     size: number,
     f: typeof font,
-    color = rgb(0.3, 0.3, 0.3),
-    maxChars = 25, // ← adjust this to control where the split happens
-    lineHeight = 16,
-  ) => {
-    if (text.length <= maxChars) {
-      page.drawText(text, { x, y, size, font: f, color });
-    } else {
-      // Split at the last space before maxChars to avoid cutting a word
-      const splitIndex = text.lastIndexOf(" ", maxChars);
-      const line1 = text.substring(0, splitIndex);
-      const line2 = text.substring(splitIndex + 1);
-      page.drawText(line1, { x, y, size, font: f, color });
-      page.drawText(line2, { x, y: y - lineHeight, size, font: f, color });
-    }
-  };
-
-  // Helper to draw centered wrapped text
-  const drawCenteredWrapped = (
-    page: typeof firstPage,
-    text: string,
-    startY: number,
-    size: number,
-    f: typeof font,
-    color = rgb(0, 0, 0),
-    maxWidth = 400, // ← adjust this to control wrap width
-    lineHeight = 24,
-  ) => {
+    maxWidth: number,
+  ): string[] => {
     const words = text.split(" ");
     const lines: string[] = [];
     let currentLine = "";
-
-    // Build lines that fit within maxWidth
     words.forEach((word) => {
       const testLine = currentLine ? `${currentLine} ${word}` : word;
-      const testWidth = f.widthOfTextAtSize(testLine, size);
-
-      if (testWidth > maxWidth && currentLine) {
+      if (f.widthOfTextAtSize(testLine, size) > maxWidth && currentLine) {
         lines.push(currentLine);
         currentLine = word;
       } else {
         currentLine = testLine;
       }
     });
+    if (currentLine) lines.push(currentLine);
+    return lines;
+  };
 
-    if (currentLine) lines.push(currentLine); // push last line
+  // Finds the largest font size (down to `minSize`) at which `text` wraps
+  // into no more than `maxLines` lines, each within `maxWidth`.
+  const fitTextBlock = (
+    text: string,
+    startSize: number,
+    minSize: number,
+    f: typeof font,
+    maxWidth: number,
+    maxLines: number,
+  ): { lines: string[]; size: number } => {
+    for (let size = startSize; size >= minSize; size--) {
+      const lines = wrapLines(text, size, f, maxWidth);
+      const fits =
+        lines.length <= maxLines &&
+        lines.every((line) => f.widthOfTextAtSize(line, size) <= maxWidth);
+      if (fits) return { lines, size };
+    }
+    // Smallest size still didn't fit cleanly — use it anyway rather than
+    // shrinking indefinitely; a long single word may still overrun slightly.
+    return { lines: wrapLines(text, minSize, f, maxWidth), size: minSize };
+  };
 
-    // Draw each line centered
+  // Draws text centered above `startY`, wrapping onto up to two lines and
+  // shrinking the font size first if the name is too long to fit either way.
+  const drawFittedName = (
+    text: string,
+    startY: number,
+    startSize: number,
+    minSize: number,
+    f: typeof font,
+    color: ReturnType<typeof rgb>,
+    maxWidth: number,
+    maxLines: number,
+  ) => {
+    const { lines, size } = fitTextBlock(
+      text,
+      startSize,
+      minSize,
+      f,
+      maxWidth,
+      maxLines,
+    );
+    const lineHeight = size * 1.25;
+
+    // Multiple lines push the top line up so the block still sits just
+    // above the ruled line rather than growing downward into it.
+    const blockStartY = startY + (lines.length - 1) * lineHeight;
     lines.forEach((line, i) => {
       const lineWidth = f.widthOfTextAtSize(line, size);
-      const x = (width - lineWidth) / 2;
       page.drawText(line, {
-        x,
-        y: startY - i * lineHeight,
+        x: (width - lineWidth) / 2,
+        y: blockStartY - i * lineHeight,
         size,
         font: f,
         color,
@@ -305,151 +299,128 @@ async function createLicensePDF(
     });
   };
 
-  // ── PAGE 1 ────────────────────────────────────────────────────────────────
-  // School name in the large blank gap (tweak y if needed after preview)
-  drawCenteredWrapped(
-    firstPage,
+  // School name — centered just above the first ruled line. Shrinks from
+  // 16pt down to 11pt before it would ever wrap past two lines.
+  drawFittedName(
     data.school_name.toUpperCase(),
-    height - 430,
-    18,
+    height - 350,
+    16,
+    11,
     boldFont,
-    rgb(0.1, 0.1, 0.1),
-    400, // maxWidth — tweak this
-    24, // lineHeight between wrapped lines
+    dark,
+    460,
+    2,
   );
 
-  // License number — top right
-  firstPage.drawText(`${data.license_number}`, {
-    x: width - 130,
-    y: height - 180,
-    size: 11,
+  // Proprietor name — centered just above the second ruled line.
+  drawCentered(data.proprietor_name, height - 432, 13, boldFont, dark);
+
+  // Certificate number — centered inside the "Certificate No." box
+  // (box spans x: 461.8–565.0), not the full page width.
+  const certBoxCenterX = (461.8 + 565.0) / 2;
+  const certNumberSize = 13;
+  const certNumberWidth = boldFont.widthOfTextAtSize(
+    data.license_number,
+    certNumberSize,
+  );
+  page.drawText(data.license_number, {
+    x: certBoxCenterX - certNumberWidth / 2,
+    y: height - 210,
+    size: certNumberSize,
     font: boldFont,
-    color: rgb(0.13, 0.37, 0.31),
+    color: accent,
   });
 
-  // Address / location
-  drawWrappedText(
-    firstPage,
-    `${data.address}`,
-    50,
-    height - 250,
-    10,
-    boldFont,
-    rgb(0.2, 0.2, 0.2),
-  );
-
-  firstPage.drawText(`Issued ${data.issue_date}`, {
-    x: 50,
-    y: height - 226,
-    size: 10,
-    font,
-    color: rgb(0.4, 0.4, 0.4),
-  });
-
-  // firstPage.drawText(`${data.serial_number}`, {
-  //   x: 50,
-  //   y: height - 226,
-  //   size: 10,
-  //   font: boldFont,
-  //   color: rgb(0.4, 0.4, 0.4),
-  // });
-
-  // firstPage.drawText(`Valid Until: ${data.expiry_date}`, {
-  //   x: 50,
-  //   y: height - 490,
-  //   size: 9,
-  //   font,
-  //   color: rgb(0.4, 0.4, 0.4),
-  // });
-
-  // QR code
+  // QR code — tucked under the certificate number box, kept clear of the
+  // "This is to certify..." paragraph that starts at y (top-down) ≈ 288.
   if (data.qrCode) {
     const qrImageBytes = Buffer.from(data.qrCode.split(",")[1], "base64");
     const qrImage = await pdfDoc.embedPng(qrImageBytes);
-    firstPage.drawImage(qrImage, {
-      x: width - 130,
-      y: height - 270,
-      width: 84,
-      height: 84,
+    page.drawImage(qrImage, {
+      x: 565 - 50,
+      y: height - 288,
+      width: 50,
+      height: 50,
     });
   }
 
-  // ── PAGE 2 ────────────────────────────────────────────────────────────────
-  if (secondPage) {
-    const courses =
-      data.courses && data.courses.length > 0
-        ? data.courses
-        : ["No courses listed"];
+  // Issue / Expiry dates — printed right after their existing labels.
+  page.drawText(data.issue_date, {
+    x: 300.6,
+    y: height - 752,
+    size: 10,
+    font: boldFont,
+    color: accent,
+  });
+  page.drawText(data.expiry_date, {
+    x: 466.2,
+    y: height - 752,
+    size: 10,
+    font: boldFont,
+    color: accent,
+  });
 
-    // Institution name above
-    secondPage.drawText(`${data.school_name}`, {
-      x: 40,
-      y: height - 210,
-      size: 10,
-      font: font,
-      color: rgb(0.1, 0.1, 0.1),
+  // Programs table — 2 columns × 5 rows, filled left-to-right, row by row.
+  // The header and cell borders are already drawn on the template.
+  const courses =
+    data.courses && data.courses.length > 0 ? data.courses : ["No courses listed"];
+  const tableRows = 5;
+  const tableCols = 2;
+  const visibleSlots = tableRows * tableCols;
+  const rowTop = 558.2;
+  const rowHeight = 27.08;
+  const col1X = 68;
+  const col2X = 298.4;
+  const courseFontSize = 10;
+
+  const visibleCourses = courses.slice(0, visibleSlots);
+  const remaining = courses.length - visibleSlots;
+
+  visibleCourses.forEach((course, index) => {
+    const row = Math.floor(index / tableCols);
+    const isFirstColumn = index % tableCols === 0;
+    const baselineTopDown = rowTop + row * rowHeight + 18;
+    page.drawText(truncateToWidth(course, courseFontSize, font, 210), {
+      x: isFirstColumn ? col1X : col2X,
+      y: height - baselineTopDown,
+      size: courseFontSize,
+      font,
+      color: dark,
     });
-    // Institution address
-    secondPage.drawText(`${data.address}`, {
-      x: 40,
-      y: height - 230,
-      size: 10,
-      font: font,
-      color: rgb(0.1, 0.1, 0.1),
-    });
+  });
 
-    let courseY = height - 380;
-    const lineH = 18;
-    const maxCourseY = height - 480;
-    const maxVisible = Math.floor((courseY - maxCourseY) / lineH);
-
-    const visibleCourses = courses.slice(0, maxVisible);
-    const remaining = courses.length - maxVisible;
-
-    visibleCourses.forEach((course, index) => {
-      secondPage.drawText(`${index + 1}.  ${course}`, {
-        x: 50,
-        y: courseY,
-        size: 10,
-        font: boldFont,
-        color: rgb(0.15, 0.15, 0.15),
-      });
-      courseY -= lineH;
-    });
-
-    // Show overflow count if courses were cut
-    if (remaining > 0) {
-      secondPage.drawText(
-        `... and ${remaining} more course${remaining > 1 ? "s" : ""} scan QR for full list`,
-        {
-          x: 50,
-          y: courseY,
-          size: 9,
-          font,
-          color: rgb(0.5, 0.5, 0.5),
-        },
-      );
-    }
-
-    // Reference number on page 2
-    secondPage.drawText(`Ref: ${data.license_number}`, {
-      x: width - 130,
-      y: height - 230,
-      size: 10,
-      font: boldFont,
-      color: rgb(0.13, 0.37, 0.31),
-    });
-
-    // Proprietor number on page 2
-    secondPage.drawText(`${data.proprietor_name}`, {
-      x: 40,
-      y: height - 190,
-      size: 10,
-      font: boldFont,
-      color: rgb(0.13, 0.37, 0.31),
+  if (remaining > 0) {
+    const noteText = `+ ${remaining} more — scan QR for full list`;
+    const noteWidth = font.widthOfTextAtSize(noteText, 9);
+    page.drawText(noteText, {
+      x: (width - noteWidth) / 2,
+      y: height - 705,
+      size: 9,
+      font,
+      color: rgb(0.5, 0.5, 0.5),
     });
   }
 
   const pdfBytes = await pdfDoc.save();
   return Buffer.from(pdfBytes);
+}
+
+// Cuts off a course name with an ellipsis if it would overflow its table
+// cell — the cell has no wrap room, so a clipped word reads worse than a
+// clean truncation.
+function truncateToWidth(
+  text: string,
+  size: number,
+  font: Awaited<ReturnType<import("pdf-lib").PDFDocument["embedFont"]>>,
+  maxWidth: number,
+): string {
+  if (font.widthOfTextAtSize(text, size) <= maxWidth) return text;
+  let truncated = text;
+  while (
+    truncated.length > 1 &&
+    font.widthOfTextAtSize(`${truncated}…`, size) > maxWidth
+  ) {
+    truncated = truncated.slice(0, -1);
+  }
+  return `${truncated}…`;
 }

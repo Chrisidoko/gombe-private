@@ -8,11 +8,17 @@ import {
   YAxis,
   CartesianGrid,
   Tooltip,
-  ResponsiveContainer,
-  Cell,
 } from "recharts";
+import { ResponsiveContainer } from "recharts";
 import { MapPin, Loader2 } from "lucide-react";
 import type { TooltipProps } from "recharts";
+
+// Single series (revenue), so one hue throughout — LGAs are nominal
+// categories with no natural order, so coloring bars by their own value
+// would double-encode what bar height already shows. See dataviz anti
+// -patterns: "a value-ramp on nominal categories."
+const BAR_COLOR = "#28a745";
+const BAR_COLOR_ACTIVE = "#218838";
 
 type LGARevenue = {
   lga: string;
@@ -31,7 +37,13 @@ function CustomTooltip({ active, payload }: CustomTooltipProps) {
     const d = payload[0].payload;
     return (
       <div className="bg-white border border-gray-200 rounded-xl shadow-lg px-4 py-3 text-left min-w-[180px]">
-        <p className="text-xs font-bold text-gray-700 mb-2">{d.lga} LGA</p>
+        <div className="flex items-center gap-1.5 mb-2">
+          <span
+            className="w-2 h-2 rounded-full shrink-0"
+            style={{ backgroundColor: BAR_COLOR }}
+          />
+          <p className="text-xs font-bold text-gray-700">{d.lga} LGA</p>
+        </div>
         <div className="space-y-1">
           <div className="flex items-center justify-between gap-4">
             <span className="text-xs text-gray-400">Revenue</span>
@@ -86,16 +98,6 @@ export default function LGARevenueChart() {
   }, []);
 
   const totalRevenue = data.reduce((sum, d) => sum + d.totalRevenue, 0);
-  const maxRevenue = Math.max(...data.map((d) => d.totalRevenue), 1);
-
-  // Color intensity based on revenue proportion
-  const getBarColor = (revenue: number) => {
-    const ratio = revenue / maxRevenue;
-    if (ratio >= 0.75) return "#15803d";
-    if (ratio >= 0.5) return "#16a34a";
-    if (ratio >= 0.25) return "#22c55e";
-    return "#86efac";
-  };
 
   if (loading) {
     return (
@@ -122,7 +124,7 @@ export default function LGARevenueChart() {
   }
 
   return (
-    <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden overflow-hidden h-full flex flex-col">
+    <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden h-full flex flex-col">
       {/* Header */}
       <div className="px-6 py-5 border-b border-gray-100">
         <div className="flex items-start justify-between">
@@ -134,10 +136,9 @@ export default function LGARevenueChart() {
               <h3 className="text-sm font-bold text-gray-800">
                 Revenue by LGA
               </h3>
-              <p className="text-xs text-gray-400 mt-0.5 ">
-                <span className="font-bold uppercase tracking-widest text-gray-400 mb-3">
-                  {" "}
-                  Top Performing LGAs{" "}
+              <p className="text-xs text-gray-400 mt-0.5">
+                <span className="font-bold uppercase tracking-widest text-gray-400">
+                  Top Performing LGAs
                 </span>{" "}
                 — {data.length} LGAs contributing
               </p>
@@ -191,12 +192,18 @@ export default function LGARevenueChart() {
           <BarChart
             data={data}
             margin={{ top: 4, right: 16, left: 8, bottom: 60 }}
-            barCategoryGap="30%"
+            barCategoryGap="34%"
           >
-            <CartesianGrid vertical={false} stroke="#f0f0f0" />
+            <defs>
+              <linearGradient id="lgaBarFill" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor={BAR_COLOR} stopOpacity={1} />
+                <stop offset="100%" stopColor={BAR_COLOR} stopOpacity={0.75} />
+              </linearGradient>
+            </defs>
+            <CartesianGrid vertical={false} stroke="#f1f5f9" />
             <XAxis
               dataKey="lga"
-              tick={{ fontSize: 11, fill: "#4b5563" }}
+              tick={{ fontSize: 11, fill: "#6b7280" }}
               angle={-40}
               textAnchor="end"
               interval={0}
@@ -213,15 +220,17 @@ export default function LGARevenueChart() {
               tickLine={false}
               axisLine={false}
             />
-            <Tooltip content={<CustomTooltip />} cursor={{ fill: "#f9fafb" }} />
-            <Bar dataKey="totalRevenue" radius={[6, 6, 0, 0]} maxBarSize={48}>
-              {data.map((entry, index) => (
-                <Cell
-                  key={`cell-${index}`}
-                  fill={getBarColor(entry.totalRevenue)}
-                />
-              ))}
-            </Bar>
+            <Tooltip
+              content={<CustomTooltip />}
+              cursor={{ fill: "#f8fafc" }}
+            />
+            <Bar
+              dataKey="totalRevenue"
+              fill="url(#lgaBarFill)"
+              activeBar={{ fill: BAR_COLOR_ACTIVE }}
+              radius={[4, 4, 0, 0]}
+              maxBarSize={24}
+            />
           </BarChart>
         </ResponsiveContainer>
       </div>

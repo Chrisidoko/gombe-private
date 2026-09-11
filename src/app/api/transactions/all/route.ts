@@ -14,6 +14,12 @@ export async function GET(req: Request) {
     const status = searchParams.get("status"); // Optional: filter by status
     const schoolId = searchParams.get("school_id"); // Optional: filter by school
     const lga = searchParams.get("lga"); // Optional: filter by LGA
+    // Optional: restrict to one source. "private-uni" covers everything
+    // this project (gombe-privateuni) handles — every in-app consumer of
+    // this route (finance, operator) passes it explicitly, so a future
+    // external-partner source (see PAYMENTS_GATEWAY.md) landing in this
+    // table stays invisible here unless a caller opts in to see it too.
+    const source = searchParams.get("source");
 
     // Calculate offset for pagination
     const offset = (page - 1) * perPage;
@@ -54,6 +60,13 @@ export async function GET(req: Request) {
     if (lga) {
       conditions.push(`t.lga = $${paramIndex}`);
       values.push(lga);
+      paramIndex++;
+    }
+
+    // Optional source filter
+    if (source) {
+      conditions.push(`t.source = $${paramIndex}`);
+      values.push(source);
       paramIndex++;
     }
 

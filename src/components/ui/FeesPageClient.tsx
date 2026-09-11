@@ -57,7 +57,6 @@ export default function FeesPageClient({ school }: { school: School }) {
       {activeTab === "documents" && (
         <ComplianceDocs
           school_id={school.school_id}
-          license_status={school.license_status}
           license_number={school.license_number}
         />
       )}

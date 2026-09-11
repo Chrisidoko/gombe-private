@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Download, FileText, Lock, Loader2 } from "lucide-react";
 import toast from "react-hot-toast";
 
@@ -14,16 +14,40 @@ type Doc = {
 
 export default function ComplianceDocs({
   school_id,
-  license_status,
   license_number,
 }: {
   school_id: string;
-  license_status?: string;
   license_number?: string;
 }) {
   const [downloading, setDownloading] = useState<string | null>(null);
+  const [certificatePaid, setCertificatePaid] = useState(false);
+  const [checkingStatus, setCheckingStatus] = useState(true);
 
-  const hasActiveLicense = license_status === "Active" && !!license_number;
+  // Gated on a real paid row in schoolkano_payments (fee_id 4 — "Issuing of
+  // Certificate"), not schoolskano.license_status — see
+  // api/schools/certificate-status/route.ts for why.
+  useEffect(() => {
+    let cancelled = false;
+    async function checkCertificateStatus() {
+      try {
+        const res = await fetch(
+          `/api/schools/certificate-status?school_id=${encodeURIComponent(school_id)}`,
+        );
+        const data = await res.json();
+        if (!cancelled) setCertificatePaid(res.ok && !!data.paid);
+      } catch {
+        if (!cancelled) setCertificatePaid(false);
+      } finally {
+        if (!cancelled) setCheckingStatus(false);
+      }
+    }
+    checkCertificateStatus();
+    return () => {
+      cancelled = true;
+    };
+  }, [school_id]);
+
+  const hasActiveLicense = certificatePaid && !!license_number;
 
   // ── Define available documents — add more here as they become available
   const documents: Doc[] = [
@@ -85,6 +109,11 @@ export default function ComplianceDocs({
       </div>
 
       {/* Document list */}
+      {checkingStatus ? (
+        <div className="flex items-center justify-center py-10">
+          <Loader2 className="w-5 h-5 animate-spin text-gray-300" />
+        </div>
+      ) : (
       <div className="divide-y divide-gray-100">
         {documents.map((doc) => (
           <div
@@ -139,6 +168,7 @@ export default function ComplianceDocs({
           </div>
         ))}
       </div>
+      )}
     </div>
   );
 }

@@ -71,7 +71,7 @@ export default function Transactions() {
     try {
       const { perPage, page, startDate, endDate } = filters;
       const res = await fetch(
-        `/api/transactions/all?per_page=${perPage}&page=${page}&start_date=${startDate}&end_date=${endDate}`,
+        `/api/transactions/all?per_page=${perPage}&page=${page}&start_date=${startDate}&end_date=${endDate}&source=private-uni`,
       );
       const data = await res.json();
 

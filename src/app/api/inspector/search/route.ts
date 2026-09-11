@@ -6,6 +6,12 @@ export async function GET(req: Request) {
   try {
     const { searchParams } = new URL(req.url);
     const query = searchParams.get("q")?.trim();
+    // Opt-in — inspectors legitimately search/report on schools ahead of
+    // approval (that's part of what feeds the approval decision), so the
+    // default stays unrestricted. Callers that only make sense for already
+    // -approved institutions (e.g. ministry assessments/demand notices)
+    // pass this explicitly instead.
+    const approvedOnly = searchParams.get("approved_only") === "true";
 
     if (!query || query.length < 2) {
       return NextResponse.json(
@@ -35,6 +41,7 @@ export async function GET(req: Request) {
         courses
        FROM schoolskano
        WHERE name ILIKE $1
+       ${approvedOnly ? "AND approval_status = 'approved'" : ""}
        ORDER BY name ASC
        LIMIT 10`,
       [`%${query}%`],

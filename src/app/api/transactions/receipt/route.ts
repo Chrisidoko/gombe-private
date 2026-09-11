@@ -92,6 +92,8 @@ async function createReceiptPDF(data: {
   schoolId: string;
 }): Promise<Buffer> {
   const { PDFDocument, StandardFonts, rgb } = await import("pdf-lib");
+  const fs = await import("fs");
+  const path = await import("path");
 
   const pdfDoc = await PDFDocument.create();
   const page = pdfDoc.addPage([595.28, 421.89]); // A5 landscape
@@ -112,15 +114,54 @@ async function createReceiptPDF(data: {
     height: 80,
     color: green,
   });
-  page.drawText("Gombe State Ministry of Education", {
-    x: 40,
+
+  // Logo — white backing square, same treatment as everywhere else in the
+  // app (a white box behind the logo regardless of its own colors).
+  const logoBoxSize = 44;
+  const logoBoxX = 32;
+  const logoBoxY = height - 80 + (80 - logoBoxSize) / 2;
+  page.drawRectangle({
+    x: logoBoxX,
+    y: logoBoxY,
+    width: logoBoxSize,
+    height: logoBoxSize,
+    color: rgb(1, 1, 1),
+  });
+
+  try {
+    const logoPath = path.join(process.cwd(), "public", "gombe_logo.png");
+    const logoBytes = fs.readFileSync(logoPath);
+    const logoImage = await pdfDoc.embedPng(logoBytes);
+
+    const padding = 6;
+    const maxDim = logoBoxSize - padding * 2;
+    const scale = Math.min(
+      maxDim / logoImage.width,
+      maxDim / logoImage.height,
+    );
+    const logoWidth = logoImage.width * scale;
+    const logoHeight = logoImage.height * scale;
+
+    page.drawImage(logoImage, {
+      x: logoBoxX + (logoBoxSize - logoWidth) / 2,
+      y: logoBoxY + (logoBoxSize - logoHeight) / 2,
+      width: logoWidth,
+      height: logoHeight,
+    });
+  } catch (err) {
+    console.error("Receipt logo embed failed:", err);
+  }
+
+  const titleX = logoBoxX + logoBoxSize + 14;
+  page.drawText("GOMBE STATE MINISTRY OF EDUCATION", {
+    x: titleX,
     y: height - 35,
     size: 14,
     font: boldFont,
     color: rgb(1, 1, 1),
   });
   page.drawText("Private Tertiary Institutions — Payment Receipt", {
-    x: 40,
+    x: titleX,
     y: height - 55,
     size: 10,
     font,

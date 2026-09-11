@@ -83,6 +83,7 @@ export default function Transactions() {
         page: String(page),
         start_date: startDate,
         end_date: endDate,
+        source: "private-uni",
       });
       if (lga) params.set("lga", lga);
       const res = await fetch(`/api/transactions/all?${params.toString()}`);

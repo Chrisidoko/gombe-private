@@ -119,7 +119,7 @@ export default function FixedAssessmentsPage() {
       setSearching(true);
       try {
         const res = await fetch(
-          `/api/inspector/search?q=${encodeURIComponent(query)}`,
+          `/api/inspector/search?q=${encodeURIComponent(query)}&approved_only=true`,
         );
         if (res.ok) {
           setResults(await res.json());

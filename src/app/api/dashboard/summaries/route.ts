@@ -55,6 +55,7 @@ export async function GET() {
         ), 0) AS year_total
 
       FROM transactionskano
+      WHERE source = 'private-uni'
     `);
 
     const row = result.rows[0];
@@ -67,6 +68,7 @@ export async function GET() {
     SUM(amount::numeric) AS total_amount
   FROM transactionskano
   WHERE status = 'Paid'
+    AND source = 'private-uni'
     AND payment_item IS NOT NULL
     AND paid_at >= DATE_TRUNC('year', NOW())
     AND paid_at < DATE_TRUNC('year', NOW()) + INTERVAL '1 year'

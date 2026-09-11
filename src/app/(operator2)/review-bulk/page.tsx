@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { ChartNoAxesGantt, Loader2, Check, X, ChevronDown, ChevronUp, PackageOpen } from "lucide-react";
+import { ChartNoAxesGantt, Loader2, Check, X, ChevronDown, ChevronUp, PackageOpen, Users, Search } from "lucide-react";
 import toast from "react-hot-toast";
 
 type BulkAssessment = {
@@ -29,6 +29,137 @@ function formatDate(s: string) {
   });
 }
 
+type CategorySchools = {
+  tier: number;
+  label: string;
+  fee: string | null;
+  schools: { school_id: string; name: string; lga: string | null }[];
+};
+
+function SchoolsModal({
+  title,
+  categories,
+  onClose,
+}: {
+  title: string;
+  categories: CategorySchools[];
+  onClose: () => void;
+}) {
+  const [activeTab, setActiveTab] = useState<number | "all">("all");
+  const [search, setSearch] = useState("");
+
+  const allSchools = categories.flatMap((c) =>
+    c.schools.map((s) => ({ ...s, tier: c.tier, label: c.label })),
+  );
+
+  const q = search.trim().toLowerCase();
+  const filtered = allSchools.filter((s) => {
+    const matchesTab = activeTab === "all" || s.tier === activeTab;
+    const matchesSearch =
+      !q ||
+      s.name.toLowerCase().includes(q) ||
+      (s.lga || "").toLowerCase().includes(q);
+    return matchesTab && matchesSearch;
+  });
+
+  const tabs = [
+    { id: "all" as const, label: "All", count: allSchools.length },
+    ...categories.map((c) => ({ id: c.tier, label: c.label, count: c.schools.length })),
+  ];
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4"
+      onClick={onClose}
+    >
+      <div
+        className="bg-white rounded-2xl shadow-2xl w-full max-w-xl max-h-[80vh] flex flex-col overflow-hidden"
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Header */}
+        <div className="px-6 py-4 border-b border-gray-100 flex items-start justify-between shrink-0">
+          <div className="min-w-0">
+            <h3 className="text-sm font-bold text-gray-900">Affected Schools</h3>
+            <p className="text-xs text-gray-400 mt-0.5 truncate">{title}</p>
+          </div>
+          <button
+            onClick={onClose}
+            className="text-gray-400 hover:text-gray-600 shrink-0"
+          >
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+
+        {/* Search */}
+        <div className="px-6 pt-4 shrink-0 relative">
+          <Search className="w-4 h-4 text-gray-400 absolute left-9 top-1/2 -translate-y-1/2" />
+          <input
+            type="text"
+            autoFocus
+            placeholder="Search by school name or LGA..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="w-full pl-10 pr-4 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#28a745]"
+          />
+        </div>
+
+        {/* Category tabs */}
+        <div className="px-6 pt-3 shrink-0">
+          <div className="flex items-center gap-1 bg-gray-100 rounded-xl p-1 overflow-x-auto">
+            {tabs.map((t) => (
+              <button
+                key={t.id}
+                onClick={() => setActiveTab(t.id)}
+                className={`flex-1 min-w-[84px] px-3 py-2 rounded-lg text-xs font-bold transition whitespace-nowrap ${
+                  activeTab === t.id
+                    ? "bg-white text-[#28a745] shadow-sm"
+                    : "text-gray-500 hover:text-gray-700"
+                }`}
+              >
+                {t.label}{" "}
+                <span className="text-gray-400 font-medium">({t.count})</span>
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* List */}
+        <div className="flex-1 overflow-y-auto px-6 py-3">
+          {filtered.length === 0 ? (
+            <p className="text-center text-sm text-gray-400 py-10">
+              No schools match.
+            </p>
+          ) : (
+            <div className="divide-y divide-gray-100">
+              {filtered.map((s) => (
+                <div
+                  key={s.school_id}
+                  className="flex items-center justify-between gap-3 py-2.5"
+                >
+                  <div className="min-w-0">
+                    <p className="text-sm font-medium text-gray-800 truncate">
+                      {s.name}
+                    </p>
+                    <p className="text-xs text-gray-400">{s.lga || "—"}</p>
+                  </div>
+                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-green-50 text-[#28a745] border border-green-200 shrink-0">
+                    {s.label}
+                  </span>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Footer */}
+        <div className="px-6 py-3 border-t border-gray-100 shrink-0 text-xs text-gray-400">
+          {filtered.length} of {allSchools.length} schools shown
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function AssessmentCard({
   assessment,
   onApprove,
@@ -42,9 +173,22 @@ function AssessmentCard({
 }) {
   const [expanded, setExpanded] = useState(false);
   const [showRejectModal, setShowRejectModal] = useState(false);
+  const [showSchoolsModal, setShowSchoolsModal] = useState(false);
   const [reason, setReason] = useState("");
+  const [categories, setCategories] = useState<CategorySchools[] | null>(null);
+  const [loadingSchools, setLoadingSchools] = useState(false);
 
   const busy = loading.id === assessment.id;
+
+  useEffect(() => {
+    if (!expanded || categories) return;
+    setLoadingSchools(true);
+    fetch(`/api/operator2/bulk/${assessment.id}/schools`)
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => data && setCategories(data.categories))
+      .catch(() => {})
+      .finally(() => setLoadingSchools(false));
+  }, [expanded, categories, assessment.id]);
 
   return (
     <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
@@ -83,13 +227,69 @@ function AssessmentCard({
         ))}
       </div>
 
-      {/* Description (expanded) */}
-      {expanded && assessment.description && (
-        <div className="px-6 pb-4">
-          <p className="text-xs text-gray-500 bg-gray-50 rounded-xl px-4 py-3 border border-gray-100">
-            {assessment.description}
-          </p>
+      {/* Expanded: description + affected schools */}
+      {expanded && (
+        <div className="px-6 pb-4 space-y-4">
+          {assessment.description && (
+            <p className="text-xs text-gray-500 bg-gray-50 rounded-xl px-4 py-3 border border-gray-100">
+              {assessment.description}
+            </p>
+          )}
+
+          <div>
+            <div className="flex items-center justify-between mb-2">
+              <p className="text-xs font-bold uppercase tracking-widest text-gray-400">
+                Affected Schools by Category
+              </p>
+              {categories && (
+                <button
+                  onClick={() => setShowSchoolsModal(true)}
+                  className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#28a745] hover:text-[#218838] transition"
+                >
+                  <Users className="w-3.5 h-3.5" />
+                  View Full List (
+                  {categories.reduce((sum, c) => sum + c.schools.length, 0)})
+                </button>
+              )}
+            </div>
+
+            {loadingSchools ? (
+              <div className="flex items-center justify-center py-6">
+                <Loader2 className="w-4 h-4 animate-spin text-gray-300" />
+              </div>
+            ) : categories ? (
+              <div className="grid grid-cols-3 gap-3">
+                {categories.map((c) => (
+                  <div
+                    key={c.tier}
+                    className="text-center bg-gray-50 rounded-xl border border-gray-100 py-3 px-2"
+                  >
+                    <p className="text-xs font-bold text-gray-700">{c.label}</p>
+                    <p className="text-lg font-black text-gray-800 mt-1">
+                      {c.schools.length}
+                    </p>
+                    <p className="text-[10px] text-gray-400">
+                      school{c.schools.length !== 1 ? "s" : ""}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-xs text-gray-400">
+                Could not load affected schools.
+              </p>
+            )}
+          </div>
         </div>
+      )}
+
+      {/* Affected schools modal */}
+      {showSchoolsModal && categories && (
+        <SchoolsModal
+          title={assessment.title}
+          categories={categories}
+          onClose={() => setShowSchoolsModal(false)}
+        />
       )}
 
       {/* Actions */}

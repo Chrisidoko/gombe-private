@@ -2,6 +2,7 @@ import { jwtVerify } from "jose";
 import { cookies } from "next/headers";
 
 interface JwtPayload {
+  id?: number;
   name: string;
   email: string;
   role: string;

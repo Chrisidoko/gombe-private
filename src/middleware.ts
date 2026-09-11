@@ -14,7 +14,6 @@ export async function middleware(req: NextRequest) {
   // ── Public routes — always allow ─────────────────────────────────────────
   if (
     url.startsWith("/login") ||
-    url.startsWith("/signup") ||
     url.startsWith("/api") ||
     url.startsWith("/payment-success") || // ← public
     url.startsWith("/verify") || // ← public
@@ -63,7 +62,6 @@ export async function middleware(req: NextRequest) {
       url.startsWith("/dashboard") ||
       url.startsWith("/requests") ||
       url.startsWith("/institutions") ||
-      url.startsWith("/questionnaires") ||
       url.startsWith("/create-school") ||
       url.startsWith("/accounts")
     ) {

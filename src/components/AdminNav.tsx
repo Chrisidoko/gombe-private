@@ -6,8 +6,8 @@ import { useState } from "react";
 import {
   Building,
   Building2,
-  FileQuestionMark,
   UserRoundCog,
+  ShieldCheck,
 } from "lucide-react";
 import LogoutButton from "@/components/ui/logoutbutton";
 
@@ -85,12 +85,6 @@ const Navigation: React.FC<NavigationProps> = ({ collapsed, setCollapsed }) => {
       icon: <Building2 className="w-4 h-4" />,
     },
     {
-      href: "/questionnaires",
-      label: "Questionnaires",
-      icon: <FileQuestionMark className="w-4 h-4" />,
-    },
-
-    {
       href: "/create-school",
       label: "Create School",
       icon: <Building className="w-4 h-4" />,
@@ -151,6 +145,16 @@ const Navigation: React.FC<NavigationProps> = ({ collapsed, setCollapsed }) => {
               )}
             </div>
           </div>
+
+          {/* Role badge */}
+          {!collapsed && (
+            <div className="px-4 py-2 border-b border-gray-100">
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-green-50 border border-green-200 text-xs font-semibold text-green-700">
+                <ShieldCheck size={11} />
+                Administrator
+              </span>
+            </div>
+          )}
 
           {/* Collapse Toggle Button - Desktop Only */}
           <div className="hidden lg:block px-4 py-3 border-b border-gray-100">

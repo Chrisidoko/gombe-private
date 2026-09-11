@@ -144,16 +144,6 @@ const Page = () => {
             </button>
           </form>
 
-          <p className="text-xs text-gray-500">
-            New on our platform?{" "}
-            <Link
-              href="/signup"
-              className="text-sm text-blue-700 font-semibold"
-            >
-              Create an account
-            </Link>
-          </p>
-
           <div className="mt-16 flex gap-3 sm:gap-8 text-xs font-medium text-blue-700">
             <a href="#">Terms & Condition</a> <a href="#">Privacy Policy</a>{" "}
             <a href="#">Support</a>

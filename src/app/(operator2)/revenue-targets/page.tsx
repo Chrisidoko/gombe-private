@@ -46,6 +46,7 @@ export default function RevenueTargetsPage() {
   const currentYear = new Date().getFullYear();
   const [year, setYear] = useState(currentYear);
   const [forms, setForms] = useState<QuarterForm[]>(emptyForm());
+  const [selectedQuarter, setSelectedQuarter] = useState(1);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState<number | null>(null);
   const [error, setError] = useState("");
@@ -82,7 +83,11 @@ export default function RevenueTargetsPage() {
     fetchTargets(year);
   }, [year, fetchTargets]);
 
-  function updateForm(quarter: number, field: "target" | "notes", value: string) {
+  function updateForm(
+    quarter: number,
+    field: "target" | "notes",
+    value: string,
+  ) {
     setForms((prev) =>
       prev.map((f) =>
         f.quarter === quarter ? { ...f, [field]: value, saved: false } : f,
@@ -132,9 +137,11 @@ export default function RevenueTargetsPage() {
   }, 0);
 
   const yearOptions = Array.from({ length: 5 }, (_, i) => currentYear - 1 + i);
+  const activeForm =
+    forms.find((f) => f.quarter === selectedQuarter) ?? forms[0];
 
   return (
-    <div className="min-h-screen bg-gray-50 px-4 py-6">
+    <div className="min-h-screen bg-gray-50 px-4 py-2">
       <div className="max-w-4xl mx-auto space-y-6">
         {/* Header */}
         <div className="flex items-start justify-between flex-wrap gap-4">
@@ -172,7 +179,7 @@ export default function RevenueTargetsPage() {
         ) : (
           <>
             {/* Annual total */}
-            <div className="bg-white rounded-2xl border border-gray-200 shadow-sm px-6 py-5 flex items-center gap-4">
+            <div className="bg-white rounded-2xl border border-gray-200 shadow-xs px-6 py-5 flex items-center gap-4">
               <div className="w-10 h-10 rounded-xl bg-green-50 border border-green-100 flex items-center justify-center shrink-0">
                 <Target className="w-5 h-5 text-[#28a745]" />
               </div>
@@ -186,76 +193,110 @@ export default function RevenueTargetsPage() {
               </div>
             </div>
 
-            {/* Quarterly forms */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {/* Quarter clicker */}
+            <div className="flex items-center gap-1 bg-gray-100 rounded-xl p-1 overflow-x-auto">
               {forms.map((f) => (
-                <div
+                <button
                   key={f.quarter}
-                  className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden"
+                  onClick={() => setSelectedQuarter(f.quarter)}
+                  className={`flex-1 min-w-[100px] px-3 py-2.5 rounded-lg transition ${
+                    selectedQuarter === f.quarter
+                      ? "bg-white shadow-sm"
+                      : "hover:bg-white/60"
+                  }`}
                 >
-                  <div className="flex items-center justify-between px-5 py-4 bg-gray-50 border-b border-gray-100">
-                    <div>
-                      <p className="text-sm font-black text-gray-800">
-                        {f.label} {year}
-                      </p>
-                      <p className="text-xs text-gray-400">{f.period}</p>
-                    </div>
+                  <div className="flex items-center justify-center gap-1.5">
+                    <span
+                      className={`text-sm font-black ${
+                        selectedQuarter === f.quarter
+                          ? "text-[#28a745]"
+                          : "text-gray-600"
+                      }`}
+                    >
+                      {f.label}
+                    </span>
                     {f.saved && (
-                      <span className="inline-flex items-center gap-1 text-xs font-semibold text-green-600">
-                        <CheckCircle2 className="w-3.5 h-3.5" />
-                        Saved
-                      </span>
+                      <CheckCircle2 className="w-3.5 h-3.5 text-green-500" />
                     )}
                   </div>
-
-                  <div className="p-5 space-y-3">
-                    <div>
-                      <label className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-1 block">
-                        Target Amount (₦)
-                      </label>
-                      <input
-                        type="number"
-                        min={0}
-                        placeholder="0.00"
-                        value={f.target}
-                        onChange={(e) =>
-                          updateForm(f.quarter, "target", e.target.value)
-                        }
-                        className="w-full px-4 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-1 block">
-                        Notes (optional)
-                      </label>
-                      <input
-                        type="text"
-                        placeholder="e.g. basis for this target"
-                        value={f.notes}
-                        onChange={(e) =>
-                          updateForm(f.quarter, "notes", e.target.value)
-                        }
-                        className="w-full px-4 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500"
-                      />
-                    </div>
-
-                    <button
-                      onClick={() => handleSave(f.quarter)}
-                      disabled={saving === f.quarter}
-                      className="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-bold rounded-xl bg-[#28a745] text-white hover:bg-[#218838] transition disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      {saving === f.quarter ? (
-                        <Loader2 className="w-4 h-4 animate-spin" />
-                      ) : (
-                        <Save className="w-4 h-4" />
-                      )}
-                      {saving === f.quarter ? "Saving" : "Save Target"}
-                    </button>
-                  </div>
-                </div>
+                  <p
+                    className={`text-[10px] mt-0.5 ${
+                      selectedQuarter === f.quarter
+                        ? "text-gray-500"
+                        : "text-gray-400"
+                    }`}
+                  >
+                    {f.period}
+                  </p>
+                </button>
               ))}
             </div>
+
+            {/* Selected quarter's form */}
+            {activeForm && (
+              <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
+                <div className="flex items-center justify-between px-5 py-4 bg-gray-50 border-b border-gray-100">
+                  <div>
+                    <p className="text-sm font-black text-gray-800">
+                      {activeForm.label} {year}
+                    </p>
+                    <p className="text-xs text-gray-400">{activeForm.period}</p>
+                  </div>
+                  {activeForm.saved && (
+                    <span className="inline-flex items-center gap-1 text-xs font-semibold text-green-600">
+                      <CheckCircle2 className="w-3.5 h-3.5" />
+                      Saved
+                    </span>
+                  )}
+                </div>
+
+                <div className="p-5 space-y-3">
+                  <div>
+                    <label className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-1 block">
+                      Target Amount (₦)
+                    </label>
+                    <input
+                      type="number"
+                      min={0}
+                      placeholder="0.00"
+                      value={activeForm.target}
+                      onChange={(e) =>
+                        updateForm(activeForm.quarter, "target", e.target.value)
+                      }
+                      className="w-full px-4 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-1 block">
+                      Notes (optional)
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="e.g. basis for this target"
+                      value={activeForm.notes}
+                      onChange={(e) =>
+                        updateForm(activeForm.quarter, "notes", e.target.value)
+                      }
+                      className="w-full px-4 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500"
+                    />
+                  </div>
+
+                  <button
+                    onClick={() => handleSave(activeForm.quarter)}
+                    disabled={saving === activeForm.quarter}
+                    className="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-bold rounded-xl bg-[#28a745] text-white hover:bg-[#218838] transition disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {saving === activeForm.quarter ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <Save className="w-4 h-4" />
+                    )}
+                    {saving === activeForm.quarter ? "Saving" : "Save Target"}
+                  </button>
+                </div>
+              </div>
+            )}
           </>
         )}
       </div>

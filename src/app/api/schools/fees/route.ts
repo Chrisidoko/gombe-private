@@ -84,7 +84,8 @@ const FEE_DEFINITIONS: FeeDefinition[] = [
   {
     id: 4,
     name: "Issuing of Certificate",
-    description: "Ministry's issuance of the institution's certificate of registration.",
+    description:
+      "Ministry's issuance of the institution's certificate of registration.",
     group: "Certificate Fee",
     stage: 3,
     mandatory: true,
@@ -275,7 +276,8 @@ export async function GET(req: Request) {
       existing.rows.forEach((row) => {
         const isCurrent =
           row.fee_year === null ||
-          (row.fee_id === MONITORING_FEE_ID && row.fee_year === monitoringFeeYear) ||
+          (row.fee_id === MONITORING_FEE_ID &&
+            row.fee_year === monitoringFeeYear) ||
           (row.fee_id === RENEWAL_FEE_ID && row.fee_year === renewalFeeYear);
         if (!isCurrent) return;
         paymentMap[row.fee_id] = row.status;
@@ -341,7 +343,10 @@ export async function GET(req: Request) {
         .filter((f) => !(f.id === MONITORING_FEE_ID && !monitoringDue))
         .map((f) => ({
           ...f,
-          status: (paymentMap[f.id] ?? "unpaid") as "paid" | "unpaid" | "pending",
+          status: (paymentMap[f.id] ?? "unpaid") as
+            | "paid"
+            | "unpaid"
+            | "pending",
           reference: referenceMap[f.id] ?? null,
           db_id: dbIdMap[f.id] ?? null,
         }));
@@ -364,7 +369,9 @@ export async function GET(req: Request) {
           lockReason = "active_license";
         } else {
           locked = !registrationPaid || !showCertificate;
-          lockReason = !showCertificate ? "assessment_pending" : "stage_incomplete";
+          lockReason = !showCertificate
+            ? "assessment_pending"
+            : "stage_incomplete";
         }
       }
 
