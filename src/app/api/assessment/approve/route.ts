@@ -3,7 +3,6 @@
 import { NextResponse } from "next/server";
 import pool from "@/lib/db";
 import nodemailer from "nodemailer";
-import crypto from "crypto";
 
 export async function POST(req: Request) {
   const client = await pool.connect();
@@ -62,111 +61,9 @@ export async function POST(req: Request) {
 
     if (!school) throw new Error("School not found");
 
-    // Step 4: Create bill with 3rd party API (skipped when gateway is not yet configured)
-    const GATEWAY_ACTIVE = process.env.PAYKADUNA_API_KEY !== "STUB_NOT_ACTIVE";
-    let billReference = null;
-    let billStatus = null;
-    let tpui = null;
-
-    if (!GATEWAY_ACTIVE) {
-      console.log("⚠️ Payment gateway not configured — invoice created without bill reference.");
-    }
-
-    if (GATEWAY_ACTIVE) try {
-      const billPayload = {
-        engineCode: process.env.PAYKADUNA_ENGINE_CODE,
-        identifier: school.school_id, // Using school_id as identifier
-        firstName: school.name.split(" ")[0] || school.name,
-        middleName: school.name.split(" ")[1] || "",
-        lastName:
-          school.name.split(" ").slice(2).join(" ") ||
-          school.name.split(" ")[0],
-        address: school.address || "Gombe, Nigeria",
-        telephone: school.phone || "08000000000",
-        esBillDetailsDto: [
-          {
-            amount: parseFloat(amount),
-            mdasId: parseInt(process.env.MDAS_ID || "3654"), // Configure this in .env
-            narration: `Institution Payment - ${invoice_number}`,
-          },
-        ],
-      };
-
-      const jsonPayload = JSON.stringify(billPayload);
-
-      // Generate HMAC SHA256 signature
-      const apiKey = process.env.PAYKADUNA_API_KEY;
-      if (!apiKey) {
-        throw new Error("Third party API key not configured");
-      }
-
-      const signature = crypto
-        .createHmac("sha256", apiKey)
-        .update(jsonPayload)
-        .digest("base64");
-
-      console.log("🔹 Creating bill with 3rd party API...");
-
-      const apiUrl = `${process.env.NEXT_PUBLIC_PAYKADUNA_URL}api/ESBills/CreateESBill`;
-      // console.log("🔹 Creating bill with 3rd party API...");
-      // console.log("📍 API URL:", apiUrl);
-      // console.log("📦 Payload:", billPayload);
-      // console.log("🔐 Signature:", signature);
-
-      const billResponse = await fetch(apiUrl, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "X-Api-Signature": signature,
-        },
-        body: jsonPayload,
-      });
-
-      if (!billResponse.ok) {
-        const errorData = await billResponse.text();
-        console.error("❌ 3rd party API error:", errorData);
-        throw new Error(`Bill creation failed: ${billResponse.statusText}`);
-      }
-
-      const billData = await billResponse.json();
-      console.log("✅ Bill created:", billData);
-
-      // Extract billReference and status from response
-      billReference = billData.bill?.billReference || invoice_number;
-      billStatus = billData.bill?.payStatus || "Unpaid";
-      tpui = billData.bill?.tpui || " ";
-
-      // Step 4: Update invoice with bill reference
-      await client.query(
-        `UPDATE schoolkano_invoices 
-         SET bill_reference = $1, status = $2, tpui = $3, updated_at = NOW() 
-         WHERE id = $4`,
-        [billReference, billStatus, tpui, invoiceId],
-      );
-      console.log("✅ Invoice updated with bill reference");
-    } catch (billError) {
-      console.error("⚠️ Bill creation failed:", billError);
-
-      // Decision point: Do you want to rollback everything or just log the error?
-      // Option A: Rollback everything (uncomment below)
-      throw billError;
-
-      // Option B: Continue with invoice creation, log error for manual retry
-      // await client.query(
-      //   `UPDATE schoolkano_invoices
-      //    SET notes = $1, updated_at = NOW()
-      //    WHERE id = $2`,
-      //   [
-      //     `Bill creation failed: ${
-      //       billError instanceof Error ? billError.message : "Unknown error"
-      //     }`,
-      //     invoiceId,
-      //   ]
-      // );
-      // console.log(
-      //   "⚠️ Invoice created but bill creation failed - marked for retry"
-      // );
-    }
+    // Invoice reference is invoice_number itself — self-generated above, no
+    // external bill-creation call needed (see src/app/api/schools/fees/route.ts
+    // for the equivalent fee-side reasoning).
 
     // Step 5: Send email notification
     if (!process.env.SMTP_USER || !process.env.SMTP_PASS) {
@@ -199,15 +96,10 @@ export async function POST(req: Request) {
         <p>Dear ${school.name},</p>
         <p>Your assessment has been approved. Please proceed to make payment for the generated invoice.</p>
         <p><strong>Invoice Reference:</strong> ${invoice_number}</p>
-        ${
-          billReference && billReference !== invoice_number
-            ? `<p><strong>Bill Reference:</strong> ${billReference}</p>`
-            : ""
-        }
         <p><strong>Amount Due:</strong> ₦${parseFloat(
           amount,
         ).toLocaleString()}</p>
-        <p><strong>Status:</strong> ${billStatus || "Unpaid"}</p>
+        <p><strong>Status:</strong> Unpaid</p>
         <p><strong>Payment Due Date:</strong> ${formattedDueDate}</p>
         <br/>
         <a href="https://kaptems.payprosolutionsltd.com/"
@@ -223,8 +115,6 @@ export async function POST(req: Request) {
       invoice: {
         id: invoiceId,
         invoice_number,
-        bill_reference: billReference,
-        bill_status: billStatus,
         due_date: dueDate,
       },
     });

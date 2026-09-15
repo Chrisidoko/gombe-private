@@ -3,7 +3,6 @@
 import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
 // import { useRouter } from "next/navigation";
-import PaymentModal from "@/components/ui/paymentmodal";
 import {
   CheckCircle2,
   Loader2,
@@ -49,8 +48,6 @@ export default function FeeTable({
   const [checkoutLoading, setCheckoutLoading] = useState(false);
   const [checkingStatus, setCheckingStatus] = useState(false);
   const [paymentSuccess, setPaymentSuccess] = useState(false);
-  const [paymentUrl, setPaymentUrl] = useState("");
-  const [showPaymentModal, setShowPaymentModal] = useState(false);
 
   // const router = useRouter();
 
@@ -78,7 +75,15 @@ export default function FeeTable({
       }
     }
     fetchFees();
-  }, [school_id, showCertificateFee]);
+
+    // Checkout opens in a new tab (see handleMakePayment below) — this tab
+    // stays open in the background the whole time. Re-fetching on focus
+    // catches a payment completed there without needing a webhook: the fees
+    // route itself re-verifies any still-unpaid fee with Credo before
+    // responding (see src/app/api/schools/fees/route.ts).
+    window.addEventListener("focus", fetchFees);
+    return () => window.removeEventListener("focus", fetchFees);
+  }, [school_id, showCertificateFee, license_status]);
 
   const total = feeGroups
     .filter((g) => !g.locked)
@@ -112,9 +117,16 @@ export default function FeeTable({
         throw new Error(data.error || "Failed to create checkout session");
       }
 
-      // Open payment URL in modal
-      setPaymentUrl(data.checkoutUrl);
-      setShowPaymentModal(true);
+      // Open in a new tab — Credo's real checkout page can't be iframed
+      // (payment gateways block framing by default), unlike PayKaduna's
+      // previous modal-iframe flow. Matches InvoiceTable's pattern.
+      const link = document.createElement("a");
+      link.href = data.checkoutUrl;
+      link.target = "_blank";
+      link.rel = "noopener noreferrer";
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
     } catch (error) {
       console.error("Checkout error:", error);
       toast.error(
@@ -123,18 +135,6 @@ export default function FeeTable({
     } finally {
       setCheckoutLoading(false);
     }
-  }
-
-  async function closePaymentModal() {
-    setShowPaymentModal(false);
-    setPaymentUrl("");
-
-    toast.loading("Verifying payment...", { duration: 5000 });
-
-    await new Promise((resolve) => setTimeout(resolve, 5000));
-    window.location.reload();
-    // router.refresh();
-    // // ← re-fetches server data without full page reload is of the use of "window.location.reload();"
   }
 
   if (loading) {
@@ -421,13 +421,6 @@ export default function FeeTable({
           </div>
         </div>
       </div>
-
-      {/* Payment Modal */}
-      <PaymentModal
-        isOpen={showPaymentModal}
-        onClose={() => closePaymentModal()} // will come back to review payment status when modal closes
-        paymentUrl={paymentUrl}
-      />
 
       <style jsx>{`
         @keyframes fade-in {

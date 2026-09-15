@@ -97,7 +97,7 @@ const Navigation: React.FC<NavigationProps> = ({ collapsed, setCollapsed }) => {
           isMobileOpen ? "translate-x-0" : "-translate-x-full"
         } ${
           collapsed ? "w-20" : "w-72"
-        } bg-white border-r border-gray-200 shadow-xl`}
+        } bg-white border-r border-gray-200 shadow-sm`}
       >
         <div className="flex flex-col h-full">
           {/* Logo Header */}

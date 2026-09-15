@@ -9,6 +9,7 @@ import {
   FileText,
   Settings2,
   Target,
+  LayoutDashboard,
 } from "lucide-react";
 import LogoutButton from "@/components/ui/logoutbutton";
 
@@ -25,6 +26,11 @@ const Ops2Navigation: React.FC<NavigationProps> = ({
   const [isMobileOpen, setIsMobileOpen] = useState(false);
 
   const navItems = [
+    {
+      href: "/review-dashboard",
+      label: "Dashboard",
+      icon: <LayoutDashboard size={18} />,
+    },
     {
       href: "/review-bulk",
       label: "Review Bulk Assessments",
@@ -59,7 +65,7 @@ const Ops2Navigation: React.FC<NavigationProps> = ({
       <aside
         className={`fixed top-0 left-0 z-50 h-screen transition-all duration-300 ease-in-out lg:translate-x-0 ${
           isMobileOpen ? "translate-x-0" : "-translate-x-full"
-        } ${collapsed ? "w-20" : "w-72"} bg-white border-r border-gray-200 shadow-xl`}
+        } ${collapsed ? "w-20" : "w-72"} bg-white border-r border-gray-200 shadow-sm`}
       >
         <div className="flex flex-col h-full">
           {/* Logo */}

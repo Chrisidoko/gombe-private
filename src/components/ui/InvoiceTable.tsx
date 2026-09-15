@@ -56,6 +56,14 @@ export default function InvoiceTable({ schoolId }: { schoolId: string }) {
     }
 
     fetchInvoices();
+
+    // Checkout opens in a new tab (see handleCheckout below) — this tab
+    // stays open in the background the whole time. Re-fetching on focus
+    // catches a payment completed there without needing a webhook: the
+    // invoices route itself re-verifies any still-unpaid invoice with Credo
+    // before responding (see src/app/api/invoices/[school_id]/route.ts).
+    window.addEventListener("focus", fetchInvoices);
+    return () => window.removeEventListener("focus", fetchInvoices);
   }, [schoolId]);
 
   const filteredInvoices = invoices.filter((inv) => {

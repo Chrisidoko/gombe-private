@@ -56,7 +56,9 @@ function NoticeCard({
           </div>
           <div className="min-w-0">
             <p className="font-bold text-gray-900 text-sm truncate">{notice.title}</p>
-            <p className="text-xs text-gray-400 mt-0.5">Submitted {formatDate(notice.created_at)}</p>
+            <p className="text-xs text-gray-400 mt-0.5">
+              Submitted by {notice.submitted_by} · {formatDate(notice.created_at)}
+            </p>
           </div>
         </div>
         <span className="text-lg font-black text-green-600 shrink-0">{formatCurrency(notice.amount)}</span>
@@ -198,13 +200,46 @@ export default function ReviewDemandNoticesPage() {
 
   return (
     <div className="min-h-screen bg-gray-50 px-4 py-6">
-      <div className="max-w-3xl mx-auto space-y-6">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Review Demand Notices</h1>
-          <p className="text-sm text-gray-500 mt-1">
-            Flat fee demand notices submitted by Operator 1. Approving will generate a live invoice and notify the school.
-          </p>
+      <div className="max-w-6xl mx-auto space-y-6">
+        <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3">
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900">Review Demand Notices</h1>
+            <p className="text-sm text-gray-500 mt-1">
+              Flat fee demand notices submitted by Operator 1. Approving will generate a live invoice and notify the school.
+            </p>
+          </div>
+          {!fetching && notices.length > 0 && (
+            <span className="inline-flex items-center gap-1.5 self-start sm:self-auto px-3 py-1.5 rounded-full bg-amber-50 border border-amber-200 text-xs font-bold text-amber-700">
+              {notices.length} pending
+            </span>
+          )}
         </div>
+
+        {!fetching && notices.length > 0 && (
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+            <div className="bg-white rounded-xl border border-gray-200 py-3 px-4 text-center">
+              <p className="text-xs text-gray-400 font-medium">Pending</p>
+              <p className="text-xl font-black text-gray-900 mt-0.5">{notices.length}</p>
+            </div>
+            <div className="bg-white rounded-xl border border-gray-200 py-3 px-4 text-center">
+              <p className="text-xs text-gray-400 font-medium">Total Amount</p>
+              <p className="text-xl font-black text-green-700 mt-0.5">
+                {formatCurrency(notices.reduce((s, n) => s + Number(n.amount || 0), 0))}
+              </p>
+            </div>
+            <div className="bg-white rounded-xl border border-gray-200 py-3 px-4 text-center col-span-2 sm:col-span-1">
+              <p className="text-xs text-gray-400 font-medium">Oldest Submission</p>
+              <p className="text-sm font-bold text-gray-900 mt-1.5">
+                {formatDate(
+                  notices.reduce(
+                    (oldest, n) => (new Date(n.created_at) < new Date(oldest) ? n.created_at : oldest),
+                    notices[0].created_at,
+                  ),
+                )}
+              </p>
+            </div>
+          </div>
+        )}
 
         {fetching ? (
           <div className="flex justify-center py-20">
@@ -219,7 +254,7 @@ export default function ReviewDemandNoticesPage() {
             <p className="text-xs text-gray-400 mt-1">Demand notices submitted by Operator 1 will appear here.</p>
           </div>
         ) : (
-          <div className="space-y-4">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
             {notices.map((n) => (
               <NoticeCard
                 key={n.id}

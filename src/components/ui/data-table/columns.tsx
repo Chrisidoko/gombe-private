@@ -1,5 +1,7 @@
 "use client";
 
+import { useState } from "react";
+import toast from "react-hot-toast";
 import { Badge, BadgeProps } from "../../Badge";
 import { Checkbox } from "../../Checkbox";
 import { formatters } from "@/lib/utils";
@@ -15,7 +17,49 @@ const statuses = [
   { value: "pending", label: "Pending", variant: "warning" },
 ];
 
-export const getColumns = () =>
+// Manually re-verifies one transaction with Credo — see
+// src/app/api/transactions/check-status/route.ts. Only shown for rows not
+// already Paid; re-checking a settled transaction is a no-op.
+function CheckStatusButton({
+  reference,
+  onChecked,
+}: {
+  reference: string;
+  onChecked?: () => void;
+}) {
+  const [checking, setChecking] = useState(false);
+
+  async function handleClick() {
+    setChecking(true);
+    try {
+      const res = await fetch("/api/transactions/check-status", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ reference }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Check failed");
+      toast.success(data.isPaid ? "Confirmed paid" : "Still unpaid — no change");
+      onChecked?.();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to check status");
+    } finally {
+      setChecking(false);
+    }
+  }
+
+  return (
+    <button
+      onClick={handleClick}
+      disabled={checking}
+      className="text-xs font-medium text-indigo-600 hover:text-indigo-800 disabled:opacity-50 disabled:cursor-not-allowed"
+    >
+      {checking ? "Checking…" : "Check status"}
+    </button>
+  );
+}
+
+export const getColumns = (onStatusChecked?: () => void) =>
   [
     columnHelper.display({
       id: "select",
@@ -169,6 +213,25 @@ export const getColumns = () =>
         const date = d.toISOString().slice(0, 10); // 2026-04-23
         const time = d.toTimeString().slice(0, 5); // 09:30
         return `${date} ${time}`;
+      },
+    }),
+
+    columnHelper.display({
+      id: "actions",
+      header: "Actions",
+      cell: ({ row }) => {
+        if (row.original.status === "Paid") return null;
+        return (
+          <CheckStatusButton
+            reference={row.original.reference}
+            onChecked={onStatusChecked}
+          />
+        );
+      },
+      enableSorting: false,
+      enableHiding: false,
+      meta: {
+        displayName: "Actions",
       },
     }),
   ] as ColumnDef<TransactionType>[];

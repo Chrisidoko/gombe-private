@@ -154,19 +154,39 @@ export async function POST(req: Request) {
     const school_id = payment?.school_id ?? invoice?.school_id;
     const amount = payment?.amount ?? invoice?.amount;
     const payment_item = payment?.fee_name ?? `⁠Assessment Fees`;
-    const lga = payment?.lga ?? null;
+
+    // lga/category are looked up directly from schoolskano here rather
+    // than through schoolkano_payments.lga — that column exists but is
+    // never actually populated anywhere in the codebase, so reading it
+    // (as this route previously did) silently produced NULL every time.
+    // A direct lookup at confirmation time is also correct for both
+    // possible sources of school_id above (payment or invoice), and
+    // naturally stays NULL for a future external-partner payment with no
+    // schoolskano row at all — same as source/payer_name already handle
+    // that case.
+    let lga: string | null = null;
+    let category: string | null = null;
+    if (school_id) {
+      const schoolRes = await client.query(
+        `SELECT lga, category FROM schoolskano WHERE school_id = $1`,
+        [school_id],
+      );
+      lga = schoolRes.rows[0]?.lga ?? null;
+      category = schoolRes.rows[0]?.category ?? null;
+    }
 
     await client.query(
       `INSERT INTO transactionskano
-         (reference, amount, status, payment_method, gateway_response, payment_item, paid_at, created_at, school_id, lga)
-       VALUES ($1, $2, $3, 'paykaduna', $4, $5, $6, NOW(), $7, $8)
+         (reference, amount, status, payment_method, gateway_response, payment_item, paid_at, created_at, school_id, lga, category)
+       VALUES ($1, $2, $3, 'paykaduna', $4, $5, $6, NOW(), $7, $8, $9)
        ON CONFLICT (reference)
        DO UPDATE SET
          status           = $3,
          gateway_response = $4,
          paid_at          = $6,
          created_at       = NOW(),
-         lga              = $8`,
+         lga              = $8,
+         category         = $9`,
       [
         billReference,
         amount,
@@ -176,6 +196,7 @@ export async function POST(req: Request) {
         status.toLowerCase() === "paid" ? paidat || new Date() : null,
         school_id,
         lga,
+        category,
       ],
     );
     console.log("Transaction logged for:", payment_item);

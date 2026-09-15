@@ -68,8 +68,6 @@ export default function Transactions() {
   // );
   // const [drawerOpen, setDrawerOpen] = useState(false);
 
-  const columns = getColumns();
-
   useEffect(() => {
     fetchTransactions();
   }, [filters]);
@@ -99,6 +97,8 @@ export default function Transactions() {
       setLoading(false);
     }
   };
+
+  const columns = getColumns(fetchTransactions);
 
   return (
     <main>

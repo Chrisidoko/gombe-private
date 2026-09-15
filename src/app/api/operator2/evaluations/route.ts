@@ -19,6 +19,7 @@ export async function GET() {
         a.created_at,
         a.op1_recommendation,
         a.op1_note,
+        a.op1_reviewed_by,
         a.population_100, a.fee_100,
         a.population_200, a.fee_200,
         a.population_300, a.fee_300,

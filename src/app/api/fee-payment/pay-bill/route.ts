@@ -1,9 +1,9 @@
 // /api/fee-payment/pay-bill/route.ts
 import { NextResponse } from "next/server";
 import pool from "@/lib/db";
-import crypto from "crypto";
+import { initializeTransaction } from "@/lib/etransact";
 
-const GATEWAY_ACTIVE = process.env.PAYKADUNA_API_KEY !== "STUB_NOT_ACTIVE";
+const GATEWAY_ACTIVE = process.env.CREDO_PUBLIC_KEY !== "STUB_NOT_ACTIVE";
 
 export async function POST(req: Request) {
   if (!GATEWAY_ACTIVE) {
@@ -19,8 +19,6 @@ export async function POST(req: Request) {
     const body = await req.json();
     const { db_id, school_id } = body;
 
-    // console.log("🔹 Initiating checkout for fee:", fee_id);
-
     if (!db_id || !school_id) {
       return NextResponse.json(
         { error: "Missing fee_id or school_id" },
@@ -28,11 +26,12 @@ export async function POST(req: Request) {
       );
     }
 
-    // Fetch fee details including bill_reference
+    // Fetch fee details, joined with the school for the email Credo requires
     const feeRes = await client.query(
-      `SELECT id, fee_id, status, reference
-   FROM schoolkano_payments
-   WHERE id = $1 AND school_id = $2`, // ← query by fee_id + school_id
+      `SELECT p.id, p.fee_id, p.fee_name, p.status, p.reference, p.amount, s.email AS school_email
+       FROM schoolkano_payments p
+       LEFT JOIN schoolskano s ON s.school_id = p.school_id
+       WHERE p.id = $1 AND p.school_id = $2`,
       [db_id, school_id],
     );
 
@@ -56,65 +55,25 @@ export async function POST(req: Request) {
       );
     }
 
-    // Create checkout session with PayKaduna
-    const checkoutPayload = {
-      billReference: fee.reference,
-    };
-
-    const jsonPayload = JSON.stringify(checkoutPayload);
-
-    // Generate HMAC SHA256 signature
-    const apiKey = process.env.PAYKADUNA_API_KEY;
-    if (!apiKey) {
-      throw new Error("PayKaduna API key not configured");
-    }
-
-    const signature = crypto
-      .createHmac("sha256", apiKey)
-      .update(jsonPayload)
-      .digest("base64");
-
-    let baseUrl = process.env.NEXT_PUBLIC_PAYKADUNA_URL || "";
-    if (!baseUrl.startsWith("http://") && !baseUrl.startsWith("https://")) {
-      baseUrl = `https://${baseUrl}`;
-    }
-    const apiUrl = `${baseUrl}api/ESBills/CreateESTransaction`;
-
-    // console.log("🔹 Creating checkout session...");
-    // console.log("📍 API URL:", apiUrl);
-    // console.log("📦 Payload:", checkoutPayload);
-
-    const checkoutResponse = await fetch(apiUrl, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "X-Api-Signature": signature,
-      },
-      body: jsonPayload,
+    // Trailing slash stripped defensively — see the return route for why.
+    const baseUrl = (process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000").replace(/\/$/, "");
+    const { authorizationUrl, gatewayReference } = await initializeTransaction({
+      amountNaira: Number(fee.amount),
+      email: fee.school_email || "no-reply@gombeprivateuni.example.com",
+      reference: fee.reference,
+      callbackUrl: `${baseUrl}/api/payments/etransact/return?type=fee&id=${fee.id}`,
+      // 88/12 split applied automatically inside initializeTransaction()
+      // via CREDO_SERVICE_CODE (Preconfigured split) — see src/lib/etransact.ts.
     });
 
-    if (!checkoutResponse.ok) {
-      const errorData = await checkoutResponse.text();
-      console.error("❌ PayKaduna API error:", errorData);
-      throw new Error(
-        `Checkout creation failed: ${checkoutResponse.statusText}`,
-      );
-    }
-
-    const checkoutData = await checkoutResponse.json();
-    // console.log("✅ Checkout session created:", checkoutData);
-
-    const checkoutUrl = checkoutData.checkoutUrl;
-
-    if (!checkoutUrl) {
-      throw new Error("No checkout URL received from PayKaduna");
-    }
-
-    // console.log("✅ Redirecting to checkout URL");
+    await client.query(
+      `UPDATE schoolkano_payments SET credo_reference = $1 WHERE id = $2`,
+      [gatewayReference, fee.id],
+    );
 
     return NextResponse.json({
       success: true,
-      checkoutUrl,
+      checkoutUrl: authorizationUrl,
     });
   } catch (error: unknown) {
     console.error(" Error creating checkout:", error);

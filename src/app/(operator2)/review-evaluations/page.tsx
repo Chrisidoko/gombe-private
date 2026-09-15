@@ -17,6 +17,7 @@ type Assessment = {
   school_email: string;
   op1_recommendation: "recommend_approve" | "recommend_reject" | null;
   op1_note: string | null;
+  op1_reviewed_by: string | null;
   population_100?: number; fee_100?: number;
   population_200?: number; fee_200?: number;
   population_300?: number; fee_300?: number;
@@ -80,7 +81,7 @@ function AssessmentCard({
           ) : (
             <ThumbsDown className="w-3.5 h-3.5" />
           )}
-          Operator 1 recommends:{" "}
+          Operator 1{assessment.op1_reviewed_by ? ` (${assessment.op1_reviewed_by})` : ""} recommends:{" "}
           <span className="uppercase tracking-wide">
             {rec === "recommend_approve" ? "APPROVE" : "REJECT"}
           </span>
@@ -262,13 +263,41 @@ export default function ReviewEvaluationsPage() {
 
   return (
     <div className="min-h-screen bg-gray-50 px-4 py-6">
-      <div className="max-w-3xl mx-auto space-y-6">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Review Self Assessments</h1>
-          <p className="text-sm text-gray-500 mt-1">
-            School self-assessments that Operator 1 has reviewed and recommended. Your decision is final.
-          </p>
+      <div className="max-w-6xl mx-auto space-y-6">
+        <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3">
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900">Review Self Assessments</h1>
+            <p className="text-sm text-gray-500 mt-1">
+              School self-assessments that Operator 1 has reviewed and recommended. Your decision is final.
+            </p>
+          </div>
+          {!fetching && assessments.length > 0 && (
+            <span className="inline-flex items-center gap-1.5 self-start sm:self-auto px-3 py-1.5 rounded-full bg-amber-50 border border-amber-200 text-xs font-bold text-amber-700">
+              {assessments.length} pending
+            </span>
+          )}
         </div>
+
+        {!fetching && assessments.length > 0 && (
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+            <div className="bg-white rounded-xl border border-gray-200 py-3 px-4 text-center">
+              <p className="text-xs text-gray-400 font-medium">Pending</p>
+              <p className="text-xl font-black text-gray-900 mt-0.5">{assessments.length}</p>
+            </div>
+            <div className="bg-white rounded-xl border border-gray-200 py-3 px-4 text-center">
+              <p className="text-xs text-gray-400 font-medium">Total Revenue</p>
+              <p className="text-xl font-black text-gray-900 mt-0.5">
+                {formatCurrency(assessments.reduce((s, a) => s + Number(a.total_revenue || 0), 0))}
+              </p>
+            </div>
+            <div className="bg-white rounded-xl border border-gray-200 py-3 px-4 text-center col-span-2 sm:col-span-1">
+              <p className="text-xs text-gray-400 font-medium">Total Commission</p>
+              <p className="text-xl font-black text-green-700 mt-0.5">
+                {formatCurrency(assessments.reduce((s, a) => s + Number(a.commission_amount || 0), 0))}
+              </p>
+            </div>
+          </div>
+        )}
 
         {fetching ? (
           <div className="flex justify-center py-20">
@@ -283,7 +312,7 @@ export default function ReviewEvaluationsPage() {
             <p className="text-xs text-gray-400 mt-1">Assessments recommended by Operator 1 will appear here.</p>
           </div>
         ) : (
-          <div className="space-y-4">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
             {assessments.map((a) => (
               <AssessmentCard
                 key={a.id}

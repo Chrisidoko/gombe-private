@@ -1,6 +1,7 @@
 // app/api/operator/bulk/route.ts
 import { NextResponse } from "next/server";
 import pool from "@/lib/db";
+import { getUserFromCookie } from "@/lib/auth";
 
 // ── GET — fetch all schoolkano_bulk_assessments with invoice counts ───────────────────────────
 export async function GET() {
@@ -29,6 +30,11 @@ export async function GET() {
 
 // ── POST — create assessment + bulk insert invoices ───────────────────────────
 export async function POST(req: Request) {
+  const user = await getUserFromCookie();
+  if (!user || user.institution !== "CBS_Operator") {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
   const client = await pool.connect();
   try {
     const {
@@ -38,7 +44,6 @@ export async function POST(req: Request) {
       tier_2_fee,
       tier_3_fee,
       due_date,
-      created_by,
     } = await req.json();
 
     if (!title) {
@@ -95,7 +100,7 @@ export async function POST(req: Request) {
         tier_2_fee || null,
         tier_3_fee || null,
         schools.length,
-        created_by || "admin",
+        user.name || "operator",
       ],
     );
 

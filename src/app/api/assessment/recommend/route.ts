@@ -24,10 +24,11 @@ export async function POST(req: Request) {
       `UPDATE schoolskano_assessments
        SET status = 'under_review',
            op1_recommendation = $1,
-           op1_note = $2
-       WHERE id = $3 AND status = 'pending'
+           op1_note = $2,
+           op1_reviewed_by = $3
+       WHERE id = $4 AND status = 'pending'
        RETURNING id`,
-      [recommendation, note ?? null, assessment_id],
+      [recommendation, note ?? null, user.name || "operator", assessment_id],
     );
 
     if (result.rowCount === 0) {

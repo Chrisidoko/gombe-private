@@ -3,6 +3,7 @@
 import { NextResponse } from "next/server";
 import pool from "@/lib/db";
 import crypto from "crypto";
+import { reconcileFeePayment } from "@/lib/reconcileEtransact";
 
 /*
 3-stage fee structure (Gombe State):
@@ -327,6 +328,23 @@ export async function GET(req: Request) {
         referenceMap[fee.id] = reference;
         dbIdMap[fee.id] = row.rows[0].id;
         paymentMap[fee.id] = paymentMap[fee.id] ?? "unpaid";
+      }
+    }
+
+    // Re-verify any fee still "unpaid" with an attempted Credo checkout — no
+    // webhook yet, so this is what catches a payment completed after the
+    // payer closed the checkout tab without the return redirect firing.
+    // reconcileFeePayment() itself no-ops (a single SELECT, no Credo call)
+    // for anything without a credo_reference, so this stays cheap on every
+    // normal page load.
+    for (const [feeIdStr, dbId] of Object.entries(dbIdMap)) {
+      const feeId = Number(feeIdStr);
+      if (paymentMap[feeId] !== "unpaid") continue;
+      try {
+        const { isPaid } = await reconcileFeePayment(dbId);
+        if (isPaid) paymentMap[feeId] = "paid";
+      } catch (err) {
+        console.error(`Reconcile check failed for fee ${feeId}:`, err);
       }
     }
 

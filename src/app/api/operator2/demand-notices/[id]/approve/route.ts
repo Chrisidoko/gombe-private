@@ -1,9 +1,8 @@
-// Operator 2 approves a staged demand notice — invoice, PayKaduna bill, and email fire here.
+// Operator 2 approves a staged demand notice — invoice and email fire here.
 // Mirrors the logic that was in /api/operator/invoices/demand-notice before the layered approach.
 import { NextResponse } from "next/server";
 import pool from "@/lib/db";
 import nodemailer from "nodemailer";
-import crypto from "crypto";
 import { getUserFromCookie } from "@/lib/auth";
 
 export async function PATCH(
@@ -39,7 +38,7 @@ export async function PATCH(
     }
     const notice = noticeRes.rows[0];
 
-    // Fetch full school record (need phone + address for PayKaduna)
+    // Fetch full school record
     const schoolRes = await client.query(
       "SELECT email, name, phone, address FROM schoolskano WHERE school_id = $1",
       [notice.school_id],
@@ -47,7 +46,8 @@ export async function PATCH(
     const school = schoolRes.rows[0];
     if (!school) throw new Error("School not found");
 
-    // Create invoice
+    // Create invoice — invoice_number is self-generated and used directly
+    // as the reference, no external bill-creation call needed.
     const invoice_number = `INV-${notice.school_id}-${Date.now()}`;
     const due_days = 14;
     const { rows } = await client.query(
@@ -59,67 +59,6 @@ export async function PATCH(
     );
     const invoiceId = rows[0].id;
     const dueDate = rows[0].due_date;
-
-    // Create bill with payment gateway (skipped when gateway is not yet configured)
-    const GATEWAY_ACTIVE = process.env.PAYKADUNA_API_KEY !== "STUB_NOT_ACTIVE";
-    let billReference = invoice_number;
-    let billStatus = "Unpaid";
-    let tpui = "";
-
-    if (GATEWAY_ACTIVE) {
-      const billPayload = {
-        engineCode: process.env.PAYKADUNA_ENGINE_CODE,
-        identifier: notice.school_id,
-        firstName: school.name.split(" ")[0] || school.name,
-        middleName: school.name.split(" ")[1] || "",
-        lastName: school.name.split(" ").slice(2).join(" ") || school.name.split(" ")[0],
-        address: school.address || "Gombe, Nigeria",
-        telephone: school.phone || "08000000000",
-        esBillDetailsDto: [
-          {
-            amount: parseFloat(notice.amount),
-            mdasId: parseInt(process.env.MDAS_ID || "3654"),
-            narration: `${notice.title} - ${invoice_number}`,
-          },
-        ],
-      };
-
-      const jsonPayload = JSON.stringify(billPayload);
-      const apiKey = process.env.PAYKADUNA_API_KEY!;
-      const signature = crypto
-        .createHmac("sha256", apiKey)
-        .update(jsonPayload)
-        .digest("base64");
-
-      const billResponse = await fetch(
-        `${process.env.NEXT_PUBLIC_PAYKADUNA_URL}api/ESBills/CreateESBill`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json", "X-Api-Signature": signature },
-          body: jsonPayload,
-        },
-      );
-
-      if (!billResponse.ok) {
-        const errorText = await billResponse.text();
-        throw new Error(`Bill creation failed: ${errorText}`);
-      }
-
-      const billData = await billResponse.json();
-      billReference = billData.bill?.billReference || invoice_number;
-      billStatus = billData.bill?.payStatus || "Unpaid";
-      tpui = billData.bill?.tpui || "";
-
-      // Update invoice with bill reference
-      await client.query(
-        `UPDATE schoolkano_invoices
-         SET bill_reference = $1, status = $2, tpui = $3, updated_at = NOW()
-         WHERE id = $4`,
-        [billReference, billStatus, tpui, invoiceId],
-      );
-    } else {
-      console.log("⚠️ Payment gateway not configured — invoice created without bill reference.");
-    }
 
     // Mark notice as approved and link invoice
     await client.query(
@@ -165,11 +104,6 @@ export async function PATCH(
             <td style="padding:8px 12px;background:#f9fafb;border:1px solid #e5e7eb;font-weight:600;font-size:13px;">Invoice Reference</td>
             <td style="padding:8px 12px;border:1px solid #e5e7eb;font-size:13px;">${invoice_number}</td>
           </tr>
-          ${billReference !== invoice_number ? `
-          <tr>
-            <td style="padding:8px 12px;background:#f9fafb;border:1px solid #e5e7eb;font-weight:600;font-size:13px;">Bill Reference</td>
-            <td style="padding:8px 12px;border:1px solid #e5e7eb;font-size:13px;">${billReference}</td>
-          </tr>` : ""}
           <tr>
             <td style="padding:8px 12px;background:#f9fafb;border:1px solid #e5e7eb;font-weight:600;font-size:13px;">Amount Due</td>
             <td style="padding:8px 12px;border:1px solid #e5e7eb;font-size:13px;font-weight:700;color:#dc2626;">₦${parseFloat(notice.amount).toLocaleString()}</td>
@@ -194,7 +128,7 @@ export async function PATCH(
 
     return NextResponse.json({
       success: true,
-      invoice: { id: invoiceId, invoice_number, bill_reference: billReference, due_date: dueDate },
+      invoice: { id: invoiceId, invoice_number, due_date: dueDate },
     });
   } catch (error) {
     await client.query("ROLLBACK");

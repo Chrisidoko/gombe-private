@@ -1,7 +1,17 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { ChartNoAxesGantt, Loader2, Check, X, ChevronDown, ChevronUp, PackageOpen, Users, Search } from "lucide-react";
+import {
+  ChartNoAxesGantt,
+  Loader2,
+  Check,
+  X,
+  ChevronDown,
+  ChevronUp,
+  PackageOpen,
+  Users,
+  Search,
+} from "lucide-react";
 import toast from "react-hot-toast";
 
 type BulkAssessment = {
@@ -24,8 +34,11 @@ function formatCurrency(v: string | number | null) {
 
 function formatDate(s: string) {
   return new Date(s).toLocaleString("en-US", {
-    year: "numeric", month: "short", day: "numeric",
-    hour: "2-digit", minute: "2-digit",
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
   });
 }
 
@@ -64,7 +77,11 @@ function SchoolsModal({
 
   const tabs = [
     { id: "all" as const, label: "All", count: allSchools.length },
-    ...categories.map((c) => ({ id: c.tier, label: c.label, count: c.schools.length })),
+    ...categories.map((c) => ({
+      id: c.tier,
+      label: c.label,
+      count: c.schools.length,
+    })),
   ];
 
   return (
@@ -79,7 +96,9 @@ function SchoolsModal({
         {/* Header */}
         <div className="px-6 py-4 border-b border-gray-100 flex items-start justify-between shrink-0">
           <div className="min-w-0">
-            <h3 className="text-sm font-bold text-gray-900">Affected Schools</h3>
+            <h3 className="text-sm font-bold text-gray-900">
+              Affected Schools
+            </h3>
             <p className="text-xs text-gray-400 mt-0.5 truncate">{title}</p>
           </div>
           <button
@@ -199,9 +218,12 @@ function AssessmentCard({
             <ChartNoAxesGantt className="w-4 h-4 text-amber-600" />
           </div>
           <div className="min-w-0">
-            <p className="font-bold text-gray-900 text-sm truncate">{assessment.title}</p>
+            <p className="font-bold text-gray-900 text-sm truncate">
+              {assessment.title}
+            </p>
             <p className="text-xs text-gray-400 mt-0.5">
-              {assessment.total_schools} schools · Submitted {formatDate(assessment.created_at)}
+              {assessment.total_schools} schools · Submitted by{" "}
+              {assessment.created_by} · {formatDate(assessment.created_at)}
             </p>
           </div>
         </div>
@@ -209,7 +231,11 @@ function AssessmentCard({
           onClick={() => setExpanded((v) => !v)}
           className="text-gray-400 hover:text-gray-600 shrink-0 mt-0.5"
         >
-          {expanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+          {expanded ? (
+            <ChevronUp className="w-4 h-4" />
+          ) : (
+            <ChevronDown className="w-4 h-4" />
+          )}
         </button>
       </div>
 
@@ -220,9 +246,14 @@ function AssessmentCard({
           { label: "Category B", fee: assessment.tier_2_fee },
           { label: "Category C", fee: assessment.tier_3_fee },
         ].map((t) => (
-          <div key={t.label} className="text-center bg-gray-50 rounded-xl py-3 px-2 border border-gray-100">
+          <div
+            key={t.label}
+            className="text-center bg-gray-50 rounded-xl py-3 px-2 border border-gray-100"
+          >
             <p className="text-xs text-gray-400 font-medium">{t.label}</p>
-            <p className="text-sm font-black text-gray-800 mt-1">{formatCurrency(t.fee)}</p>
+            <p className="text-sm font-black text-gray-800 mt-1">
+              {formatCurrency(t.fee)}
+            </p>
           </div>
         ))}
       </div>
@@ -304,7 +335,9 @@ function AssessmentCard({
           ) : (
             <Check className="w-4 h-4" />
           )}
-          {busy && loading.action === "approve" ? "Approving…" : "Approve & Send Invoices"}
+          {busy && loading.action === "approve"
+            ? "Approving…"
+            : "Approve & Send Invoices"}
         </button>
         <button
           onClick={() => setShowRejectModal(true)}
@@ -324,7 +357,9 @@ function AssessmentCard({
       {showRejectModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6">
-            <h3 className="text-base font-bold text-gray-900 mb-1">Reject Assessment</h3>
+            <h3 className="text-base font-bold text-gray-900 mb-1">
+              Reject Assessment
+            </h3>
             <p className="text-xs text-gray-500 mb-4">
               Provide a reason so Operator 1 can revise and resubmit.
             </p>
@@ -362,8 +397,12 @@ function AssessmentCard({
 export default function ReviewBulkPage() {
   const [assessments, setAssessments] = useState<BulkAssessment[]>([]);
   const [fetching, setFetching] = useState(true);
-  const [loading, setLoading] = useState<{ id: number | null; action: string | null }>({
-    id: null, action: null,
+  const [loading, setLoading] = useState<{
+    id: number | null;
+    action: string | null;
+  }>({
+    id: null,
+    action: null,
   });
 
   async function load() {
@@ -379,12 +418,16 @@ export default function ReviewBulkPage() {
     }
   }
 
-  useEffect(() => { load(); }, []);
+  useEffect(() => {
+    load();
+  }, []);
 
   async function handleApprove(id: number) {
     setLoading({ id, action: "approve" });
     try {
-      const res = await fetch(`/api/operator2/bulk/${id}/approve`, { method: "PATCH" });
+      const res = await fetch(`/api/operator2/bulk/${id}/approve`, {
+        method: "PATCH",
+      });
       const data = await res.json();
       if (!res.ok) {
         toast.error(data.error || "Approval failed");
@@ -423,13 +466,49 @@ export default function ReviewBulkPage() {
 
   return (
     <div className="min-h-screen bg-gray-50 px-4 py-6">
-      <div className="max-w-3xl mx-auto space-y-6">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Review Bulk Assessments</h1>
-          <p className="text-sm text-gray-500 mt-1">
-            Ministry assessments submitted by Operator 1 awaiting your approval before invoices are sent to schools.
-          </p>
+      <div className="max-w-6xl mx-auto space-y-6">
+        <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3">
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900">
+              Review Ministry Assessments
+            </h1>
+            <p className="text-sm text-gray-500 mt-1">
+              Ministry assessments submitted by Operator 1 awaiting your approval
+              before invoices are sent to schools.
+            </p>
+          </div>
+          {!fetching && assessments.length > 0 && (
+            <span className="inline-flex items-center gap-1.5 self-start sm:self-auto px-3 py-1.5 rounded-full bg-amber-50 border border-amber-200 text-xs font-bold text-amber-700">
+              {assessments.length} pending
+            </span>
+          )}
         </div>
+
+        {!fetching && assessments.length > 0 && (
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+            <div className="bg-white rounded-xl border border-gray-200 py-3 px-4 text-center">
+              <p className="text-xs text-gray-400 font-medium">Pending</p>
+              <p className="text-xl font-black text-gray-900 mt-0.5">{assessments.length}</p>
+            </div>
+            <div className="bg-white rounded-xl border border-gray-200 py-3 px-4 text-center">
+              <p className="text-xs text-gray-400 font-medium">Schools Affected</p>
+              <p className="text-xl font-black text-gray-900 mt-0.5">
+                {assessments.reduce((s, a) => s + a.total_schools, 0)}
+              </p>
+            </div>
+            <div className="bg-white rounded-xl border border-gray-200 py-3 px-4 text-center col-span-2 sm:col-span-1">
+              <p className="text-xs text-gray-400 font-medium">Oldest Submission</p>
+              <p className="text-sm font-bold text-gray-900 mt-1.5">
+                {formatDate(
+                  assessments.reduce(
+                    (oldest, a) => (new Date(a.created_at) < new Date(oldest) ? a.created_at : oldest),
+                    assessments[0].created_at,
+                  ),
+                )}
+              </p>
+            </div>
+          </div>
+        )}
 
         {fetching ? (
           <div className="flex justify-center py-20">
@@ -440,11 +519,15 @@ export default function ReviewBulkPage() {
             <div className="w-16 h-16 rounded-2xl bg-gray-100 flex items-center justify-center mb-4">
               <PackageOpen className="w-8 h-8 text-gray-400" />
             </div>
-            <p className="text-gray-500 font-medium">No assessments pending review</p>
-            <p className="text-xs text-gray-400 mt-1">New submissions from Operator 1 will appear here.</p>
+            <p className="text-gray-500 font-medium">
+              No assessments pending review
+            </p>
+            <p className="text-xs text-gray-400 mt-1">
+              New submissions from Operator 1 will appear here.
+            </p>
           </div>
         ) : (
-          <div className="space-y-4">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
             {assessments.map((a) => (
               <AssessmentCard
                 key={a.id}
