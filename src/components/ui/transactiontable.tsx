@@ -123,7 +123,7 @@ export default function TransactionsTable({ schoolId }: { schoolId: string }) {
     const matchesFilter =
       filter === "all" || txn.status.toLowerCase() === filter;
     const matchesSearch =
-      txn.reference.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      txn.reference?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       txn.payment_item.toLowerCase().includes(searchTerm.toLowerCase()) ||
       (txn.invoice_number &&
         txn.invoice_number.toLowerCase().includes(searchTerm.toLowerCase()));

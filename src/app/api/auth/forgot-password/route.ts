@@ -43,7 +43,7 @@ export async function POST(req: Request) {
 
     // Build reset URL
     const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
-    const resetUrl = `${baseUrl}/reset-password?token=${token}`;
+    const resetUrl = `${baseUrl}reset-password?token=${token}`;
 
     // Send email
     const transporter = nodemailer.createTransport({
