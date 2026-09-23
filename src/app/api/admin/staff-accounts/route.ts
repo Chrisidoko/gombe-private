@@ -101,7 +101,7 @@ export async function POST(req: Request) {
     );
 
     const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
-    const setPasswordUrl = `${baseUrl}/reset-password?token=${token}`;
+    const setPasswordUrl = `${baseUrl}reset-password?token=${token}`;
 
     if (process.env.SMTP_USER && process.env.SMTP_PASS) {
       const transporter = nodemailer.createTransport({
