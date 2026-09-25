@@ -108,7 +108,7 @@ const Navigation: React.FC<NavigationProps> = ({ collapsed, setCollapsed }) => {
             >
               <img
                 src="/gombe_logo.png"
-                alt="KIRS logo"
+                alt="GESMS logo"
                 className={`flex-shrink-0 transition-all ${
                   collapsed ? "w-10 h-10" : "w-12 h-12"
                 }`}
@@ -302,8 +302,10 @@ const Navigation: React.FC<NavigationProps> = ({ collapsed, setCollapsed }) => {
           </button>
 
           <div className="flex items-center gap-2">
-            <img src="/gombe_logo.png" alt="KIRS logo" className="w-8 h-8" />
-            <span className="font-bold text-sm text-gray-900">KIRS Portal</span>
+            <img src="/gombe_logo.png" alt="GESMS logo" className="w-8 h-8" />
+            <span className="font-bold text-sm text-gray-900">
+              GESMS Portal
+            </span>
           </div>
 
           <div className="w-10" />
