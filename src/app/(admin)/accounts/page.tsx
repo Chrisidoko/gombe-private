@@ -40,7 +40,7 @@ const INSTITUTION_LABELS: Record<string, { label: string; cls: string }> = {
     cls: "bg-teal-50 text-teal-700 border-teal-200",
   },
   CBS_Operator2: {
-    label: "Operator 2",
+    label: "Supervisor",
     cls: "bg-teal-50 text-teal-700 border-teal-200",
   },
 };
@@ -50,7 +50,7 @@ const STAFF_ROLE_OPTIONS: { value: string; label: string }[] = [
   { value: "CBS_Finance", label: "Management" },
   { value: "CBS_Inspector", label: "Inspector" },
   { value: "CBS_Operator", label: "Operator" },
-  { value: "CBS_Operator2", label: "Operator 2 (Reviewer)" },
+  { value: "CBS_Operator2", label: "Supervisor" },
 ];
 
 function institutionBadge(institution: string) {
@@ -121,7 +121,9 @@ function CreateAccountModal({
       onCreated();
       onClose();
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Failed to create account");
+      toast.error(
+        err instanceof Error ? err.message : "Failed to create account",
+      );
     } finally {
       setSubmitting(false);
     }
@@ -131,7 +133,9 @@ function CreateAccountModal({
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6">
         <div className="flex items-center justify-between mb-1">
-          <h3 className="text-base font-bold text-gray-900">Create Staff Account</h3>
+          <h3 className="text-base font-bold text-gray-900">
+            Create Staff Account
+          </h3>
           <button
             onClick={onClose}
             className="text-gray-400 hover:text-gray-600 transition"
@@ -140,8 +144,8 @@ function CreateAccountModal({
           </button>
         </div>
         <p className="text-xs text-gray-500 mb-5">
-          For internal ministry roles only. The account is active
-          immediately — the user gets an email to set their own password.
+          For internal ministry roles only. The account is active immediately —
+          the user gets an email to set their own password.
         </p>
 
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -255,7 +259,9 @@ export default function StaffAccountsPage() {
       if (!res.ok) throw new Error(data.error);
 
       setAccounts((prev) =>
-        prev.map((a) => (a.id === account.id ? { ...a, status: nextStatus } : a)),
+        prev.map((a) =>
+          a.id === account.id ? { ...a, status: nextStatus } : a,
+        ),
       );
       toast.success(
         nextStatus === "disabled"
@@ -263,7 +269,9 @@ export default function StaffAccountsPage() {
           : `${account.name}'s account re-enabled`,
       );
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Failed to update account");
+      toast.error(
+        err instanceof Error ? err.message : "Failed to update account",
+      );
     } finally {
       setToggling(null);
     }

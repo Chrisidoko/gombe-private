@@ -46,6 +46,9 @@ export async function POST(req: NextRequest) {
   const ip = req.headers.get("x-forwarded-for") ?? "unknown";
 
   // ---- 1. Inbound log (before any validation, so you always see hits) ----
+  // The first line in the handler, the INBOUND log, runs before parsing, signature checks or env checks.
+  // If a request reaches the route at all, you'll see INBOUND in the logs, even when the signature is wrong or the JSON is bad.
+  // So no logs means the request never reached your code.
   console.log(`[etransact-webhook] ${receivedAt} INBOUND ip=${ip}`);
 
   const secretKey = process.env.CREDO_WEBHOOK_SECRET;

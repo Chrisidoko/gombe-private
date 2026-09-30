@@ -5,16 +5,23 @@
 // page they paid from. No webhook yet, so this return-page path plus a
 // manual page refresh is the only reconciliation trigger for now.
 import { NextResponse } from "next/server";
-import { reconcileFeePayment, reconcileInvoicePayment } from "@/lib/reconcileEtransact";
+import {
+  reconcileFeePayment,
+  reconcileInvoicePayment,
+} from "@/lib/reconcileEtransact";
 
 export async function GET(req: Request) {
+  console.log(" ETTRANSACT CALLBACK HIT");
+  console.log(" CALLBACK URL:", req.url);
   const { searchParams } = new URL(req.url);
   const type = searchParams.get("type");
   const id = Number(searchParams.get("id"));
   // Trailing slash stripped defensively — a trailing slash here caused a
   // real double-slash checkoutUrl bug in payments-gateway earlier, same
   // string-concatenation pattern.
-  const baseUrl = (process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000").replace(/\/$/, "");
+  const baseUrl = (
+    process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"
+  ).replace(/\/$/, "");
 
   const destination = type === "invoice" ? "/Invoices" : "/fees";
 
@@ -33,5 +40,7 @@ export async function GET(req: Request) {
     console.error("eTransact return reconciliation failed:", err);
   }
 
-  return NextResponse.redirect(`${baseUrl}${destination}?payment=${isPaid ? "success" : "pending"}`);
+  return NextResponse.redirect(
+    `${baseUrl}${destination}?payment=${isPaid ? "success" : "pending"}`,
+  );
 }

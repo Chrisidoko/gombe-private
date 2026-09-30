@@ -32,22 +32,26 @@ async function upsertTransactionskano(
 ) {
   let lga: string | null = null;
   let category: string | null = null;
+  let payerName: string | null = null;
+
   if (schoolId) {
     const schoolRes = await client.query(
-      `SELECT lga, category FROM schoolskano WHERE school_id = $1`,
+      `SELECT lga, category, name FROM schoolskano WHERE school_id = $1`,
       [schoolId],
     );
     lga = schoolRes.rows[0]?.lga ?? null;
     category = schoolRes.rows[0]?.category ?? null;
+    payerName = schoolRes.rows[0]?.name ?? null;
   }
 
   const paidAt = new Date();
   await client.query(
     `INSERT INTO transactionskano
-       (reference, amount, status, payment_method, gateway_response, payment_item, paid_at, created_at, school_id, lga, category)
-     VALUES ($1, $2, 'Paid', $3, $4, $5, $6, NOW(), $7, $8, $9)
-     ON CONFLICT (reference) DO UPDATE SET
-       status = 'Paid', gateway_response = $4, paid_at = $6, lga = $8, category = $9`,
+     (reference, amount, status, payment_method, gateway_response, payment_item, paid_at, created_at, school_id, lga, category, payer_name)
+   VALUES ($1, $2, 'Paid', $3, $4, $5, $6, NOW(), $7, $8, $9, $10)
+   ON CONFLICT (reference) DO UPDATE SET
+     status = 'Paid', gateway_response = $4, paid_at = $6, lga = $8, category = $9,
+     payer_name = COALESCE(transactionskano.payer_name, $10)`,
     [
       reference,
       amount,
@@ -58,6 +62,7 @@ async function upsertTransactionskano(
       schoolId,
       lga,
       category,
+      payerName,
     ],
   );
 }

@@ -165,9 +165,7 @@ export default function AssessmentPage() {
 
       // Refresh history
       fetchData();
-      toast.success(
-        `Assessment submitted — awaiting Operator 2 approval`,
-      );
+      toast.success(`Assessment submitted — awaiting supervisors approval`);
     } catch (err) {
       toast.error(
         err instanceof Error ? err.message : "Failed to create assessment",
@@ -216,7 +214,8 @@ export default function AssessmentPage() {
                 Assessment submitted for review
               </p>
               <p className="text-xs text-amber-700 mt-0.5">
-                {successCount} schools queued — Operator 2 must approve before invoices are sent.
+                {successCount} schools queued — supervisors must approve before
+                invoices are sent.
               </p>
             </div>
             <button onClick={() => setSuccessCount(null)} className="ml-auto">
@@ -527,17 +526,28 @@ export default function AssessmentPage() {
                                   : "text-amber-700 bg-amber-100 border-amber-200"
                             }`}
                           >
-                            {a.status === "pending_approval" ? "Pending Review" : a.status}
+                            {a.status === "pending_approval"
+                              ? "Pending Review"
+                              : a.status}
                           </span>
                         </div>
                         <p className="text-xs text-gray-400 mt-0.5">
                           {formatDate(a.created_at)} · {a.total_schools} schools
                         </p>
-                        {a.status === "rejected" && (a as Assessment & { rejection_reason?: string }).rejection_reason && (
-                          <p className="text-xs text-red-500 mt-1">
-                            Rejected: {(a as Assessment & { rejection_reason?: string }).rejection_reason}
-                          </p>
-                        )}
+                        {a.status === "rejected" &&
+                          (a as Assessment & { rejection_reason?: string })
+                            .rejection_reason && (
+                            <p className="text-xs text-red-500 mt-1">
+                              Rejected:{" "}
+                              {
+                                (
+                                  a as Assessment & {
+                                    rejection_reason?: string;
+                                  }
+                                ).rejection_reason
+                              }
+                            </p>
+                          )}
                         <div className="flex items-center gap-3 mt-2 text-xs text-gray-500">
                           {a.tier_1_fee && <span>T1: {fmt(a.tier_1_fee)}</span>}
                           {a.tier_2_fee && <span>T2: {fmt(a.tier_2_fee)}</span>}
@@ -626,8 +636,9 @@ export default function AssessmentPage() {
             </div>
 
             <p className="text-xs text-gray-400 mb-5 leading-relaxed">
-              This assessment will be sent to Operator 2 for review. Invoices
-              will only be created and sent to schools after Operator 2 approves.
+              This assessment will be sent to supervisor for review. Invoices
+              will only be created and sent to schools after supervisors
+              approves.
             </p>
 
             <div className="flex items-center gap-3">

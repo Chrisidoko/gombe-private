@@ -233,7 +233,7 @@ export default function FixedAssessmentsPage() {
                 New Demand Notice
               </h2>
               <p className="text-xs text-green-300 mt-0.5">
-                Submitted for Operator 2 review before reaching the Institution
+                Submitted for Supervisors review before reaching the Institution
               </p>
             </div>
           </div>
@@ -454,7 +454,7 @@ export default function FixedAssessmentsPage() {
               <div className="flex items-center gap-2 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3">
                 <CheckCircle2 className="w-4 h-4 text-amber-600 shrink-0" />
                 <p className="text-sm font-medium text-amber-700">
-                  {successMsg} — awaiting Operator 2 approval
+                  {successMsg} — awaiting supervisors approval
                 </p>
               </div>
             )}

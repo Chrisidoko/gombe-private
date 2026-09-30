@@ -136,7 +136,7 @@ function AssessmentCard({
                     Recommend Rejection
                   </h3>
                   <p className="text-red-100 text-sm">
-                    Operator 2 will review your recommendation
+                    Supervisor will review your recommendation
                   </p>
                 </div>
               </div>
@@ -331,8 +331,8 @@ function AssessmentCard({
                             {cat.label}
                           </p>
                           <p className="text-xs text-gray-500">
-                            {Number(cat.population).toLocaleString()} students × ₦
-                            {Number(cat.fee).toLocaleString()} per student
+                            {Number(cat.population).toLocaleString()} students ×
+                            ₦{Number(cat.fee).toLocaleString()} per student
                           </p>
                         </div>
                       </div>
@@ -474,7 +474,8 @@ export default function Requests() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           assessment_id,
-          recommendation: action === "approve" ? "recommend_approve" : "recommend_reject",
+          recommendation:
+            action === "approve" ? "recommend_approve" : "recommend_reject",
           note: reason || undefined,
         }),
       });
@@ -486,14 +487,18 @@ export default function Requests() {
 
       toast.success(
         action === "approve"
-          ? "Recommendation submitted — awaiting Operator 2 approval."
-          : "Rejection recommendation submitted — awaiting Operator 2 review.",
+          ? "Recommendation submitted — awaiting supervisors approval."
+          : "Rejection recommendation submitted — awaiting supervisors review.",
       );
 
       setAssessments((prev) => prev.filter((a) => a.id !== assessment_id));
     } catch (error) {
       console.error("Error:", error);
-      toast.error(error instanceof Error ? error.message : "Operation failed. Please try again.");
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : "Operation failed. Please try again.",
+      );
     } finally {
       setActionLoading({ id: null, action: null });
     }
@@ -551,7 +556,9 @@ export default function Requests() {
             </button>
 
             <div className="bg-blue-50 border border-blue-200 rounded-lg px-4 py-2">
-              <p className="text-sm text-blue-600 font-medium">Pending Reviews</p>
+              <p className="text-sm text-blue-600 font-medium">
+                Pending Reviews
+              </p>
               <p className="text-2xl font-bold text-blue-900">
                 {assessments.length}
               </p>
@@ -581,7 +588,9 @@ export default function Requests() {
               assessment={assessment}
               loading={actionLoading}
               onApprove={() => handleAction(assessment.id, "approve", "")}
-              onReject={(reason) => handleAction(assessment.id, "reject", reason)}
+              onReject={(reason) =>
+                handleAction(assessment.id, "reject", reason)
+              }
             />
           ))}
         </div>
