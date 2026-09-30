@@ -50,7 +50,7 @@ function ResetPasswordForm() {
       setSuccess(true);
 
       // Redirect to login after 3 seconds
-      setTimeout(() => router.push("/"), 3000);
+      setTimeout(() => router.push("/login"), 3000);
     } catch {
       setError("Something went wrong. Please try again.");
     } finally {

@@ -13,13 +13,18 @@
 //
 // Docs: https://docs.credocentral.com/docs/developers/accept-payments
 
-const CREDO_BASE_URL = process.env.CREDO_BASE_URL || "https://api.credodemo.com";
+const CREDO_BASE_URL =
+  process.env.CREDO_BASE_URL || "https://api.credodemo.com";
 const REQUEST_TIMEOUT_MS = 15_000;
 
 export class EtransactError extends Error {
   status: number | null;
   body: unknown;
-  constructor(message: string, status: number | null = null, body: unknown = null) {
+  constructor(
+    message: string,
+    status: number | null = null,
+    body: unknown = null,
+  ) {
     super(message);
     this.status = status;
     this.body = body;
@@ -42,7 +47,9 @@ async function credoFetch(
     });
   } catch (err) {
     if (err instanceof Error && err.name === "TimeoutError") {
-      throw new EtransactError(`Credo request to ${path} timed out after ${REQUEST_TIMEOUT_MS}ms.`);
+      throw new EtransactError(
+        `Credo request to ${path} timed out after ${REQUEST_TIMEOUT_MS}ms.`,
+      );
     }
     throw err;
   }
@@ -86,7 +93,7 @@ export async function initializeTransaction({
     // rather than adding it on top of what the school/payer is charged).
     // https://docs.credocentral.com/docs/settlement
     bearer: 1,
-    channels: ["CARD", "BANK"],
+    channels: ["CARD", "BANK", "USSD", "Payoutlet"],
     initializeAccount: 0,
     reference,
     callbackUrl,
@@ -102,7 +109,10 @@ export async function initializeTransaction({
     body.serviceCode = process.env.CREDO_SERVICE_CODE;
   }
 
-  const data = await credoFetch("/transaction/initialize", { authKey: publicKey, body });
+  const data = await credoFetch("/transaction/initialize", {
+    authKey: publicKey,
+    body,
+  });
 
   return {
     authorizationUrl: data.authorizationUrl as string,
@@ -114,9 +124,12 @@ export async function verifyTransaction(transRef: string) {
   const secretKey = process.env.CREDO_SECRET_KEY;
   if (!secretKey) throw new Error("CREDO_SECRET_KEY not configured");
 
-  const data = await credoFetch(`/transaction/${encodeURIComponent(transRef)}/verify`, {
-    authKey: secretKey,
-  });
+  const data = await credoFetch(
+    `/transaction/${encodeURIComponent(transRef)}/verify`,
+    {
+      authKey: secretKey,
+    },
+  );
 
   return {
     transRef: data.transRef as string,

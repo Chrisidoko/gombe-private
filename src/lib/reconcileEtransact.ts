@@ -48,11 +48,23 @@ async function upsertTransactionskano(
      VALUES ($1, $2, 'Paid', $3, $4, $5, $6, NOW(), $7, $8, $9)
      ON CONFLICT (reference) DO UPDATE SET
        status = 'Paid', gateway_response = $4, paid_at = $6, lga = $8, category = $9`,
-    [reference, amount, paymentMethod, JSON.stringify(gatewayResponse), paymentItem, paidAt, schoolId, lga, category],
+    [
+      reference,
+      amount,
+      paymentMethod,
+      JSON.stringify(gatewayResponse),
+      paymentItem,
+      paidAt,
+      schoolId,
+      lga,
+      category,
+    ],
   );
 }
 
-export async function reconcileFeePayment(feeId: number): Promise<ReconcileResult> {
+export async function reconcileFeePayment(
+  feeId: number,
+): Promise<ReconcileResult> {
   const client = await pool.connect();
   try {
     const { rows } = await client.query(
@@ -76,9 +88,23 @@ export async function reconcileFeePayment(feeId: number): Promise<ReconcileResul
         [feeId],
       );
 
-      if ([1, 2, 3].includes(fee.fee_id) && fee.school_id) {
+      const upd = await client.query(
+        `UPDATE schoolkano_payments SET status = 'paid', paid_at = NOW()
+         WHERE id = $1 AND status != 'paid'`,
+        [feeId],
+      );
+
+      if (
+        upd.rowCount === 1 &&
+        [1, 2, 3].includes(fee.fee_id) &&
+        fee.school_id
+      ) {
         await activateLicense(client, fee.school_id);
       }
+
+      // if ([1, 2, 3].includes(fee.fee_id) && fee.school_id) {
+      //   await activateLicense(client, fee.school_id);
+      // }
 
       await upsertTransactionskano(client, {
         reference: fee.reference,
@@ -101,7 +127,9 @@ export async function reconcileFeePayment(feeId: number): Promise<ReconcileResul
   }
 }
 
-export async function reconcileInvoicePayment(invoiceId: number): Promise<ReconcileResult> {
+export async function reconcileInvoicePayment(
+  invoiceId: number,
+): Promise<ReconcileResult> {
   const client = await pool.connect();
   try {
     const { rows } = await client.query(
@@ -126,11 +154,11 @@ export async function reconcileInvoicePayment(invoiceId: number): Promise<Reconc
       );
 
       await upsertTransactionskano(client, {
-        reference: invoice.bill_reference,
+        reference: invoice.invoice_number,
         amount: invoice.amount,
         paymentMethod: "etransact",
         gatewayResponse: verified.raw,
-        paymentItem: `Assessment Invoice ${invoice.invoice_number}`,
+        paymentItem: "Assessment Invoice",
         schoolId: invoice.school_id,
       });
 
