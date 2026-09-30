@@ -32,6 +32,15 @@ function expectedSignature(secretKey: string, businessCode: string) {
     .digest("hex");
 }
 
+type EtransactWebhookBody = {
+  event?: string;
+  data?: {
+    businessCode?: string;
+    transRef?: string;
+    businessRef?: string;
+  };
+};
+
 export async function POST(req: NextRequest) {
   const receivedAt = ts();
   const ip = req.headers.get("x-forwarded-for") ?? "unknown";
@@ -50,9 +59,9 @@ export async function POST(req: NextRequest) {
   }
 
   // ---- 2. Parse body ----
-  let body: any;
+  let body: EtransactWebhookBody;
   try {
-    body = JSON.parse(await req.text());
+    body = JSON.parse(await req.text()) as EtransactWebhookBody;
   } catch {
     console.warn(`[etransact-webhook] ${ts()} REJECTED invalid JSON`);
     return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
