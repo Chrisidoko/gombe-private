@@ -75,6 +75,8 @@ export async function middleware(req: NextRequest) {
     if (
       url.startsWith("/evaluations") ||
       url.startsWith("/ministry-assessment") ||
+      url.startsWith("/annual-notices") ||
+      url.startsWith("/tax-declarations") ||
       url.startsWith("/operator-Invoices") ||
       url.startsWith("/bulk-assessment") ||
       url.startsWith("/tiers") ||
@@ -92,6 +94,8 @@ export async function middleware(req: NextRequest) {
       url.startsWith("/review-bulk") ||
       url.startsWith("/review-evaluations") ||
       url.startsWith("/review-demand-notices") ||
+      url.startsWith("/review-annual-notices") ||
+      url.startsWith("/review-tax-items") ||
       url.startsWith("/revenue-targets")
     ) {
       if (!isOperator2) {
@@ -118,6 +122,8 @@ export async function middleware(req: NextRequest) {
     if (
       url.startsWith("/finance") ||
       url.startsWith("/collections") ||
+      url.startsWith("/revenue-heads") ||
+      url.startsWith("/tax-audit") ||
       url.startsWith("/transactions")
     ) {
       if (!isFinance) {

@@ -10,6 +10,7 @@ import pool from "@/lib/db";
 import {
   reconcileFeePayment,
   reconcileInvoicePayment,
+  reconcileNoticeLine,
 } from "@/lib/reconcileEtransact";
 
 export const runtime = "nodejs"; // needs node crypto + pg
@@ -134,6 +135,21 @@ export async function POST(req: NextRequest) {
       const { isPaid } = await reconcileInvoicePayment(invRes.rows[0].id);
       console.log(
         `[etransact-webhook] ${ts()} RECONCILED type=invoice id=${invRes.rows[0].id} isPaid=${isPaid} transRef=${transRef}`,
+      );
+      return NextResponse.json({ received: true, isPaid }, { status: 200 });
+    }
+
+    const lineRes = await pool.query(
+      `SELECT id FROM annual_notice_lines
+       WHERE credo_reference = $1 OR reference = $2
+       LIMIT 1`,
+      [transRef ?? null, businessRef ?? null],
+    );
+
+    if (lineRes.rows[0]) {
+      const { isPaid } = await reconcileNoticeLine(lineRes.rows[0].id);
+      console.log(
+        `[etransact-webhook] ${ts()} RECONCILED type=notice id=${lineRes.rows[0].id} isPaid=${isPaid} transRef=${transRef}`,
       );
       return NextResponse.json({ received: true, isPaid }, { status: 200 });
     }

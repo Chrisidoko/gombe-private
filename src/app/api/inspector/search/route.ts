@@ -1,8 +1,12 @@
 // app/api/inspector/search/route.ts
 import { NextResponse } from "next/server";
 import pool from "@/lib/db";
+import { requireRole } from "@/lib/apiAuth";
 
 export async function GET(req: Request) {
+  const denied = await requireRole("CBS_Inspector", "CBS_Operator");
+  if (denied) return denied;
+
   try {
     const { searchParams } = new URL(req.url);
     const query = searchParams.get("q")?.trim();

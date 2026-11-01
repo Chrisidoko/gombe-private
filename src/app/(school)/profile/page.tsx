@@ -1,5 +1,5 @@
 // app/(school)/profile/page.tsx - Server Component (NO "use client")
-import { getUserFromCookie } from "@/lib/auth";
+import { getUserFromCookie, authHeaders } from "@/lib/auth";
 import ProfilePageClient from "@/components/ui/ProfilePageClient";
 import { School } from "@/lib/types"; // Import the type
 
@@ -18,6 +18,7 @@ export default async function ProfilePage() {
   const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
   const res = await fetch(`${baseUrl}/api/schools/${user.institution}`, {
     cache: "no-store",
+    headers: await authHeaders(),
   });
 
   if (!res.ok) {

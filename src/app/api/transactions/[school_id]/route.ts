@@ -2,6 +2,7 @@
 //This is specifically to fetch transactions by school_Id - PLEASE NOTE
 import { NextResponse } from "next/server";
 import pool from "@/lib/db";
+import { requireSchoolAccess } from "@/lib/apiAuth";
 
 export async function GET(
   req: Request,
@@ -9,6 +10,9 @@ export async function GET(
 ) {
   try {
     const { school_id } = await context.params; // 👈 awaited before use
+
+    const denied = await requireSchoolAccess(school_id);
+    if (denied) return denied;
 
     const query = `
       SELECT id, reference, amount, status, payment_item, invoice_number, updated_at

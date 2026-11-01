@@ -5,7 +5,7 @@ import React from "react";
 //   CheckCircle2,
 //   Computer,
 // } from "lucide-react";
-import { getUserFromCookie } from "@/lib/auth";
+import { getUserFromCookie, authHeaders } from "@/lib/auth";
 import TopPaymentsChart from "@/components/ui/TopPaymentsChart";
 import LGARevenueChart from "@/components/ui/Lgarevenuechart";
 
@@ -79,7 +79,9 @@ const StatCard: React.FC<StatCardProps> = ({
 
 async function getSummariesStats(): Promise<SummariesResponse> {
   const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
-  const res = await fetch(`${baseUrl}/api/dashboard/summaries`, {});
+  const res = await fetch(`${baseUrl}/api/dashboard/summaries`, {
+    headers: await authHeaders(),
+  });
 
   if (!res.ok) throw new Error("Failed to fetch stats");
 

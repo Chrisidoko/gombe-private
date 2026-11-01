@@ -1,11 +1,15 @@
 import { NextResponse } from "next/server";
 import pool from "@/lib/db";
 import nodemailer from "nodemailer";
+import { requireRole } from "@/lib/apiAuth";
 
 export async function POST(
   req: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
+  const denied = await requireRole("CBS_Admin");
+  if (denied) return denied;
+
   const { id } = await params;
 
   try {

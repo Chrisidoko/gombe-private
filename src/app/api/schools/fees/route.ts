@@ -2,8 +2,10 @@
 
 import { NextResponse } from "next/server";
 import pool from "@/lib/db";
-import crypto from "crypto";
 import { reconcileFeePayment } from "@/lib/reconcileEtransact";
+import { generateUniquePaymentReference } from "@/lib/paymentReference";
+import { FEE_DEFINITIONS, resolveTier } from "@/lib/feeDefinitions";
+import { requireSchoolAccess } from "@/lib/apiAuth";
 
 /*
 3-stage fee structure (Gombe State):
@@ -33,133 +35,12 @@ Pricing is tiered by school category:
   - "hnd" tier: Polytechnic, College, School of Health Technology, Exam Center
 */
 
-type FeeTier = "university" | "hnd";
-
-type FeeDefinition = {
-  id: number;
-  name: string;
-  description: string;
-  group: string;
-  stage: number;
-  mandatory: boolean;
-  recurring: boolean;
-  amounts: Record<FeeTier, number>;
-};
-
-const FEE_DEFINITIONS: FeeDefinition[] = [
-  // Stage 1 — Application Fees
-  {
-    id: 1,
-    name: "Application Form",
-    description: "One-time application form fee for institution registration.",
-    group: "Application Fees",
-    stage: 1,
-    mandatory: true,
-    recurring: false,
-    amounts: { university: 50000, hnd: 50000 },
-  },
-  {
-    id: 2,
-    name: "Guideline Booklet",
-    description: "Covers the cost of the issued guideline booklet.",
-    group: "Application Fees",
-    stage: 1,
-    mandatory: true,
-    recurring: false,
-    amounts: { university: 60000, hnd: 60000 },
-  },
-
-  // Stage 2 — Registration
-  {
-    id: 3,
-    name: "Registration",
-    description: "One-time institution registration fee.",
-    group: "Registration",
-    stage: 2,
-    mandatory: true,
-    recurring: false,
-    amounts: { university: 300000, hnd: 200000 },
-  },
-
-  // Stage 3 — Certificate Fee (locked until assessment approved)
-  {
-    id: 4,
-    name: "Issuing of Certificate",
-    description:
-      "Ministry's issuance of the institution's certificate of registration.",
-    group: "Certificate Fee",
-    stage: 3,
-    mandatory: true,
-    recurring: false,
-    amounts: { university: 40000, hnd: 40000 },
-  },
-
-  // Recurs every year, only visible once Registration is paid — same bracket as Registration
-  {
-    id: 5,
-    name: "Monitoring, Supervision and Evaluation",
-    description: "Annual monitoring, supervision and evaluation fee.",
-    group: "Registration",
-    stage: 2,
-    mandatory: true,
-    recurring: true,
-    amounts: { university: 60000, hnd: 60000 },
-  },
-  // Recurs annually, but only becomes due one year after Registration — omitted until then
-  {
-    id: 6,
-    name: "Annual Renewal of Registration",
-    description: "Annual renewal of the institution's registration.",
-    group: "Registration",
-    stage: 2,
-    mandatory: true,
-    recurring: true,
-    amounts: { university: 150000, hnd: 100000 },
-  },
-];
-
 const GROUP_ORDER = ["Application Fees", "Registration", "Certificate Fee"];
 
 const REGISTRATION_FEE_ID = 3;
 const MONITORING_FEE_ID = 5;
 const RENEWAL_FEE_ID = 6;
 const ONE_YEAR_MS = 365 * 24 * 60 * 60 * 1000;
-
-function resolveTier(category: string | null): FeeTier {
-  return category === "University" ? "university" : "hnd";
-}
-
-// ── Local payment reference generation ──────────────────────────────────────
-// Replaces the old PayKaduna CreateESBill call — we mint our own reference so
-// it can be handed to whichever payment gateway Gombe State ultimately wires up.
-const REFERENCE_CHARS = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"; // no 0/O/1/I
-const REFERENCE_LENGTH = 10;
-const MAX_REFERENCE_ATTEMPTS = 20;
-
-function randomReference(): string {
-  let ref = "";
-  for (let i = 0; i < REFERENCE_LENGTH; i++) {
-    ref += REFERENCE_CHARS[crypto.randomInt(REFERENCE_CHARS.length)];
-  }
-  return ref;
-}
-
-async function generateUniquePaymentReference(): Promise<string> {
-  for (let attempt = 0; attempt < MAX_REFERENCE_ATTEMPTS; attempt++) {
-    const candidate = randomReference();
-    const existing = await pool.query(
-      `SELECT 1 FROM schoolkano_payments WHERE reference = $1
-       UNION ALL
-       SELECT 1 FROM transactionskano WHERE reference = $1
-       LIMIT 1`,
-      [candidate],
-    );
-    if (existing.rows.length === 0) return candidate;
-  }
-  throw new Error(
-    "Could not generate a unique payment reference after multiple attempts.",
-  );
-}
 
 type FeeGroup = {
   category: string;
@@ -185,6 +66,9 @@ export async function GET(req: Request) {
   try {
     const { searchParams } = new URL(req.url);
     const school_id = searchParams.get("school_id");
+
+    const denied = await requireSchoolAccess(school_id);
+    if (denied) return denied;
     const showCertificate = searchParams.get("show_certificate") === "true";
 
     // Determine fee tier from the school's category

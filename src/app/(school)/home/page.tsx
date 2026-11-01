@@ -7,10 +7,11 @@ import {
   CheckCircle,
   Clock,
 } from "lucide-react";
-import { getUserFromCookie } from "@/lib/auth";
+import { getUserFromCookie, authHeaders } from "@/lib/auth";
 import Link from "next/link";
 import { formatDate } from "@/lib/formatDate";
 import ComplyCard from "@/components/ui/complyCard";
+import { getNoticeBalance } from "@/lib/annualNotices";
 // import dynamic from "next/dynamic";
 
 // const CompleteProfile = dynamic(() => import("@/components/profilecomplete"), {
@@ -18,14 +19,6 @@ import ComplyCard from "@/components/ui/complyCard";
 //   loading: () => <div>Loading...</div>, // optional loading state
 // });
 
-// Sample stats - these would come from your API
-const complianceStats = {
-  totalNotices: 0,
-  paidNotices: 0,
-  complianceScore: 0,
-  overdueInvoices: 0,
-  upcomingDeadlines: 0,
-};
 
 function getDaysUntilExpiry(expiryDate: string) {
   const today = new Date();
@@ -35,13 +28,7 @@ function getDaysUntilExpiry(expiryDate: string) {
   return diffDays;
 }
 
-export default async function SchoolOverviewDashboard(
-  {
-    // stats = complianceStats,
-  }: {
-    stats?: typeof complianceStats;
-  },
-) {
+export default async function SchoolOverviewDashboard() {
   const user = await getUserFromCookie();
 
   if (!user) {
@@ -55,6 +42,7 @@ export default async function SchoolOverviewDashboard(
   const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
   const res = await fetch(`${baseUrl}/api/schools/${user.institution}`, {
     cache: "no-store",
+    headers: await authHeaders(),
   });
 
   if (!res.ok) {
@@ -66,6 +54,8 @@ export default async function SchoolOverviewDashboard(
   }
 
   const school = await res.json();
+
+  const noticeBalance = await getNoticeBalance(user.institution || "");
 
   const daysUntilExpiry = school.license_expiry_date
     ? getDaysUntilExpiry(school.license_expiry_date)
@@ -126,6 +116,28 @@ export default async function SchoolOverviewDashboard(
           )}
         </div>
       </div>
+
+      {(noticeBalance.outstanding > 0 || noticeBalance.awaiting > 0) && (
+        <Link
+          href="/Invoices"
+          className="flex items-center justify-between gap-4 flex-wrap bg-red-50 border border-red-200 rounded-xl px-6 py-4"
+        >
+          <div>
+            <p className="text-sm font-bold text-red-800">
+              Single Demand Notice
+            </p>
+            <p className="text-xs text-red-700 mt-0.5">
+              {noticeBalance.awaiting > 0 &&
+                `${noticeBalance.awaiting} tax declaration${noticeBalance.awaiting !== 1 ? "s" : ""} needed. `}
+              {noticeBalance.nextDue &&
+                `Next payment due ${formatDate(String(noticeBalance.nextDue))}.`}
+            </p>
+          </div>
+          <p className="text-xl font-black text-red-700">
+            ₦{noticeBalance.outstanding.toLocaleString()}
+          </p>
+        </Link>
+      )}
 
       {/* School Information Card */}
       <div className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">

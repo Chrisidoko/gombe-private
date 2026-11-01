@@ -29,6 +29,7 @@ export async function POST(req: Request) {
       lastTaxFiling,
       address,
       lga,
+      locationType,
       category,
       website,
       // Gombe general additions
@@ -64,7 +65,7 @@ export async function POST(req: Request) {
     } = data;
 
     // Only mark complete when every required section has its minimum fields
-    const generalOk  = !!(proprietorName && contact_person && category && vcName);
+    const generalOk  = !!(proprietorName && contact_person && category && locationType && vcName);
     const academicOk = !!(modeOfOperation?.length && programmes?.length && totalStudents);
     const infraOk    = !!(labStatus && libraryStatus);
     const peopleOk   = !!(boardMembers?.length || academicStaff?.length);
@@ -111,6 +112,9 @@ export async function POST(req: Request) {
         academic_staff               = COALESCE($33::jsonb, academic_staff),
         non_academic_staff           = COALESCE($34::jsonb, non_academic_staff),
         form_status                  = CASE WHEN approval_status = 'approved' THEN 'complete' ELSE $35 END,
+        -- Sets the Business Premises rate, so it's fixed once confirmed at approval
+        location_type                = CASE WHEN approval_status = 'approved' AND location_type IS NOT NULL
+                                            THEN location_type ELSE COALESCE($36, location_type) END,
         updated_at                   = NOW()
        WHERE school_id = $1
        RETURNING *`,
@@ -150,6 +154,7 @@ export async function POST(req: Request) {
         academicStaff != null ? JSON.stringify(academicStaff) : null,
         nonAcademicStaff != null ? JSON.stringify(nonAcademicStaff) : null,
         newFormStatus,
+        locationType === "urban" || locationType === "rural" ? locationType : null,
       ],
     );
 

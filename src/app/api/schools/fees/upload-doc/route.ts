@@ -1,10 +1,14 @@
 // api/schools/fees/upload-doc/route.ts
 import { NextResponse } from "next/server";
 import pool from "@/lib/db";
+import { requireSchoolAccess } from "@/lib/apiAuth";
 
 export async function PATCH(req: Request) {
   try {
     const { school_id, fee_id, document_url } = await req.json();
+
+    const denied = await requireSchoolAccess(school_id);
+    if (denied) return denied;
 
     if (!school_id || !fee_id) {
       return NextResponse.json(

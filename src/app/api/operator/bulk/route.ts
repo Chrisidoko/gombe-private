@@ -2,9 +2,13 @@
 import { NextResponse } from "next/server";
 import pool from "@/lib/db";
 import { getUserFromCookie } from "@/lib/auth";
+import { requireRole } from "@/lib/apiAuth";
 
 // ── GET — fetch all schoolkano_bulk_assessments with invoice counts ───────────────────────────
 export async function GET() {
+  const denied = await requireRole("CBS_Operator");
+  if (denied) return denied;
+
   try {
     const result = await pool.query(`
       SELECT

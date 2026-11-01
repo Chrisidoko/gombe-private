@@ -2,6 +2,7 @@
 import { NextResponse } from "next/server";
 import pool from "@/lib/db";
 import { initializeTransaction } from "@/lib/etransact";
+import { requireSchoolAccess } from "@/lib/apiAuth";
 
 const GATEWAY_ACTIVE = process.env.CREDO_PUBLIC_KEY !== "STUB_NOT_ACTIVE";
 
@@ -18,6 +19,9 @@ export async function POST(req: Request) {
   try {
     const body = await req.json();
     const { db_id, school_id } = body;
+
+    const denied = await requireSchoolAccess(school_id);
+    if (denied) return denied;
 
     if (!db_id || !school_id) {
       return NextResponse.json(

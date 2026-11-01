@@ -21,6 +21,7 @@ async function upsertTransactionskano(
     gatewayResponse,
     paymentItem,
     schoolId,
+    revenueSubheadId,
   }: {
     reference: string;
     amount: number;
@@ -28,6 +29,7 @@ async function upsertTransactionskano(
     gatewayResponse: unknown;
     paymentItem: string;
     schoolId: string | null;
+    revenueSubheadId: number | null;
   },
 ) {
   let lga: string | null = null;
@@ -47,11 +49,12 @@ async function upsertTransactionskano(
   const paidAt = new Date();
   await client.query(
     `INSERT INTO transactionskano
-     (reference, amount, status, payment_method, gateway_response, payment_item, paid_at, created_at, school_id, lga, category, payer_name)
-   VALUES ($1, $2, 'Paid', $3, $4, $5, $6, NOW(), $7, $8, $9, $10)
+     (reference, amount, status, payment_method, gateway_response, payment_item, paid_at, created_at, school_id, lga, category, payer_name, revenue_subhead_id)
+   VALUES ($1, $2, 'Paid', $3, $4, $5, $6, NOW(), $7, $8, $9, $10, $11)
    ON CONFLICT (reference) DO UPDATE SET
      status = 'Paid', gateway_response = $4, paid_at = $6, lga = $8, category = $9,
-     payer_name = COALESCE(transactionskano.payer_name, $10)`,
+     payer_name = COALESCE(transactionskano.payer_name, $10),
+     revenue_subhead_id = COALESCE(transactionskano.revenue_subhead_id, $11)`,
     [
       reference,
       amount,
@@ -63,6 +66,7 @@ async function upsertTransactionskano(
       lga,
       category,
       payerName,
+      revenueSubheadId,
     ],
   );
 }
@@ -73,8 +77,9 @@ export async function reconcileFeePayment(
   const client = await pool.connect();
   try {
     const { rows } = await client.query(
-      `SELECT id, school_id, fee_id, fee_name, amount, status, reference, credo_reference
-       FROM schoolkano_payments WHERE id = $1`,
+      `SELECT p.id, p.school_id, p.fee_id, p.fee_name, p.amount, p.status, p.reference, p.credo_reference,
+              (SELECT s.id FROM revenue_subheads s WHERE s.fee_id = p.fee_id) AS revenue_subhead_id
+       FROM schoolkano_payments p WHERE p.id = $1`,
       [feeId],
     );
     const fee = rows[0];
@@ -118,6 +123,7 @@ export async function reconcileFeePayment(
         gatewayResponse: verified.raw,
         paymentItem: fee.fee_name,
         schoolId: fee.school_id,
+        revenueSubheadId: fee.revenue_subhead_id,
       });
 
       await client.query("COMMIT");
@@ -138,7 +144,7 @@ export async function reconcileInvoicePayment(
   const client = await pool.connect();
   try {
     const { rows } = await client.query(
-      `SELECT id, school_id, invoice_number, amount, status, bill_reference, credo_reference
+      `SELECT id, school_id, invoice_number, title, amount, status, bill_reference, credo_reference, revenue_subhead_id
        FROM schoolkano_invoices WHERE id = $1`,
       [invoiceId],
     );
@@ -163,8 +169,62 @@ export async function reconcileInvoicePayment(
         amount: invoice.amount,
         paymentMethod: "etransact",
         gatewayResponse: verified.raw,
-        paymentItem: "Assessment Invoice",
+        paymentItem: invoice.title || "Assessment Invoice",
         schoolId: invoice.school_id,
+        revenueSubheadId: invoice.revenue_subhead_id,
+      });
+
+      await client.query("COMMIT");
+    } catch (err) {
+      await client.query("ROLLBACK");
+      throw err;
+    }
+
+    return { isPaid: true };
+  } finally {
+    client.release();
+  }
+}
+
+export async function reconcileNoticeLine(
+  lineId: number,
+): Promise<ReconcileResult> {
+  const client = await pool.connect();
+  try {
+    const { rows } = await client.query(
+      `SELECT l.id, l.amount, l.status, l.reference, l.credo_reference, l.revenue_subhead_id,
+              n.school_id, n.year, s.name AS subhead_name
+       FROM annual_notice_lines l
+       JOIN annual_notices n ON n.id = l.notice_id
+       JOIN revenue_subheads s ON s.id = l.revenue_subhead_id
+       WHERE l.id = $1`,
+      [lineId],
+    );
+    const line = rows[0];
+    if (!line || line.status === "paid" || !line.credo_reference) {
+      return { isPaid: line?.status === "paid" };
+    }
+
+    const verified = await verifyTransaction(line.credo_reference);
+    const amountMatches = Number(verified.amount) === Number(line.amount);
+    if (!verified.isPaid || !amountMatches) return { isPaid: false };
+
+    await client.query("BEGIN");
+    try {
+      await client.query(
+        `UPDATE annual_notice_lines SET status = 'paid', paid_at = NOW()
+         WHERE id = $1 AND status = 'unpaid'`,
+        [lineId],
+      );
+
+      await upsertTransactionskano(client, {
+        reference: line.reference,
+        amount: line.amount,
+        paymentMethod: "etransact",
+        gatewayResponse: verified.raw,
+        paymentItem: `${line.subhead_name} ${line.year}`,
+        schoolId: line.school_id,
+        revenueSubheadId: line.revenue_subhead_id,
       });
 
       await client.query("COMMIT");

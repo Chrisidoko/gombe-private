@@ -8,9 +8,13 @@
 // throughout this integration.
 import { NextResponse } from "next/server";
 import pool from "@/lib/db";
-import { reconcileFeePayment, reconcileInvoicePayment } from "@/lib/reconcileEtransact";
+import { reconcileFeePayment, reconcileInvoicePayment, reconcileNoticeLine } from "@/lib/reconcileEtransact";
+import { requireRole } from "@/lib/apiAuth";
 
 export async function POST(req: Request) {
+  const denied = await requireRole("CBS_Finance", "CBS_Operator");
+  if (denied) return denied;
+
   try {
     const { reference } = await req.json();
     if (!reference || typeof reference !== "string") {
@@ -37,6 +41,15 @@ export async function POST(req: Request) {
     );
     if (invoiceRes.rows.length > 0) {
       const { isPaid } = await reconcileInvoicePayment(invoiceRes.rows[0].id);
+      return NextResponse.json({ success: true, isPaid });
+    }
+
+    const lineRes = await pool.query(
+      `SELECT id FROM annual_notice_lines WHERE reference = $1`,
+      [reference],
+    );
+    if (lineRes.rows.length > 0) {
+      const { isPaid } = await reconcileNoticeLine(lineRes.rows[0].id);
       return NextResponse.json({ success: true, isPaid });
     }
 

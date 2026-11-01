@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import pool from "@/lib/db";
 import { generateSchoolID } from "@/lib/generateSchoolID";
 import { findLGA, findCategory } from "@/lib/schoolIdConstants";
+import { rejectIfApproved } from "@/lib/apiAuth";
 
 export async function POST(req: Request) {
   const client = await pool.connect(); // get client for transaction
@@ -10,6 +11,12 @@ export async function POST(req: Request) {
 
     const body = await req.json();
     const { section } = body; // e.g. "A" or "B"
+
+    const denied = await rejectIfApproved({ school_id: body.school_id, tin: body.tin });
+    if (denied) {
+      await client.query("ROLLBACK");
+      return denied;
+    }
 
     function sanitize<T>(value: T): T | null {
       return value === "" ? null : value;

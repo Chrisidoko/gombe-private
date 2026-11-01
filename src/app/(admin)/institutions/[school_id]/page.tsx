@@ -1,6 +1,7 @@
 // app/(admin)/institutions/[school_id]/page.tsx
 import { notFound } from "next/navigation";
 import Link from "next/link";
+import PremisesDetailsForm from "@/components/ui/PremisesDetailsForm";
 import {
   ArrowLeft,
   Building2,
@@ -19,6 +20,7 @@ import {
   WalletCards,
   ClipboardList,
 } from "lucide-react";
+import { authHeaders } from "@/lib/auth";
 
 type School = {
   school_id: string;
@@ -57,6 +59,8 @@ type School = {
   enumerator_name: string | null;
   assigned_inspector_name: string | null;
   assigned_inspector_email: string | null;
+  location_type: string | null;
+  premises_category: string | null;
   created_at: string;
   updated_at: string | null;
 };
@@ -159,10 +163,11 @@ async function getSchool(
   const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
   const encoded = encodeURIComponent(school_id);
 
+  const headers = await authHeaders();
   const [schoolRes, docsRes, assessmentRes] = await Promise.all([
-    fetch(`${baseUrl}/api/admin/schools/${encoded}`, { cache: "no-store" }),
-    fetch(`${baseUrl}/api/schools/${encoded}/documents`, { cache: "no-store" }),
-    fetch(`${baseUrl}/api/admin/schools/${encoded}/assessments`, { cache: "no-store" }),
+    fetch(`${baseUrl}/api/admin/schools/${encoded}`, { cache: "no-store", headers }),
+    fetch(`${baseUrl}/api/schools/${encoded}/documents`, { cache: "no-store", headers }),
+    fetch(`${baseUrl}/api/admin/schools/${encoded}/assessments`, { cache: "no-store", headers }),
   ]);
 
   const school = schoolRes.ok ? await schoolRes.json() : null;
@@ -546,6 +551,15 @@ export default async function InstitutionDetailPage({
               </div>
             </div>
           )}
+        </Section>
+
+        {/* Business Premises */}
+        <Section icon={MapPin} title="Business Premises">
+          <PremisesDetailsForm
+            schoolId={school.school_id}
+            locationType={school.location_type}
+            premisesCategory={school.premises_category}
+          />
         </Section>
 
         {/* Record Info */}

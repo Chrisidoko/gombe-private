@@ -33,23 +33,21 @@ type School = {
   email: string;
 };
 
+type Subhead = {
+  id: number;
+  name: string;
+  head_name: string;
+};
+
 const FEE_OPTIONS = [
-  {
-    id: "annual_renewal",
-    label: "Annual Consent Certificate Renewal",
-    amount: 150000,
-    note: "Flat renewal fee per year",
-  },
   {
     id: "penalty_notice",
     label: "Compliance Penalty Notice",
-    amount: null,
     note: "Custom amount required",
   },
   {
     id: "custom",
     label: "Custom Fee",
-    amount: null,
     note: "Enter a custom amount and description",
   },
 ];
@@ -76,6 +74,8 @@ export default function FixedAssessmentsPage() {
   const [submitError, setSubmitError] = useState("");
   const [successMsg, setSuccessMsg] = useState("");
   const [notices, setNotices] = useState<PendingNotice[]>([]);
+  const [subheads, setSubheads] = useState<Subhead[]>([]);
+  const [subheadId, setSubheadId] = useState("");
 
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const wrapperRef = useRef<HTMLDivElement>(null);
@@ -92,6 +92,15 @@ export default function FixedAssessmentsPage() {
   useEffect(() => {
     loadNotices();
   }, [loadNotices]);
+
+  useEffect(() => {
+    fetch("/api/operator/revenue-subheads")
+      .then((res) => (res.ok ? res.json() : []))
+      .then(setSubheads)
+      .catch(() => {
+        // silently fail
+      });
+  }, []);
 
   // Close dropdown on outside click
   useEffect(() => {
@@ -144,6 +153,7 @@ export default function FixedAssessmentsPage() {
     setQuery("");
     setResults([]);
     setSelectedFee("");
+    setSubheadId("");
     setCustomAmount("");
     setCustomDesc("");
     setNarration("");
@@ -160,7 +170,7 @@ export default function FixedAssessmentsPage() {
       selectedFee === "custom"
         ? customDesc || "Custom Fee"
         : `${activeFeeLocal?.label}${customDesc ? ` — ${customDesc}` : ""}`;
-    const amount = activeFeeLocal?.amount ?? Number(customAmount);
+    const amount = Number(customAmount);
 
     try {
       const res = await fetch("/api/operator/invoices/demand-notice", {
@@ -171,6 +181,7 @@ export default function FixedAssessmentsPage() {
           title,
           amount,
           narration: narration.trim() || undefined,
+          revenue_subhead_id: Number(subheadId),
         }),
       });
 
@@ -184,6 +195,7 @@ export default function FixedAssessmentsPage() {
       setSelected(null);
       setQuery("");
       setSelectedFee("");
+      setSubheadId("");
       setCustomAmount("");
       setCustomDesc("");
       setNarration("");
@@ -196,17 +208,15 @@ export default function FixedAssessmentsPage() {
   }
 
   const activeFee = FEE_OPTIONS.find((f) => f.id === selectedFee);
-  const needsAmount = activeFee && activeFee.amount === null;
-  const displayAmount = activeFee?.amount
-    ? `₦${activeFee.amount.toLocaleString()}`
-    : customAmount
-      ? `₦${Number(customAmount).toLocaleString()}`
-      : "—";
+  const displayAmount = customAmount
+    ? `₦${Number(customAmount).toLocaleString()}`
+    : "—";
 
   const isReady =
     !!selected &&
     !!selectedFee &&
-    (!needsAmount || (needsAmount && !!customAmount)) &&
+    !!subheadId &&
+    !!customAmount &&
     (selectedFee !== "custom" || !!customDesc.trim());
 
   return (
@@ -355,18 +365,13 @@ export default function FixedAssessmentsPage() {
                       </p>
                       <p className="text-xs text-gray-400 mt-0.5">{fee.note}</p>
                     </div>
-                    {fee.amount !== null && (
-                      <span className="text-sm font-black text-green-700 shrink-0">
-                        ₦{fee.amount.toLocaleString()}
-                      </span>
-                    )}
                   </label>
                 ))}
               </div>
             </div>
 
             {/* Step 3 — Amount + name/description */}
-            {selectedFee && needsAmount && (
+            {selectedFee && (
               <div className="space-y-3">
                 <label className="block text-xs font-bold uppercase tracking-widest text-gray-500">
                   Step 3 — Enter Amount
@@ -402,6 +407,35 @@ export default function FixedAssessmentsPage() {
                     </p>
                   )}
                 </div>
+              </div>
+            )}
+
+            {/* Head and Sub-Head */}
+            {selectedFee && (
+              <div>
+                <label className="block text-xs font-bold uppercase tracking-widest text-gray-500 mb-2">
+                  Revenue Head &amp; Sub-Head
+                </label>
+                <select
+                  value={subheadId}
+                  onChange={(e) => setSubheadId(e.target.value)}
+                  className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm bg-white focus:outline-none focus:ring-2 focus:ring-green-500"
+                >
+                  <option value="">Select where this revenue belongs</option>
+                  {Array.from(new Set(subheads.map((s) => s.head_name))).map(
+                    (head) => (
+                      <optgroup key={head} label={head}>
+                        {subheads
+                          .filter((s) => s.head_name === head)
+                          .map((s) => (
+                            <option key={s.id} value={s.id}>
+                              {s.name}
+                            </option>
+                          ))}
+                      </optgroup>
+                    ),
+                  )}
+                </select>
               </div>
             )}
 

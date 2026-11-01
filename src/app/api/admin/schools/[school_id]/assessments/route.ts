@@ -1,10 +1,14 @@
 import { NextResponse } from "next/server";
 import pool from "@/lib/db";
+import { requireRole } from "@/lib/apiAuth";
 
 export async function GET(
   _req: Request,
   { params }: { params: Promise<{ school_id: string }> },
 ) {
+  const denied = await requireRole("CBS_Admin");
+  if (denied) return denied;
+
   const { school_id } = await params;
   const decodedId = decodeURIComponent(school_id);
 

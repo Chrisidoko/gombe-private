@@ -32,6 +32,8 @@ export interface School {
   proprietor_name: string | null;
   proprietor_nin: string | null;
   property_type: string | null;
+  location_type: string | null;
+  premises_category: string | null;
   chairman_name: string | null;
 
   // Academic Info

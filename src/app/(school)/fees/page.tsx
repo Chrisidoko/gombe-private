@@ -1,5 +1,5 @@
 // app/(school)/fees/page.tsx
-import { getUserFromCookie } from "@/lib/auth";
+import { getUserFromCookie, authHeaders } from "@/lib/auth";
 import FeesPageClient from "@/components/ui/FeesPageClient";
 
 export default async function FeeDashboard() {
@@ -16,6 +16,7 @@ export default async function FeeDashboard() {
   const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
   const res = await fetch(`${baseUrl}/api/schools/${user.institution}`, {
     cache: "no-store",
+    headers: await authHeaders(),
   });
   const school = await res.json();
 

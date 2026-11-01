@@ -1,11 +1,15 @@
 // this is for the school to know their status of submition
 import { NextResponse } from "next/server";
 import pool from "@/lib/db";
+import { requireSchoolAccess } from "@/lib/apiAuth";
 
 export async function GET(req: Request) {
   try {
     const { searchParams } = new URL(req.url);
     const school_id = searchParams.get("school_id");
+
+    const denied = await requireSchoolAccess(school_id);
+    if (denied) return denied;
 
     if (!school_id) {
       return NextResponse.json(

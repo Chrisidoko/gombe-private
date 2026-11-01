@@ -83,8 +83,10 @@ export async function PATCH(
       await client.query(
         `INSERT INTO schoolkano_invoices
            (school_id, invoice_number, title, amount, status,
-            issue_date, due_date, bulk_assessment_id, tier, is_creating_bill)
-         VALUES ($1, $2, $3, $4, 'Unpaid', NOW(), $5, $6, $7, false)`,
+            issue_date, due_date, bulk_assessment_id, tier, is_creating_bill,
+            revenue_subhead_id)
+         VALUES ($1, $2, $3, $4, 'Unpaid', NOW(), $5, $6, $7, false,
+            (SELECT id FROM revenue_subheads WHERE code = 'EDU_ASSESSMENT'))`,
         [
           school.school_id,
           invoiceNumber,

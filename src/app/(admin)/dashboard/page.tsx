@@ -12,7 +12,7 @@ import {
   Stethoscope,
   Computer,
 } from "lucide-react";
-import { getUserFromCookie } from "@/lib/auth";
+import { getUserFromCookie, authHeaders } from "@/lib/auth";
 import LGAChart from "@/components/ui/LGACharts";
 
 interface SchoolStats {
@@ -111,6 +111,7 @@ async function getSchoolStats(): Promise<SchoolStats> {
   const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
   const res = await fetch(`${baseUrl}/api/dashboard/stats`, {
     cache: "no-store", // ← make sure this exists on every fetch
+    headers: await authHeaders(),
   });
 
   if (!res.ok) throw new Error("Failed to fetch school stats");

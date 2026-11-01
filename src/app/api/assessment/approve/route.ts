@@ -3,8 +3,12 @@
 import { NextResponse } from "next/server";
 import pool from "@/lib/db";
 import nodemailer from "nodemailer";
+import { requireRole } from "@/lib/apiAuth";
 
 export async function POST(req: Request) {
+  const denied = await requireRole("CBS_Operator2");
+  if (denied) return denied;
+
   const client = await pool.connect();
 
   try {

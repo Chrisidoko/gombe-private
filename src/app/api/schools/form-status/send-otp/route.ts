@@ -3,10 +3,14 @@
 import { NextResponse } from "next/server";
 import pool from "@/lib/db";
 import nodemailer from "nodemailer";
+import { requireSchoolAccess } from "@/lib/apiAuth";
 
 export async function POST(req: Request) {
   try {
     const { school_id, email } = await req.json();
+
+    const denied = await requireSchoolAccess(school_id);
+    if (denied) return denied;
 
     if (!school_id) {
       return NextResponse.json(

@@ -1,8 +1,12 @@
 // api/assessment/pending/route.ts
 import { NextResponse } from "next/server";
 import pool from "@/lib/db";
+import { requireRole } from "@/lib/apiAuth";
 
 export async function GET() {
+  const denied = await requireRole("CBS_Operator");
+  if (denied) return denied;
+
   try {
     const result = await pool.query(`
       SELECT 

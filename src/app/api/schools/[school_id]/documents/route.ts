@@ -2,6 +2,7 @@
 
 import { NextResponse } from "next/server";
 import pool from "@/lib/db";
+import { requireSchoolAccess } from "@/lib/apiAuth";
 
 export async function GET(
   request: Request,
@@ -9,6 +10,9 @@ export async function GET(
 ) {
   try {
     const { school_id } = await context.params;
+
+    const denied = await requireSchoolAccess(school_id);
+    if (denied) return denied;
 
     const result = await pool.query(
       `SELECT id, school_id, document_type, file_url 

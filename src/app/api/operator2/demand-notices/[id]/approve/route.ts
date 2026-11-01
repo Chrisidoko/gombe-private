@@ -52,10 +52,10 @@ export async function PATCH(
     const due_days = 14;
     const { rows } = await client.query(
       `INSERT INTO schoolkano_invoices
-         (school_id, invoice_number, title, amount, status, issue_date, due_date)
-       VALUES ($1, $2, $3, $4, 'Unpaid', NOW(), NOW() + INTERVAL '${due_days} days')
+         (school_id, invoice_number, title, amount, status, issue_date, due_date, revenue_subhead_id)
+       VALUES ($1, $2, $3, $4, 'Unpaid', NOW(), NOW() + INTERVAL '${due_days} days', $5)
        RETURNING id, invoice_number, due_date`,
-      [notice.school_id, invoice_number, notice.title, notice.amount],
+      [notice.school_id, invoice_number, notice.title, notice.amount, notice.revenue_subhead_id],
     );
     const invoiceId = rows[0].id;
     const dueDate = rows[0].due_date;
@@ -117,7 +117,7 @@ export async function PATCH(
         <br/>
         <p style="font-size:13px;color:#6b7280;">Please log in to your dashboard to make payment before the due date.</p>
         <br/>
-        <a href="https://kaptems.payprosolutionsltd.com/"
+        <a href="https://higheredu.gesms.payprosolutionsltd.com/"
            style="background-color:#166534;color:white;padding:10px 20px;text-decoration:none;border-radius:8px;font-size:14px;font-weight:600;">
           Go to Dashboard
         </a>

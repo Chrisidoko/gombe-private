@@ -1,5 +1,6 @@
 // app/(finance)/finance/page.tsx
 import { AlertTriangle } from "lucide-react";
+import { authHeaders } from "@/lib/auth";
 
 const YEAR = new Date().getFullYear();
 
@@ -79,7 +80,7 @@ async function getPerformanceData(): Promise<PerformanceData | null> {
     const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
     const res = await fetch(
       `${baseUrl}/api/dashboard/revenue-performance?year=${YEAR}`,
-      { cache: "no-store" },
+      { cache: "no-store", headers: await authHeaders() },
     );
     if (!res.ok) return null;
     return res.json();

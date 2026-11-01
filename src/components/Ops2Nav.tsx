@@ -47,6 +47,16 @@ const Ops2Navigation: React.FC<NavigationProps> = ({
       icon: <Settings2 size={18} />,
     },
     {
+      href: "/review-annual-notices",
+      label: "Review Annual Notices",
+      icon: <ClipboardCheck size={18} />,
+    },
+    {
+      href: "/review-tax-items",
+      label: "Review Tax Items",
+      icon: <ClipboardCheck size={18} />,
+    },
+    {
       href: "/revenue-targets",
       label: "Revenue Targets",
       icon: <Target size={18} />,

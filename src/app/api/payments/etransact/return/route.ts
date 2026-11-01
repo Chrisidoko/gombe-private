@@ -8,6 +8,7 @@ import { NextResponse } from "next/server";
 import {
   reconcileFeePayment,
   reconcileInvoicePayment,
+  reconcileNoticeLine,
 } from "@/lib/reconcileEtransact";
 
 export async function GET(req: Request) {
@@ -23,7 +24,8 @@ export async function GET(req: Request) {
     process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"
   ).replace(/\/$/, "");
 
-  const destination = type === "invoice" ? "/Invoices" : "/fees";
+  const destination =
+    type === "invoice" || type === "notice" ? "/Invoices" : "/fees";
 
   if (!type || !id || Number.isNaN(id)) {
     return NextResponse.redirect(`${baseUrl}${destination}?payment=error`);
@@ -35,6 +37,8 @@ export async function GET(req: Request) {
       ({ isPaid } = await reconcileFeePayment(id));
     } else if (type === "invoice") {
       ({ isPaid } = await reconcileInvoicePayment(id));
+    } else if (type === "notice") {
+      ({ isPaid } = await reconcileNoticeLine(id));
     }
   } catch (err) {
     console.error("eTransact return reconciliation failed:", err);

@@ -1,8 +1,12 @@
 // app/api/admin/schools/route.ts
 import { NextResponse } from "next/server";
 import pool from "@/lib/db";
+import { requireRole } from "@/lib/apiAuth";
 
 export async function GET(req: Request) {
+  const denied = await requireRole("CBS_Admin");
+  if (denied) return denied;
+
   try {
     const { searchParams } = new URL(req.url);
 

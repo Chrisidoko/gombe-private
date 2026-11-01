@@ -1,4 +1,4 @@
-import { getUserFromCookie } from "@/lib/auth";
+import { getUserFromCookie, authHeaders } from "@/lib/auth";
 import { Divider } from "@/components/Divider";
 import AssesmentForm from "@/components/ui/assementform";
 import { LockKeyhole } from "lucide-react";
@@ -21,12 +21,15 @@ export default async function AssesmentDashboard() {
   // ✅ Use an absolute base URL
   const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
 
+  const headers = await authHeaders();
   const [statusRes, windowRes] = await Promise.all([
     fetch(`${baseUrl}/api/assessment/status?school_id=${user.institution}`, {
       cache: "no-store",
+      headers,
     }),
     fetch(`${baseUrl}/api/operator/settings/assessment-window`, {
       cache: "no-store",
+      headers,
     }),
   ]);
 

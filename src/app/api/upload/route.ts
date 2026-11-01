@@ -4,12 +4,16 @@ import { v2 as cloudinary } from "cloudinary";
 import { UploadApiResponse } from "cloudinary";
 import pool from "@/lib/db";
 import path from "path";
+import { requireSchoolAccess } from "@/lib/apiAuth";
 
 cloudinary.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME!,
   api_key: process.env.CLOUDINARY_API_KEY!,
   api_secret: process.env.CLOUDINARY_API_SECRET!,
 });
+
+const MAX_FILE_SIZE = 10 * 1024 * 1024;
+const ALLOWED_TYPES = ["application/pdf", "image/jpeg", "image/png"];
 
 export async function POST(req: Request) {
   try {
@@ -24,6 +28,30 @@ export async function POST(req: Request) {
         { success: false, message: "Missing required fields." },
         { status: 400 }
       );
+    }
+
+    if (!ALLOWED_TYPES.includes(file.type) || file.size > MAX_FILE_SIZE) {
+      return NextResponse.json(
+        { success: false, message: "Upload a PDF, JPG or PNG under 10MB." },
+        { status: 400 }
+      );
+    }
+
+    // Open to registering schools with no login yet, so only for a school that
+    // exists; an approved school can only be changed by its own account.
+    const schoolRes = await pool.query(
+      "SELECT approval_status FROM schoolskano WHERE school_id = $1",
+      [school_id]
+    );
+    if (schoolRes.rows.length === 0) {
+      return NextResponse.json(
+        { success: false, message: "School not found." },
+        { status: 404 }
+      );
+    }
+    if (schoolRes.rows[0].approval_status === "approved") {
+      const denied = await requireSchoolAccess(school_id);
+      if (denied) return denied;
     }
 
     // Read the file buffer

@@ -8,8 +8,12 @@
 import { NextResponse } from "next/server";
 import pool from "@/lib/db";
 import crypto from "crypto";
+import { requireRole } from "@/lib/apiAuth";
 
 export async function GET(req: Request) {
+  const denied = await requireRole("CBS_Admin");
+  if (denied) return denied;
+
   const client = await pool.connect();
 
   try {

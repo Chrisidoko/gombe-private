@@ -124,6 +124,7 @@ export default function SchoolProfileView({
               <Field label="Year Established" value={schoolData?.year_established} />
               <Field label="Site Type" value={schoolData?.property_type} />
               <Field label="LGA" value={schoolData?.lga} />
+              <Field label="Location" value={schoolData?.location_type} />
               <Field label="Address" value={schoolData?.address} />
               <Field
                 label="Website"

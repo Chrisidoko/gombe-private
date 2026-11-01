@@ -63,6 +63,16 @@ const Navigation: React.FC<NavigationProps> = ({ collapsed, setCollapsed }) => {
       icon: <Building className="w-4 h-4" />,
     },
     {
+      href: "/annual-notices",
+      label: "Annual Notices",
+      icon: <FileText className="w-4 h-4" />,
+    },
+    {
+      href: "/tax-declarations",
+      label: "Tax Declarations",
+      icon: <FileText className="w-4 h-4" />,
+    },
+    {
       href: "/field-reports",
       label: "Field Reports",
       icon: <FileText className="w-4 h-4" />,

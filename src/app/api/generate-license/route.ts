@@ -1,6 +1,7 @@
 // app/api/generate-license/route.ts
 import { NextRequest, NextResponse } from "next/server";
 import pool from "@/lib/db";
+import { requireRole, requireSchoolAccess } from "@/lib/apiAuth";
 
 interface LicenseData {
   school_name: string;
@@ -16,6 +17,9 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
     const { school_id } = body;
+
+    const denied = await requireSchoolAccess(school_id);
+    if (denied) return denied;
 
     if (!school_id) {
       return NextResponse.json(
@@ -98,6 +102,9 @@ export async function POST(request: NextRequest) {
 
 // ── GET — sample preview (preserved) ─────────────────────────────────────────
 export async function GET() {
+  const denied = await requireRole("CBS_Admin");
+  if (denied) return denied;
+
   try {
     const sampleData: LicenseData = {
       school_name: "Marayam Abacha College of Health",

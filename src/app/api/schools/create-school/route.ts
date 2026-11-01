@@ -6,6 +6,7 @@ import bcrypt from "bcryptjs";
 import { generateSchoolID } from "@/lib/generateSchoolID";
 import { getUserFromCookie } from "@/lib/auth";
 import { findLGA, findCategory } from "@/lib/schoolIdConstants";
+import { requireRole } from "@/lib/apiAuth";
 
 function generateEmail(name: string): string {
   const slug = name
@@ -19,6 +20,9 @@ function generateEmail(name: string): string {
 }
 
 export async function POST(req: Request) {
+  const denied = await requireRole("CBS_Admin", "CBS_Inspector");
+  if (denied) return denied;
+
   try {
     const user = await getUserFromCookie();
     const enumeratorName = user?.name ?? null;

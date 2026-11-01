@@ -1,9 +1,13 @@
 // app/api/operator/tiers/route.ts
 import { NextResponse } from "next/server";
 import pool from "@/lib/db";
+import { requireRole } from "@/lib/apiAuth";
 
 // ── GET — fetch all schools grouped by tier ───────────────────────────────────
 export async function GET() {
+  const denied = await requireRole("CBS_Operator");
+  if (denied) return denied;
+
   try {
     const result = await pool.query(`
       SELECT
@@ -36,6 +40,9 @@ export async function GET() {
 
 // ── PATCH — update a school's tier ────────────────────────────────────────────
 export async function PATCH(req: Request) {
+  const denied = await requireRole("CBS_Operator");
+  if (denied) return denied;
+
   try {
     const { school_id, tier } = await req.json();
 
@@ -71,6 +78,9 @@ export async function PATCH(req: Request) {
 
 // ── POST — bulk assign tier to multiple schools ───────────────────────────────
 export async function POST(req: Request) {
+  const denied = await requireRole("CBS_Operator");
+  if (denied) return denied;
+
   try {
     const { school_ids, tier } = await req.json();
 

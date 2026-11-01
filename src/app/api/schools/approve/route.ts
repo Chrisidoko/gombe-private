@@ -2,19 +2,50 @@
 import { NextResponse } from "next/server";
 import pool from "@/lib/db";
 import nodemailer from "nodemailer";
+import { getUserFromCookie } from "@/lib/auth";
+import { createNoticeBatch } from "@/lib/annualNotices";
 
 export async function POST(req: Request) {
+  const user = await getUserFromCookie();
+  if (!user || user.institution !== "CBS_Admin") {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
   try {
-    const { school_id, inspector_name, inspector_email } = await req.json();
+    const {
+      school_id,
+      inspector_name,
+      inspector_email,
+      location_type,
+      premises_category,
+    } = await req.json();
+
+    if (
+      !["urban", "rural"].includes(location_type) ||
+      !["A", "B", "C"].includes(premises_category)
+    ) {
+      return NextResponse.json(
+        { error: "Location and premises category are required" },
+        { status: 400 },
+      );
+    }
 
     const result = await pool.query(
       `UPDATE schoolskano
        SET approval_status = 'approved',
            assigned_inspector_name = COALESCE($2, assigned_inspector_name),
-           assigned_inspector_email = COALESCE($3, assigned_inspector_email)
+           assigned_inspector_email = COALESCE($3, assigned_inspector_email),
+           location_type = $4,
+           premises_category = $5
        WHERE school_id = $1
        RETURNING email, name, license_status`,
-      [school_id, inspector_name || null, inspector_email || null],
+      [
+        school_id,
+        inspector_name || null,
+        inspector_email || null,
+        location_type,
+        premises_category,
+      ],
     );
 
     if (result.rowCount === 0) {
@@ -22,6 +53,26 @@ export async function POST(req: Request) {
     }
 
     const { email, name, license_status } = result.rows[0];
+
+    // A newly approved school gets a full notice for the current year, queued
+    // for Operator 2 like any other. Approval itself must not depend on it:
+    // if this fails, Operator 1 can still prepare the notice from their page.
+    const client = await pool.connect();
+    try {
+      await client.query("BEGIN");
+      await createNoticeBatch(client, {
+        year: new Date().getFullYear(),
+        schools: [{ school_id, location_type, premises_category }],
+        source: "school_approval",
+        createdBy: user.name || "admin",
+      });
+      await client.query("COMMIT");
+    } catch (noticeError) {
+      await client.query("ROLLBACK");
+      console.error("Notice for newly approved school failed:", noticeError);
+    } finally {
+      client.release();
+    }
     const hasActiveLicense = license_status === "Active";
 
     // const purchaseLink = `https://kaptems.payprosolutionsltd.com/school-overview?school_id=${encodeURIComponent(school_id)}`;

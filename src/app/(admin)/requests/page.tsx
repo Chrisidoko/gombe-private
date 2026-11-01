@@ -69,6 +69,7 @@ interface SchoolDetails {
   year_established: number | null;
   property_type: string | null;
   category: string | null;
+  location_type: string | null;
   // Gombe — Facilities
   lab_status: string | null;
   library_status: string | null;
@@ -296,6 +297,8 @@ export default function Requests() {
   }>({ id: null, action: null });
   const [inspectors, setInspectors] = useState<Inspector[]>([]);
   const [selectedInspectorEmail, setSelectedInspectorEmail] = useState("");
+  const [selectedLocation, setSelectedLocation] = useState("");
+  const [selectedPremises, setSelectedPremises] = useState("");
 
   // ── Academic requests state
   const [academicRequests, setAcademicRequests] = useState<AcademicRequest[]>(
@@ -343,7 +346,11 @@ export default function Requests() {
 
     fetch(`/api/schools/${selectedSchool.school_id}`)
       .then((r) => (r.ok ? r.json() : null))
-      .then((data) => data && setSchoolDetails(data))
+      .then((data) => {
+        if (!data) return;
+        setSchoolDetails(data);
+        setSelectedLocation(data.location_type ?? "");
+      })
       .catch(console.error)
       .finally(() => setDetailsLoading(false));
 
@@ -374,6 +381,12 @@ export default function Requests() {
         body: JSON.stringify({
           school_id,
           reason,
+          ...(action === "approve"
+            ? {
+                location_type: selectedLocation,
+                premises_category: selectedPremises,
+              }
+            : {}),
           ...(action === "approve" && selectedInspector
             ? {
                 inspector_name: selectedInspector.name,
@@ -388,6 +401,8 @@ export default function Requests() {
       setSelectedSchool(null);
       setSchoolDetails(null);
       setSelectedInspectorEmail("");
+      setSelectedLocation("");
+      setSelectedPremises("");
     } catch (error) {
       console.error(error);
     } finally {
@@ -425,6 +440,8 @@ export default function Requests() {
     setSchoolDetails(null);
     setDocuments([]);
     setSelectedInspectorEmail("");
+    setSelectedLocation("");
+    setSelectedPremises("");
   };
 
   // ─── Render ────────────────────────────────────────────────────────────────
@@ -913,6 +930,49 @@ export default function Requests() {
                     )}
                   </div>
 
+                  {/* Business premises */}
+                  <div className="mb-6">
+                    <h4 className="text-lg font-semibold text-gray-900 mb-3">
+                      Business Premises
+                    </h4>
+                    <div className="bg-gray-50 rounded-lg p-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div>
+                        <label className="text-xs font-medium text-gray-500 block mb-1">
+                          Location (confirm the school&apos;s answer)
+                        </label>
+                        <select
+                          value={selectedLocation}
+                          onChange={(e) => setSelectedLocation(e.target.value)}
+                          className="w-full bg-white border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-green-500"
+                        >
+                          <option value="">Select location</option>
+                          <option value="urban">Urban</option>
+                          <option value="rural">Rural</option>
+                        </select>
+                      </div>
+                      <div>
+                        <label className="text-xs font-medium text-gray-500 block mb-1">
+                          Premises category
+                        </label>
+                        <select
+                          value={selectedPremises}
+                          onChange={(e) => setSelectedPremises(e.target.value)}
+                          className="w-full bg-white border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-green-500"
+                        >
+                          <option value="">Select category</option>
+                          <option value="A">Category A</option>
+                          <option value="B">Category B</option>
+                          <option value="C">Category C</option>
+                        </select>
+                      </div>
+                    </div>
+                    {(!selectedLocation || !selectedPremises) && (
+                      <p className="text-xs text-gray-500 mt-2">
+                        Both are required before this school can be approved.
+                      </p>
+                    )}
+                  </div>
+
                   {/* Assign inspector */}
                   <div className="mb-6">
                     <h4 className="text-lg font-semibold text-gray-900 mb-3">
@@ -949,8 +1009,10 @@ export default function Requests() {
                   <div className="flex gap-3">
                     <button
                       disabled={
-                        aloading.id === selectedSchool.id &&
-                        aloading.action === "approve"
+                        !selectedLocation ||
+                        !selectedPremises ||
+                        (aloading.id === selectedSchool.id &&
+                          aloading.action === "approve")
                       }
                       onClick={() =>
                         handleAction(

@@ -1,12 +1,16 @@
 import { NextResponse } from "next/server";
 import pool from "@/lib/db";
 import { getUserFromCookie } from "@/lib/auth";
+import { requireLogin } from "@/lib/apiAuth";
 
 const KEY = "assessment_window_open";
 
 // Public — school assessment page reads this to decide whether to show the
 // form or the locked overlay.
 export async function GET() {
+  const denied = await requireLogin();
+  if (denied) return denied;
+
   try {
     const { rows } = await pool.query(
       "SELECT value FROM system_settings WHERE key = $1",

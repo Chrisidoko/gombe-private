@@ -11,9 +11,12 @@ export async function GET() {
 
   try {
     const { rows } = await pool.query(`
-      SELECT * FROM pending_demand_notices
-      WHERE status = 'pending_approval'
-      ORDER BY created_at DESC
+      SELECT n.*, s.name AS subhead_name, h.name AS head_name
+      FROM pending_demand_notices n
+      LEFT JOIN revenue_subheads s ON s.id = n.revenue_subhead_id
+      LEFT JOIN revenue_heads h ON h.id = s.head_id
+      WHERE n.status = 'pending_approval'
+      ORDER BY n.created_at DESC
     `);
     return NextResponse.json(rows);
   } catch (error) {

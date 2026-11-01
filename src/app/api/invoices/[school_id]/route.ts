@@ -2,6 +2,7 @@
 import { NextResponse } from "next/server";
 import pool from "@/lib/db";
 import { reconcileInvoicePayment } from "@/lib/reconcileEtransact";
+import { requireSchoolAccess } from "@/lib/apiAuth";
 
 export async function GET(
   _req: Request,
@@ -9,6 +10,9 @@ export async function GET(
 ) {
   try {
     const { school_id } = await context.params; // 👈 awaited before use
+
+    const denied = await requireSchoolAccess(school_id);
+    if (denied) return denied;
 
     const query = `
       SELECT id, invoice_number, title, amount, status, issue_date, due_date

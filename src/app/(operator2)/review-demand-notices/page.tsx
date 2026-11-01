@@ -19,6 +19,8 @@ type PendingNotice = {
   title: string;
   amount: string;
   narration: string | null;
+  head_name: string | null;
+  subhead_name: string | null;
   submitted_by: string;
   created_at: string;
   status: string;
@@ -86,6 +88,18 @@ function NoticeCard({
           </p>
           <p className="text-xs text-gray-400">{notice.school_email}</p>
         </div>
+      </div>
+
+      {/* Head and Sub-Head */}
+      <div className="px-6 py-3 border-b border-gray-100">
+        <p className="text-xs text-gray-500 font-medium uppercase tracking-widest mb-1">
+          Revenue Head
+        </p>
+        <p className="text-sm text-gray-700">
+          {notice.head_name
+            ? `${notice.head_name} — ${notice.subhead_name}`
+            : "Not specified"}
+        </p>
       </div>
 
       {/* Narration */}

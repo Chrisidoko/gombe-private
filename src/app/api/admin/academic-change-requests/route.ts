@@ -1,8 +1,12 @@
 import { NextResponse } from "next/server";
 import pool from "@/lib/db";
+import { requireRole } from "@/lib/apiAuth";
 
 // GET — list all pending academic change requests, newest first
 export async function GET() {
+  const denied = await requireRole("CBS_Admin");
+  if (denied) return denied;
+
   try {
     const result = await pool.query(
       `SELECT acr.id, acr.school_id, acr.status,

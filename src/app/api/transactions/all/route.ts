@@ -1,8 +1,12 @@
 // app/api/transactions/all/route.ts
 import { NextResponse } from "next/server";
 import pool from "@/lib/db";
+import { requireRole } from "@/lib/apiAuth";
 
 export async function GET(req: Request) {
+  const denied = await requireRole("CBS_Finance", "CBS_Operator", "CBS_Operator2", "CBS_Admin");
+  if (denied) return denied;
+
   try {
     const { searchParams } = new URL(req.url);
 

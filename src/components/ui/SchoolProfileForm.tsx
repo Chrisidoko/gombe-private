@@ -52,6 +52,7 @@ type FormData = {
   ownershipType: string;
   address: string;
   lga: string;
+  locationType: string;
   tin: string;
   lastTaxFiling: string;
   category: string;
@@ -115,6 +116,7 @@ export default function SchoolProfileForm({
     ownershipType: schoolData.ownership ?? "Private Individual",
     address: schoolData.address ?? "",
     lga: schoolData.lga ?? "",
+    locationType: schoolData.location_type ?? "",
     tin: schoolData.tin ?? "",
     lastTaxFiling: schoolData.last_tax_filing ?? "",
     category: schoolData.category ?? "",
@@ -294,6 +296,7 @@ export default function SchoolProfileForm({
             ownershipType: formData.ownershipType,
             address: formData.address,
             lga: formData.lga,
+            locationType: formData.locationType,
             tin: formData.tin,
             lastTaxFiling: formData.lastTaxFiling,
             category: formData.category,
@@ -340,6 +343,7 @@ export default function SchoolProfileForm({
     formData.proprietorName &&
     formData.contact_person &&
     formData.category &&
+    formData.locationType &&
     formData.vcName;
   const isAcademicComplete =
     formData.modeOfOperation.length > 0 &&
@@ -644,6 +648,24 @@ export default function SchoolProfileForm({
                         {lga}
                       </option>
                     ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    Location <span className="text-red-500">*</span>
+                  </label>
+                  <select
+                    value={formData.locationType}
+                    onChange={(e) =>
+                      handleChange("locationType", e.target.value)
+                    }
+                    disabled={isApproved && !!schoolData.location_type}
+                    className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all disabled:bg-gray-100 disabled:text-gray-500"
+                    required
+                  >
+                    <option value="">Select location</option>
+                    <option value="urban">Urban</option>
+                    <option value="rural">Rural</option>
                   </select>
                 </div>
                 <div>

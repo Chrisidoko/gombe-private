@@ -1,6 +1,7 @@
 // src/app/api/schools/[school_id]/route.ts
 
 import { NextResponse } from "next/server";
+import { requireSchoolAccess } from "@/lib/apiAuth";
 import pool from "@/lib/db"; // PostgreSQL pool setup
 
 export async function GET(
@@ -9,6 +10,9 @@ export async function GET(
 ) {
   try {
     const { school_id } = await context.params; // 👈 awaited before use
+
+    const denied = await requireSchoolAccess(school_id);
+    if (denied) return denied;
 
     const result = await pool.query(
       `SELECT * FROM schoolskano WHERE school_id = $1`,

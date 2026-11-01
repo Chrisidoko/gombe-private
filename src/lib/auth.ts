@@ -29,3 +29,10 @@ export async function getUserFromCookie() {
     return null;
   }
 }
+
+// A server-side fetch doesn't carry the browser's cookies, so pages calling
+// their own API routes pass the login along with this.
+export async function authHeaders(): Promise<Record<string, string>> {
+  const cookieStore = await cookies();
+  return { cookie: cookieStore.toString() };
+}

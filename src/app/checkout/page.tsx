@@ -16,7 +16,7 @@ type SearchParams = {
 export default async function Page({
   searchParams,
 }: {
-  searchParams: SearchParams;
+  searchParams: Promise<SearchParams>;
 }) {
   // Pass server-parsed searchParams into the client form as plain props.
 

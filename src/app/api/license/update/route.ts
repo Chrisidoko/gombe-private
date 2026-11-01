@@ -3,8 +3,12 @@
 import { NextResponse } from "next/server";
 import pool from "@/lib/db";
 import { activateLicense } from "@/lib/activateLicense";
+import { requireRole } from "@/lib/apiAuth";
 
 export async function POST(req: Request) {
+  const denied = await requireRole("CBS_Admin");
+  if (denied) return denied;
+
   const { school_id } = await req.json();
   const license_number = await activateLicense(pool, school_id);
   return NextResponse.json({ success: true, license_number });

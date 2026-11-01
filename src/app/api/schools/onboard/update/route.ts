@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import pool from "@/lib/db";
+import { rejectIfApproved } from "@/lib/apiAuth";
 
 export async function POST(req: Request) {
   const client = await pool.connect();
@@ -8,6 +9,12 @@ export async function POST(req: Request) {
     await client.query("BEGIN");
     const body = await req.json();
     const { section, school_id } = body;
+
+    const denied = await rejectIfApproved({ school_id });
+    if (denied) {
+      await client.query("ROLLBACK");
+      return denied;
+    }
 
     if (!school_id) {
       return NextResponse.json(

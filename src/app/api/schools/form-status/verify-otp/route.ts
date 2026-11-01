@@ -4,10 +4,14 @@
 // Verify OTP
 import { NextResponse } from "next/server";
 import pool from "@/lib/db";
+import { requireSchoolAccess } from "@/lib/apiAuth";
 
 export async function POST(req: Request) {
   try {
     const { school_id, otp } = await req.json();
+
+    const denied = await requireSchoolAccess(school_id);
+    if (denied) return denied;
 
     const result = await pool.query(
       `SELECT o.id 

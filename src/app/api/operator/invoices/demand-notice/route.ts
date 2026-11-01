@@ -13,15 +13,24 @@ export async function POST(req: Request) {
 
   try {
     const body = await req.json();
-    const { school_id, title, amount, narration } = body;
+    const { school_id, title, amount, narration, revenue_subhead_id } = body;
 
-    if (!school_id || !title?.trim() || !amount) {
+    if (!school_id || !title?.trim() || !amount || !revenue_subhead_id) {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
     }
 
     const parsedAmount = parseFloat(amount);
     if (isNaN(parsedAmount) || parsedAmount <= 0) {
       return NextResponse.json({ error: "Invalid amount" }, { status: 400 });
+    }
+
+    const subheadRes = await pool.query(
+      `SELECT 1 FROM revenue_subheads
+       WHERE id = $1 AND charge_type = 'manual' AND active`,
+      [revenue_subhead_id],
+    );
+    if (subheadRes.rowCount === 0) {
+      return NextResponse.json({ error: "Invalid revenue sub-head" }, { status: 400 });
     }
 
     // Fetch school info for display in Op2's review queue
@@ -36,8 +45,8 @@ export async function POST(req: Request) {
 
     const { rows } = await pool.query(
       `INSERT INTO pending_demand_notices
-         (school_id, school_name, school_email, title, amount, narration, submitted_by)
-       VALUES ($1, $2, $3, $4, $5, $6, $7)
+         (school_id, school_name, school_email, title, amount, narration, submitted_by, revenue_subhead_id)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
        RETURNING id, created_at`,
       [
         school_id,
@@ -47,6 +56,7 @@ export async function POST(req: Request) {
         parsedAmount,
         narration?.trim() || null,
         user.name || "operator",
+        revenue_subhead_id,
       ],
     );
 
