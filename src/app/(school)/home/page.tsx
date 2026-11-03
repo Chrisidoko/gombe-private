@@ -12,6 +12,7 @@ import Link from "next/link";
 import { formatDate } from "@/lib/formatDate";
 import ComplyCard from "@/components/ui/complyCard";
 import { getNoticeBalance } from "@/lib/annualNotices";
+import { getDisplayedExpiry } from "@/lib/certificate";
 // import dynamic from "next/dynamic";
 
 // const CompleteProfile = dynamic(() => import("@/components/profilecomplete"), {
@@ -57,8 +58,9 @@ export default async function SchoolOverviewDashboard() {
 
   const noticeBalance = await getNoticeBalance(user.institution || "");
 
-  const daysUntilExpiry = school.license_expiry_date
-    ? getDaysUntilExpiry(school.license_expiry_date)
+  const expiryDate = getDisplayedExpiry(school);
+  const daysUntilExpiry = expiryDate
+    ? getDaysUntilExpiry(String(expiryDate))
     : null;
 
   const isExpiringSoon = daysUntilExpiry !== null && daysUntilExpiry <= 30;
@@ -257,9 +259,7 @@ export default async function SchoolOverviewDashboard() {
                   Expiry Date
                 </p>
                 <p className="text-white text-lg font-bold">
-                  {school?.license_expiry_date
-                    ? formatDate(school.license_expiry_date)
-                    : "N/A"}
+                  {expiryDate ? formatDate(String(expiryDate)) : "Does not expire"}
                 </p>
               </div>
 

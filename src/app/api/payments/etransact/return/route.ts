@@ -25,10 +25,15 @@ export async function GET(req: Request) {
   ).replace(/\/$/, "");
 
   const destination =
-    type === "invoice" || type === "notice" ? "/Invoices" : "/fees";
+    type === "notice"
+      ? "/Invoices?tab=single"
+      : type === "invoice"
+        ? "/Invoices?tab=other"
+        : "/fees";
+  const join = destination.includes("?") ? "&" : "?";
 
   if (!type || !id || Number.isNaN(id)) {
-    return NextResponse.redirect(`${baseUrl}${destination}?payment=error`);
+    return NextResponse.redirect(`${baseUrl}${destination}${join}payment=error`);
   }
 
   let isPaid = false;
@@ -45,6 +50,6 @@ export async function GET(req: Request) {
   }
 
   return NextResponse.redirect(
-    `${baseUrl}${destination}?payment=${isPaid ? "success" : "pending"}`,
+    `${baseUrl}${destination}${join}payment=${isPaid ? "success" : "pending"}`,
   );
 }

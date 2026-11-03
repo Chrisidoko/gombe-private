@@ -18,6 +18,7 @@ export async function POST(req: Request) {
       inspector_email,
       location_type,
       premises_category,
+      confirm_existing_license,
     } = await req.json();
 
     if (
@@ -36,7 +37,11 @@ export async function POST(req: Request) {
            assigned_inspector_name = COALESCE($2, assigned_inspector_name),
            assigned_inspector_email = COALESCE($3, assigned_inspector_email),
            location_type = $4,
-           premises_category = $5
+           premises_category = $5,
+           -- Only an existing licence Admin has checked; otherwise the school
+           -- pays the Certificate fee, which activates it
+           license_status = CASE WHEN $6 AND license_number IS NOT NULL
+                                 THEN 'Active' ELSE license_status END
        WHERE school_id = $1
        RETURNING email, name, license_status`,
       [
@@ -45,6 +50,7 @@ export async function POST(req: Request) {
         inspector_email || null,
         location_type,
         premises_category,
+        confirm_existing_license === true,
       ],
     );
 

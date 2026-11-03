@@ -10,6 +10,8 @@ import pool from "@/lib/db";
 import { verifyTransaction } from "@/lib/etransact";
 import { activateLicense } from "@/lib/activateLicense";
 
+const CERTIFICATE_FEE_ID = 4;
+
 type ReconcileResult = { isPaid: boolean };
 
 async function upsertTransactionskano(
@@ -93,28 +95,21 @@ export async function reconcileFeePayment(
 
     await client.query("BEGIN");
     try {
-      await client.query(
-        `UPDATE schoolkano_payments SET status = 'paid', paid_at = NOW() WHERE id = $1 AND status != 'paid'`,
-        [feeId],
-      );
-
       const upd = await client.query(
         `UPDATE schoolkano_payments SET status = 'paid', paid_at = NOW()
          WHERE id = $1 AND status != 'paid'`,
         [feeId],
       );
 
+      // The certificate is issued once, by its own fee. rowCount guards
+      // against activating again on a repeat confirmation of the same payment.
       if (
         upd.rowCount === 1 &&
-        [1, 2, 3].includes(fee.fee_id) &&
+        fee.fee_id === CERTIFICATE_FEE_ID &&
         fee.school_id
       ) {
         await activateLicense(client, fee.school_id);
       }
-
-      // if ([1, 2, 3].includes(fee.fee_id) && fee.school_id) {
-      //   await activateLicense(client, fee.school_id);
-      // }
 
       await upsertTransactionskano(client, {
         reference: fee.reference,

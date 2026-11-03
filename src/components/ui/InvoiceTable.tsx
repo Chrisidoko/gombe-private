@@ -34,7 +34,13 @@ function getDaysUntilDue(dueDate: string) {
   return diffDays;
 }
 
-export default function InvoiceTable({ schoolId }: { schoolId: string }) {
+export default function InvoiceTable({
+  schoolId,
+  showTitle = true,
+}: {
+  schoolId: string;
+  showTitle?: boolean;
+}) {
   const [invoices, setInvoices] = useState<invoiceTypes[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<"all" | "Paid" | "Unpaid">("all");
@@ -124,14 +130,18 @@ export default function InvoiceTable({ schoolId }: { schoolId: string }) {
   return (
     <div className="overflow-hidden">
       {/* Header */}
-      <div className="px-6 pb-6">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div>
-            <h2 className="text-2xl font-bold text-gray-900">Demand Notices</h2>
-            <p className="text-sm text-gray-600 mt-1">
-              Manage and track your Institution&apos;s demand notices
-            </p>
-          </div>
+      <div className={showTitle || totalUnpaid > 0 ? "px-6 pb-6" : ""}>
+        <div
+          className={`flex flex-col sm:flex-row sm:items-center gap-4 ${showTitle ? "sm:justify-between" : "sm:justify-end"}`}
+        >
+          {showTitle && (
+            <div>
+              <h2 className="text-2xl font-bold text-gray-900">Demand Notices</h2>
+              <p className="text-sm text-gray-600 mt-1">
+                Manage and track your Institution&apos;s demand notices
+              </p>
+            </div>
+          )}
 
           {totalUnpaid > 0 && (
             <div className="bg-red-50 border border-red-200 rounded-lg px-4 py-2">

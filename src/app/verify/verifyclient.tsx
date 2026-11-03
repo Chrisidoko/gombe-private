@@ -16,7 +16,7 @@ interface LicenseResult {
     state: string;
     ownership: string;
     property_type: string | null;
-    license_expiry_date: string;
+    license_expiry_date: string | null;
     courses: { name: string; accredited: boolean }[];
   };
 }
@@ -378,9 +378,11 @@ export default function VerifyForm() {
                       Certificate Expiry
                     </p>
                     <p className="text-sm font-bold text-gray-800">
-                      {new Date(
-                        result.school.license_expiry_date,
-                      ).toDateString()}
+                      {result.school.license_expiry_date
+                        ? new Date(
+                            result.school.license_expiry_date,
+                          ).toDateString()
+                        : "Does not expire"}
                     </p>
                   </div>
 

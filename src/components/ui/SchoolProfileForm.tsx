@@ -84,7 +84,7 @@ type FormData = {
   nonAcademicStaff: NonAcademicStaff[];
 
   // License Information
-  license_status: string;
+  license_claim: string;
 };
 
 const lgas = [
@@ -143,7 +143,7 @@ export default function SchoolProfileForm({
     boardMembers: schoolData.board_members ?? [],
     academicStaff: schoolData.academic_staff ?? [],
     nonAcademicStaff: schoolData.non_academic_staff ?? [],
-    license_status: schoolData.license_status ?? "",
+    license_claim: schoolData.license_claim ?? "",
   });
 
   const isApproved = schoolData?.approval_status === "approved";
@@ -301,7 +301,7 @@ export default function SchoolProfileForm({
             lastTaxFiling: formData.lastTaxFiling,
             category: formData.category,
             website: formData.website,
-            license_status: formData.license_status,
+            license_claim: formData.license_claim,
             vcName: formData.vcName,
             gsmNo: formData.gsmNo,
             yearEstablished: formData.yearEstablished,
@@ -352,7 +352,7 @@ export default function SchoolProfileForm({
   const isInfrastructureComplete = formData.labStatus && formData.libraryStatus;
   const isPeopleComplete =
     formData.boardMembers.length > 0 || formData.academicStaff.length > 0;
-  const isLicenseComplete = formData.license_status;
+  const isLicenseComplete = formData.license_claim;
 
   const completionPercentage = Math.round(
     ([
@@ -1303,11 +1303,15 @@ export default function SchoolProfileForm({
                   <span className="text-red-500">*</span>
                 </label>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                  {["Active", "Expired"].map((option) => (
+                  {[
+                    { value: "Active", label: "Active" },
+                    { value: "Expired", label: "Expired" },
+                    { value: "None", label: "No certificate yet" },
+                  ].map(({ value: option, label }) => (
                     <label
                       key={option}
                       className={`flex items-center gap-3 p-3 border-2 rounded-lg cursor-pointer transition-all ${
-                        formData.license_status === option
+                        formData.license_claim === option
                           ? "border-purple-500 bg-purple-50"
                           : "border-gray-200 hover:border-gray-300"
                       }`}
@@ -1315,12 +1319,12 @@ export default function SchoolProfileForm({
                       <input
                         type="radio"
                         value={option}
-                        checked={formData.license_status === option}
-                        onChange={() => handleChange("license_status", option)}
+                        checked={formData.license_claim === option}
+                        onChange={() => handleChange("license_claim", option)}
                         className="w-4 h-4 text-purple-600"
                       />
                       <span className="font-medium text-gray-900">
-                        {option}
+                        {label}
                       </span>
                     </label>
                   ))}

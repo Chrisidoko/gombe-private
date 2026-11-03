@@ -3,11 +3,19 @@
 // The patch was done speifically to handle the license information update from the license modal, so it only updates the license fields
 import { NextResponse } from "next/server";
 import pool from "@/lib/db";
+import { getUserFromCookie } from "@/lib/auth";
+import { requireRole, requireSchoolAccess } from "@/lib/apiAuth";
 
 export async function GET(req: Request) {
   try {
     const { searchParams } = new URL(req.url);
     const school_id = searchParams.get("school_id");
+
+    // One school: that school or staff. The full list: admin only.
+    const denied = school_id
+      ? await requireSchoolAccess(school_id)
+      : await requireRole("CBS_Admin");
+    if (denied) return denied;
 
     let result;
 
@@ -65,6 +73,29 @@ export async function PATCH(req: Request) {
             "school_id, license number, license expiry date, and license Issue date are required",
         },
         { status: 400 },
+      );
+    }
+
+    // A school may enter its own licence until it's approved; after that, the
+    // licence admin confirmed at approval can only be changed by admin.
+    const denied = await requireSchoolAccess(school_id, ["CBS_Admin"]);
+    if (denied) return denied;
+
+    const user = await getUserFromCookie();
+    const schoolRes = await pool.query(
+      "SELECT approval_status FROM schoolskano WHERE school_id = $1",
+      [school_id],
+    );
+    if (schoolRes.rows.length === 0) {
+      return NextResponse.json({ error: "School not found" }, { status: 404 });
+    }
+    if (
+      schoolRes.rows[0].approval_status === "approved" &&
+      user?.institution !== "CBS_Admin"
+    ) {
+      return NextResponse.json(
+        { error: "Licence details can't be changed after approval" },
+        { status: 403 },
       );
     }
 

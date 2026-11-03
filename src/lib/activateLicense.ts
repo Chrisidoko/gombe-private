@@ -1,6 +1,7 @@
 // lib/activateLicense.ts
 import pool from "@/lib/db";
 import { PoolClient } from "pg";
+import { CERTIFICATE_EXPIRY_ENFORCED } from "@/lib/certificate";
 
 export async function activateLicense(
   client: typeof pool | PoolClient,
@@ -44,9 +45,13 @@ export async function activateLicense(
     }
   }
 
+  // No expiry date while certificates don't expire — see lib/certificate.ts
   const issue_date = new Date();
-  const expiry_date = new Date();
-  expiry_date.setFullYear(expiry_date.getFullYear() + 1);
+  let expiry_date: Date | null = null;
+  if (CERTIFICATE_EXPIRY_ENFORCED) {
+    expiry_date = new Date();
+    expiry_date.setFullYear(expiry_date.getFullYear() + 1);
+  }
 
   await client.query(
     `UPDATE schoolskano
@@ -58,7 +63,7 @@ export async function activateLicense(
     [
       license_number,
       issue_date.toISOString(),
-      expiry_date.toISOString(),
+      expiry_date?.toISOString() ?? null,
       school_id,
     ],
   );

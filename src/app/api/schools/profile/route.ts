@@ -61,7 +61,7 @@ export async function POST(req: Request) {
       nonAcademicStaff,
 
       // License Information
-      license_status,
+      license_claim,
     } = data;
 
     // Only mark complete when every required section has its minimum fields
@@ -69,7 +69,7 @@ export async function POST(req: Request) {
     const academicOk = !!(modeOfOperation?.length && programmes?.length && totalStudents);
     const infraOk    = !!(labStatus && libraryStatus);
     const peopleOk   = !!(boardMembers?.length || academicStaff?.length);
-    const licenseOk  = !!license_status;
+    const licenseOk  = !!license_claim;
     const newFormStatus = (generalOk && academicOk && infraOk && peopleOk && licenseOk)
       ? "complete"
       : "pending";
@@ -99,7 +99,8 @@ export async function POST(req: Request) {
         session_end                  = COALESCE($20, session_end),
         programmes                   = COALESCE($21::jsonb, programmes),
         courses                      = COALESCE($22::jsonb, courses),
-        license_status               = COALESCE($23, license_status),
+        -- The school's own answer; only approval or the Certificate fee activates
+        license_claim                = CASE WHEN approval_status = 'approved' THEN license_claim ELSE COALESCE($23, license_claim) END,
         vc_name                      = COALESCE($24, vc_name),
         gsm_no                       = COALESCE($25, gsm_no),
         year_established             = COALESCE($26::integer, year_established),
@@ -141,7 +142,7 @@ export async function POST(req: Request) {
         sessionEnd || null,
         programmes != null ? JSON.stringify(programmes) : null,
         courses != null ? JSON.stringify(courses) : null,
-        license_status || null,
+        ["Active", "Expired", "None"].includes(license_claim) ? license_claim : null,
         vcName || null,
         gsmNo || null,
         yearEstablished || null,

@@ -52,7 +52,13 @@ function statusBadge(line: Line) {
   return { label: "Unpaid", className: "bg-red-50 text-red-600" };
 }
 
-export default function AnnualNoticeCard({ schoolId }: { schoolId: string }) {
+export default function AnnualNoticeCard({
+  schoolId,
+  showEmpty = false,
+}: {
+  schoolId: string;
+  showEmpty?: boolean;
+}) {
   const [lines, setLines] = useState<Line[]>([]);
   const [loading, setLoading] = useState(true);
   const [busyLine, setBusyLine] = useState<number | null>(null);
@@ -148,7 +154,27 @@ export default function AnnualNoticeCard({ schoolId }: { schoolId: string }) {
     }
   }
 
-  if (loading || lines.length === 0) return null;
+  if (loading) {
+    return showEmpty ? (
+      <div className="flex items-center justify-center py-16">
+        <Loader2 className="w-6 h-6 animate-spin text-gray-300" />
+      </div>
+    ) : null;
+  }
+
+  if (lines.length === 0) {
+    return showEmpty ? (
+      <div className="bg-white rounded-2xl border border-gray-200 shadow-sm px-6 py-12 text-center">
+        <p className="text-sm font-semibold text-gray-700">
+          No Single Demand Notice yet
+        </p>
+        <p className="text-xs text-gray-500 mt-1">
+          Your institution&apos;s notice will appear here once it has been
+          issued.
+        </p>
+      </div>
+    ) : null;
+  }
 
   const years = Array.from(new Set(lines.map((l) => l.year))).sort((a, b) => b - a);
   const latestYear = years[0];

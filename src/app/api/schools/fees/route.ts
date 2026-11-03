@@ -72,13 +72,17 @@ export async function GET(req: Request) {
     const showCertificate = searchParams.get("show_certificate") === "true";
 
     // Determine fee tier from the school's category
+    // Read from the database, not the request, so a school can't be offered
+    // the Certificate fee again after its certificate is issued
     let category: string | null = null;
+    let licenseStatus: string | null = null;
     if (school_id) {
       const schoolRes = await pool.query(
-        `SELECT category FROM schoolskano WHERE school_id = $1`,
+        `SELECT category, license_status FROM schoolskano WHERE school_id = $1`,
         [school_id],
       );
       category = schoolRes.rows[0]?.category ?? null;
+      licenseStatus = schoolRes.rows[0]?.license_status ?? null;
     }
     const tier = resolveTier(category);
 
@@ -265,7 +269,6 @@ export async function GET(req: Request) {
       }
 
       if (stage === 3) {
-        const licenseStatus = searchParams.get("license_status");
         if (licenseStatus === "Active") {
           locked = true;
           lockReason = "active_license";

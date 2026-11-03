@@ -121,12 +121,12 @@ export async function POST(req: Request) {
         status.toLowerCase(),
       );
 
-      // Step 6: Check if certificate fee — activate license if so, although i think this one is not neccessary
+      // Step 6: Only the Certificate fee (fee 4) issues the certificate
       const feeId = payment?.fee_id;
       const schoolId = payment?.school_id;
 
       if (
-        [1, 2, 3].includes(feeId) &&
+        feeId === 4 &&
         schoolId &&
         status.toLowerCase() === "paid"
       ) {

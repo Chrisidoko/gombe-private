@@ -54,6 +54,7 @@ interface SchoolDetails {
   website: string;
   license_number: string;
   license_status: string;
+  license_claim: string | null;
   last_license_renewal: string;
   license_expiry_date: string;
   // Academic
@@ -299,6 +300,7 @@ export default function Requests() {
   const [selectedInspectorEmail, setSelectedInspectorEmail] = useState("");
   const [selectedLocation, setSelectedLocation] = useState("");
   const [selectedPremises, setSelectedPremises] = useState("");
+  const [confirmLicense, setConfirmLicense] = useState(false);
 
   // ── Academic requests state
   const [academicRequests, setAcademicRequests] = useState<AcademicRequest[]>(
@@ -385,6 +387,7 @@ export default function Requests() {
             ? {
                 location_type: selectedLocation,
                 premises_category: selectedPremises,
+                confirm_existing_license: confirmLicense,
               }
             : {}),
           ...(action === "approve" && selectedInspector
@@ -403,6 +406,7 @@ export default function Requests() {
       setSelectedInspectorEmail("");
       setSelectedLocation("");
       setSelectedPremises("");
+      setConfirmLicense(false);
     } catch (error) {
       console.error(error);
     } finally {
@@ -442,6 +446,7 @@ export default function Requests() {
     setSelectedInspectorEmail("");
     setSelectedLocation("");
     setSelectedPremises("");
+    setConfirmLicense(false);
   };
 
   // ─── Render ────────────────────────────────────────────────────────────────
@@ -845,10 +850,12 @@ export default function Requests() {
                           <Shield className="w-4 h-4 text-gray-500 mt-1" />
                           <div className="flex-1">
                             <label className="text-xs font-medium text-gray-500 block mb-1">
-                              License Status
+                              School Says
                             </label>
                             <p className="text-gray-900">
-                              {schoolDetails.license_status || "Not specified"}
+                              {schoolDetails.license_claim === "None"
+                                ? "No certificate yet"
+                                : schoolDetails.license_claim || "Not specified"}
                             </p>
                           </div>
                         </div>
@@ -929,6 +936,28 @@ export default function Requests() {
                       </div>
                     )}
                   </div>
+
+                  {/* Existing certificate */}
+                  {schoolDetails?.license_number && (
+                    <label className="mb-6 flex items-start gap-3 bg-amber-50 border border-amber-200 rounded-lg p-4 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={confirmLicense}
+                        onChange={(e) => setConfirmLicense(e.target.checked)}
+                        className="mt-1 w-4 h-4 accent-green-600"
+                      />
+                      <span>
+                        <span className="block text-sm font-semibold text-gray-900">
+                          Confirm existing certificate {schoolDetails.license_number}
+                        </span>
+                        <span className="block text-xs text-gray-600 mt-0.5">
+                          Tick only after checking the licence document above.
+                          The school will not pay for a new certificate.
+                          Leave unticked if the school must buy one.
+                        </span>
+                      </span>
+                    </label>
+                  )}
 
                   {/* Business premises */}
                   <div className="mb-6">

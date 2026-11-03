@@ -1,10 +1,12 @@
-// app/(school)/fees/page.tsx
+// app/(school)/Invoices/page.tsx
 import { getUserFromCookie } from "@/lib/auth";
-// import { Divider } from "@/components/Divider";
-import InvoiceTable from "@/components/ui/InvoiceTable";
-import AnnualNoticeCard from "@/components/ui/AnnualNoticeCard";
+import DemandNoticesTabs from "@/components/ui/DemandNoticesTabs";
 
-export default async function FeeDashboard() {
+export default async function DemandNoticesPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ tab?: string }>;
+}) {
   const user = await getUserFromCookie();
 
   if (!user) {
@@ -15,11 +17,20 @@ export default async function FeeDashboard() {
     );
   }
 
+  const { tab } = await searchParams;
+
   return (
     <main className="space-y-6">
-      <AnnualNoticeCard schoolId={user.institution || ""} />
-      {/* Pass institution to the client component */}
-      <InvoiceTable schoolId={user.institution || ""} />
+      <div>
+        <h1 className="text-2xl font-bold text-gray-900">Demand Notices</h1>
+        <p className="text-sm text-gray-600 mt-1">
+          Manage and track your Institution&apos;s demand notices
+        </p>
+      </div>
+      <DemandNoticesTabs
+        schoolId={user.institution || ""}
+        initialTab={tab === "other" ? "other" : "single"}
+      />
     </main>
   );
 }

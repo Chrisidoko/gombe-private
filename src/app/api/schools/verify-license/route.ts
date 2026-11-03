@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import pool from "@/lib/db";
+import { getCertificateState, getDisplayedExpiry } from "@/lib/certificate";
 
 export async function GET(req: Request) {
   try {
@@ -30,16 +31,9 @@ export async function GET(req: Request) {
 
     const school = result.rows[0];
 
-    // Determine validity
-    const today = new Date();
-    const expiryDate = new Date(school.license_expiry_date);
-    let status = "valid";
-
-    if (expiryDate < today) {
-      status = "expired";
-    } else if (school.license_status === "expired") {
-      status = "expired";
-    }
+    // A number the Ministry hasn't confirmed or issued isn't a valid certificate
+    const state = getCertificateState(school);
+    const status = state === "none" ? "invalid" : state;
 
     return NextResponse.json({
       status,
@@ -51,7 +45,7 @@ export async function GET(req: Request) {
         address: school.address,
         ownership: school.ownership,
         property_type: school.property_type,
-        license_expiry_date: school.license_expiry_date,
+        license_expiry_date: getDisplayedExpiry(school),
         courses: school.courses,
       },
     });

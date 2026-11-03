@@ -1,6 +1,7 @@
 // app/api/generate-license/route.ts
 import { NextRequest, NextResponse } from "next/server";
 import pool from "@/lib/db";
+import { getDisplayedExpiry } from "@/lib/certificate";
 import { requireRole, requireSchoolAccess } from "@/lib/apiAuth";
 
 interface LicenseData {
@@ -68,7 +69,9 @@ export async function POST(request: NextRequest) {
       school_name: schoolData.name,
       license_number: schoolData.license_number,
       issue_date: formatDate(schoolData.last_license_renewal),
-      expiry_date: formatDate(schoolData.license_expiry_date),
+      expiry_date: getDisplayedExpiry(schoolData)
+        ? formatDate(schoolData.license_expiry_date)
+        : "Not applicable",
       proprietor_name: schoolData.proprietor_name,
       courses: schoolData.courses || [],
     };

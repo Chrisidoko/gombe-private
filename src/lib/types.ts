@@ -33,6 +33,7 @@ export interface School {
   proprietor_nin: string | null;
   property_type: string | null;
   location_type: string | null;
+  license_claim: string | null;
   premises_category: string | null;
   chairman_name: string | null;
 

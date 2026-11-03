@@ -26,11 +26,11 @@ export default function ProfilePageClient({ school }: { school: School }) {
     );
   }
 
-  // ── Check 2: form complete but no license → show modal over profile ─────────
-  // With && both conditions must be true simultaneously —
-  // so the modal only shows if the license number is missing and the status is "Active" at the same time.
+  // ── Check 2: says it holds a certificate but hasn't entered it → show modal ──
+  // Admin checks these details at approval before confirming the certificate.
   const hasNoLicense =
-    !school.license_number && school.license_status === "Active";
+    !school.license_number &&
+    (school.license_claim === "Active" || school.license_claim === "Expired");
 
   return (
     <div>

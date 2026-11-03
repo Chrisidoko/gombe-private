@@ -348,7 +348,11 @@ export default function SchoolProfileView({
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
               <p className="text-xs text-gray-400 uppercase tracking-wide mb-2">Current Status</p>
-              {schoolData?.license_status ? (
+              {schoolData?.license_status !== "Active" && schoolData?.license_claim && schoolData.license_claim !== "None" ? (
+                <span className="inline-flex items-center gap-2 px-4 py-2 text-sm rounded-lg font-semibold bg-amber-50 text-amber-700 border border-amber-200">
+                  Awaiting Ministry confirmation
+                </span>
+              ) : schoolData?.license_status ? (
                 <span className={`inline-flex items-center gap-2 px-4 py-2 text-sm rounded-lg font-semibold ${
                   schoolData.license_status === "Active"
                     ? "bg-green-100 text-green-700 border border-green-200"
