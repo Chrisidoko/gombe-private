@@ -29,7 +29,7 @@ export default async function DemandNoticesPage({
       </div>
       <DemandNoticesTabs
         schoolId={user.institution || ""}
-        initialTab={tab === "other" ? "other" : "single"}
+        initialTab={tab === "other" || tab === "paye" ? tab : "single"}
       />
     </main>
   );

@@ -91,6 +91,8 @@ export async function middleware(req: NextRequest) {
     // ── Operator 2 routes ─────────────────────────────────────────────────
     if (
       url.startsWith("/review-dashboard") ||
+      url.startsWith("/reviews") ||
+      url.startsWith("/rates") ||
       url.startsWith("/review-bulk") ||
       url.startsWith("/review-evaluations") ||
       url.startsWith("/review-demand-notices") ||

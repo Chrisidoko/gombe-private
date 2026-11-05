@@ -3,7 +3,6 @@ import { NextResponse } from "next/server";
 import pool from "@/lib/db";
 import nodemailer from "nodemailer";
 import { getUserFromCookie } from "@/lib/auth";
-import { createNoticeBatch } from "@/lib/annualNotices";
 
 export async function POST(req: Request) {
   const user = await getUserFromCookie();
@@ -60,25 +59,6 @@ export async function POST(req: Request) {
 
     const { email, name, license_status } = result.rows[0];
 
-    // A newly approved school gets a full notice for the current year, queued
-    // for Operator 2 like any other. Approval itself must not depend on it:
-    // if this fails, Operator 1 can still prepare the notice from their page.
-    const client = await pool.connect();
-    try {
-      await client.query("BEGIN");
-      await createNoticeBatch(client, {
-        year: new Date().getFullYear(),
-        schools: [{ school_id, location_type, premises_category }],
-        source: "school_approval",
-        createdBy: user.name || "admin",
-      });
-      await client.query("COMMIT");
-    } catch (noticeError) {
-      await client.query("ROLLBACK");
-      console.error("Notice for newly approved school failed:", noticeError);
-    } finally {
-      client.release();
-    }
     const hasActiveLicense = license_status === "Active";
 
     // const purchaseLink = `https://kaptems.payprosolutionsltd.com/school-overview?school_id=${encodeURIComponent(school_id)}`;
@@ -102,7 +82,7 @@ export async function POST(req: Request) {
     if (hasActiveLicense) {
       // License is active — send standard approval email
       await transporter.sendMail({
-        from: `"GESMS" <${process.env.SMTP_USER}>`,
+        from: `"GO-ESMS" <${process.env.SMTP_USER}>`,
         to: email,
         subject: "Your School Registration Has Been Approved",
         html: `
@@ -112,14 +92,14 @@ export async function POST(req: Request) {
             <p>Your institution has been successfully approved on the Gombe Private Tertiary Institution Portal.</p>
             <p>You can now continue using the portal to handle your certificate management and school assessments.</p>
             <br />
-            <p>Best Regards,<br>GESMS Assessment Team</p>
+            <p>Best Regards,<br>GO-ESMS Assessment Team</p>
           </div>
         `,
       });
     } else {
       // License is not active — prompt school to purchase license
       await transporter.sendMail({
-        from: `"GESMS" <${process.env.SMTP_USER}>`,
+        from: `"GO-ESMS" <${process.env.SMTP_USER}>`,
         to: email,
         subject: "Action Required: Purchase Your Consent Certificate ",
         html: `
@@ -129,7 +109,7 @@ export async function POST(req: Request) {
             <p>Your institution has been approved on the Gombe Private Tertiary Institution Portal.</p>
             <p>To fully access all portal features and remain compliant, please login and navigate to compliance standing to purchase your Consent Certificate</p>
             <br />
-            <p>Best Regards,<br>GESMS Assessment Team</p>
+            <p>Best Regards,<br>GO-ESMS Assessment Team</p>
           </div>
 `,
       });

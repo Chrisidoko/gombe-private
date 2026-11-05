@@ -1,28 +1,12 @@
 // Operator 1 — see which schools are ready for a year's notice and prepare the
-// batch. Nothing reaches a school until Operator 2 approves it.
+// batch as a draft. Operator 1 checks each school's lines, adjusts any that
+// need it, then sends the batch to Operator 2. Nothing reaches a school until
+// Operator 2 approves it.
 import { NextResponse } from "next/server";
 import pool from "@/lib/db";
 import { getUserFromCookie } from "@/lib/auth";
 import { requireRole } from "@/lib/apiAuth";
-import { createNoticeBatch } from "@/lib/annualNotices";
-
-async function getReadiness(year: number) {
-  const { rows } = await pool.query(
-    `SELECT s.school_id, s.name, s.location_type, s.premises_category
-     FROM schoolskano s
-     WHERE s.approval_status = 'approved'
-       AND NOT EXISTS (
-         SELECT 1 FROM annual_notices n
-         WHERE n.school_id = s.school_id AND n.year = $1 AND n.status <> 'rejected'
-       )
-     ORDER BY s.name`,
-    [year],
-  );
-  return {
-    ready: rows.filter((s) => s.location_type && s.premises_category),
-    missingDetails: rows.filter((s) => !s.location_type || !s.premises_category),
-  };
-}
+import { createNoticeBatch, getReadiness } from "@/lib/annualNotices";
 
 export async function GET(req: Request) {
   const denied = await requireRole("CBS_Operator");
@@ -45,11 +29,31 @@ export async function GET(req: Request) {
        ORDER BY b.created_at DESC`,
       [year],
     );
+    // Lines of batches not yet issued, so Operator 1 sees what each school
+    // will be billed (and can adjust drafts)
+    const lines = await pool.query(
+      `SELECT n.batch_id, n.school_id, sc.name AS school_name,
+              sc.location_type, sc.premises_category,
+              l.id, l.amount, l.standard_amount, l.adjustment_reason, l.adjusted_by,
+              s.name AS subhead_name, s.charge_type, h.name AS head_name
+       FROM annual_notice_batches b
+       JOIN annual_notices n ON n.batch_id = b.id
+       JOIN annual_notice_lines l ON l.notice_id = n.id
+       JOIN revenue_subheads s ON s.id = l.revenue_subhead_id
+       JOIN revenue_heads h ON h.id = s.head_id
+       LEFT JOIN schoolskano sc ON sc.school_id = n.school_id
+       WHERE b.year = $1 AND b.status IN ('draft', 'pending_approval')
+       ORDER BY sc.name, h.sort_order, s.sort_order`,
+      [year],
+    );
     return NextResponse.json({
       year,
       ready,
       missingDetails,
-      batches: batches.rows,
+      batches: batches.rows.map((b) => ({
+        ...b,
+        lines: lines.rows.filter((l) => l.batch_id === b.id),
+      })),
     });
   } catch (error) {
     console.error("Annual notice readiness fetch failed:", error);
@@ -69,6 +73,17 @@ export async function POST(req: Request) {
 
   const client = await pool.connect();
   try {
+    const draft = await pool.query(
+      `SELECT 1 FROM annual_notice_batches WHERE year = $1 AND status = 'draft'`,
+      [year],
+    );
+    if (draft.rows.length > 0) {
+      return NextResponse.json(
+        { error: "Send or discard the existing draft first" },
+        { status: 409 },
+      );
+    }
+
     const { ready } = await getReadiness(year);
     if (ready.length === 0) {
       return NextResponse.json(

@@ -3,6 +3,8 @@
 import { useState } from "react";
 import { Edit, CheckCircle, AlertCircle } from "lucide-react";
 import { School } from "@/lib/types";
+import { Tabs, TabsList, TabsTrigger } from "@/components/Tabs";
+import { PAGE_TAB_TRIGGER } from "@/components/ui/pageTabs";
 
 function formatDate(dateString: string | null) {
   if (!dateString) return "—";
@@ -95,21 +97,15 @@ export default function SchoolProfileView({
       </div>
 
       {/* Tab Bar */}
-      <div className="bg-white rounded-xl border border-gray-200 px-4 py-2 flex gap-1">
-        {TABS.map((tab) => (
-          <button
-            key={tab.id}
-            onClick={() => setActiveTab(tab.id)}
-            className={`flex-1 px-3 py-2 text-xs font-semibold rounded-lg transition-all ${
-              activeTab === tab.id
-                ? "bg-green-600 text-white shadow-sm"
-                : "text-gray-500 hover:bg-gray-100"
-            }`}
-          >
-            {tab.label}
-          </button>
-        ))}
-      </div>
+      <Tabs value={activeTab} onValueChange={(tab) => setActiveTab(tab as TabId)}>
+        <TabsList className="overflow-x-auto">
+          {TABS.map((tab) => (
+            <TabsTrigger key={tab.id} value={tab.id} className={PAGE_TAB_TRIGGER}>
+              {tab.label}
+            </TabsTrigger>
+          ))}
+        </TabsList>
+      </Tabs>
 
       {/* ── General ── */}
       {activeTab === "general" && (

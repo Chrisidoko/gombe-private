@@ -1,6 +1,9 @@
-// A school declares its Income Tax or PAYE for a notice line.
+// A school declares its Income Tax or PAYE for a notice line. For Income Tax
+// the school gives its total income and the tax is worked out from the bands;
+// for PAYE it gives the tax amount itself.
 import { NextResponse } from "next/server";
 import pool from "@/lib/db";
+import { assessPit, PIT_SUBHEAD_CODE } from "@/lib/pitBands";
 import { getUserFromCookie } from "@/lib/auth";
 import { requireSchoolAccess } from "@/lib/apiAuth";
 
@@ -16,9 +19,10 @@ export async function POST(
 
   try {
     const { rows } = await pool.query(
-      `SELECT l.status, n.school_id, n.status AS notice_status
+      `SELECT l.status, n.school_id, n.year, n.status AS notice_status, s.code
        FROM annual_notice_lines l
        JOIN annual_notices n ON n.id = l.notice_id
+       JOIN revenue_subheads s ON s.id = l.revenue_subhead_id
        WHERE l.id = $1`,
       [lineId],
     );
@@ -42,6 +46,9 @@ export async function POST(
     if (!Number.isFinite(parsedAmount) || parsedAmount < 0 || amount === "") {
       return NextResponse.json({ error: "Invalid amount" }, { status: 400 });
     }
+    const isPit = line.code === PIT_SUBHEAD_CODE;
+    const declaredIncome = isPit ? parsedAmount : null;
+    const tax = isPit ? assessPit(parsedAmount, line.year).tax : parsedAmount;
 
     // Must be a file this school uploaded, not any URL
     const evidence = await pool.query(
@@ -58,14 +65,15 @@ export async function POST(
     const user = await getUserFromCookie();
     const result = await pool.query(
       `INSERT INTO tax_declarations
-         (line_id, school_id, amount, evidence_url, note, submitted_by)
-       VALUES ($1, $2, $3, $4, $5, $6)
+         (line_id, school_id, amount, declared_income, evidence_url, note, submitted_by)
+       VALUES ($1, $2, $3, $4, $5, $6, $7)
        ON CONFLICT (line_id) WHERE status <> 'rejected' DO NOTHING
        RETURNING id`,
       [
         lineId,
         line.school_id,
-        parsedAmount,
+        tax,
+        declaredIncome,
         evidence_url,
         note?.trim() || null,
         user?.name || "school",

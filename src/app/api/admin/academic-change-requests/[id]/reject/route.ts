@@ -51,7 +51,7 @@ export async function POST(
       });
 
       await transporter.sendMail({
-        from: `"GESMS" <${process.env.SMTP_USER}>`,
+        from: `"GO-ESMS" <${process.env.SMTP_USER}>`,
         to: email,
         subject: "Academic Profile Update Request — Not Approved",
         html: `
@@ -62,7 +62,7 @@ export async function POST(
             ${reason ? `<p><strong>Reason:</strong> ${reason}</p>` : ""}
             <p>Your currently approved academic data remains unchanged on the portal. You may submit a new request after addressing the concerns above.</p>
             <br />
-            <p>Best Regards,<br>GESMS Assessment Team</p>
+            <p>Best Regards,<br>GO-ESMS Assessment Team</p>
           </div>
         `,
       });

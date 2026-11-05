@@ -5,6 +5,8 @@ import { usePathname } from "next/navigation";
 import { useState } from "react";
 import { Lock, Building2 } from "lucide-react";
 import LogoutButton from "@/components/ui/logoutbutton";
+import SidebarCollapseButton from "@/components/SidebarCollapseButton";
+import Image from "next/image";
 
 interface NavigationProps {
   collapsed: boolean;
@@ -63,7 +65,7 @@ const Navigation: React.FC<NavigationProps> = ({
     },
     {
       href: "/fees",
-      label: "Compliance Standing",
+      label: "Fees",
       requiresApproval: true,
       // badge: 3,
       icon: (
@@ -143,6 +145,7 @@ const Navigation: React.FC<NavigationProps> = ({
           collapsed ? "w-20" : "w-72"
         } bg-white border-r border-gray-200 shadow-sm`}
       >
+        <SidebarCollapseButton collapsed={collapsed} setCollapsed={setCollapsed} />
         <div className="flex flex-col h-full">
           {/* Logo Header */}
           <div
@@ -155,9 +158,12 @@ const Navigation: React.FC<NavigationProps> = ({
                 collapsed ? "justify-center" : "gap-3"
               }`}
             >
-              <img
+              <Image
                 src="/gombe_logo.png"
-                alt="GESMS logo"
+                width={48}
+                height={48}
+                priority
+                alt="GO-ESMS logo"
                 className={`flex-shrink-0 transition-all ${
                   collapsed ? "w-10 h-10" : "w-12 h-12"
                 }`}
@@ -185,33 +191,6 @@ const Navigation: React.FC<NavigationProps> = ({
             </div>
           )}
 
-          {/* Collapse Toggle Button - Desktop Only */}
-          <div className="hidden lg:block px-4 py-3 border-b border-gray-100">
-            <button
-              onClick={() => setCollapsed(!collapsed)}
-              className={`w-full flex items-center gap-2 px-3 py-2 text-sm font-medium text-gray-600 hover:bg-gray-100 rounded-lg transition-all ${
-                collapsed ? "justify-center" : ""
-              }`}
-              title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
-            >
-              <svg
-                className={`w-5 h-5 transition-transform duration-300 ${
-                  collapsed ? "rotate-180" : ""
-                }`}
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M11 19l-7-7 7-7m8 14l-7-7 7-7"
-                />
-              </svg>
-              {!collapsed && <span>Collapse</span>}
-            </button>
-          </div>
 
           {/* Navigation Links */}
           <nav className="flex-1 px-4 py-6 space-y-2 overflow-y-auto">
@@ -357,9 +336,9 @@ const Navigation: React.FC<NavigationProps> = ({
           </button>
 
           <div className="flex items-center gap-2">
-            <img src="/gombe_logo.png" alt="GESMS logo" className="w-8 h-8" />
+            <Image src="/gombe_logo.png" alt="GO-ESMS logo" width={32} height={32} className="w-8 h-8" />
             <span className="font-bold text-sm text-gray-900">
-              GESMS Portal
+              GO-ESMS Portal
             </span>
           </div>
 

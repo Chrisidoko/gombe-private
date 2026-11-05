@@ -70,7 +70,7 @@ function remarkFor(line: NoticeLine, noticeYear: number) {
   if (line.status === "waived") return "Nothing due";
   if (line.status === "awaiting_declaration") return "By declaration";
   if (line.year < noticeYear) return "Arrears";
-  return line.code === "GIRS_PAYE" ? "Monthly" : "Annually";
+  return "Annually";
 }
 
 export async function createNoticePdf(data: {
@@ -160,6 +160,27 @@ export async function createNoticePdf(data: {
     font,
     color: DARK,
   });
+  // Built fresh on every download, so each copy says when it was printed and
+  // an old copy can't pass for the current position
+  y -= 12;
+  const now = new Date();
+  const asAt = `Statement as at ${now.toLocaleDateString("en-GB", {
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+    timeZone: "Africa/Lagos",
+  })}, ${now.toLocaleTimeString("en-GB", {
+    hour: "2-digit",
+    minute: "2-digit",
+    timeZone: "Africa/Lagos",
+  })}`;
+  page.drawText(asAt, {
+    x: width - MARGIN - font.widthOfTextAtSize(asAt, 8.5),
+    y,
+    size: 8.5,
+    font,
+    color: DARK,
+  });
   y -= 16;
   paragraph("The Proprietor,");
   paragraph(data.schoolName, 11, bold);
@@ -223,6 +244,11 @@ export async function createNoticePdf(data: {
       font,
     );
   });
+  // PAYE is filed and paid monthly, so it's listed without an amount
+  row(
+    [String(data.lines.length + 1), "Pay As You Earn (PAYE)", String(data.year), "-", "Monthly return"],
+    font,
+  );
   const total = data.lines
     .filter((l) => l.status === "unpaid")
     .reduce((sum, l) => sum + Number(l.amount), 0);
@@ -235,10 +261,10 @@ export async function createNoticePdf(data: {
     y = height - MARGIN;
   }
   paragraph(
-    `You are expected to effect the payment of the above within thirty (30) days from the day you received this letter, on or before ${formatDate(data.dueDate)}, through your institution's account on the GESMS portal. However, you may wish to object to it within the stipulated time as enshrined in section 90(1) of Gombe Revenue (Codification and Consolidated) Law 2021, stating your grounds of objection.`,
+    `You are expected to effect the payment of the above within thirty (30) days from the day you received this letter, on or before ${formatDate(data.dueDate)}, through your institution's account on the GO-ESMS portal. However, you may wish to object to it within the stipulated time as enshrined in section 90(1) of Gombe Revenue (Codification and Consolidated) Law 2021, stating your grounds of objection.`,
   );
   paragraph(
-    "Personal Income Tax and Pay As You Earn are payable on the amounts approved from your declaration, within thirty (30) days of approval.",
+    "Personal Income Tax is payable on the amount approved from your declaration, within thirty (30) days of approval. Pay As You Earn is filed and paid monthly through the GO-ESMS portal, by the 10th of the following month.",
   );
   y -= 26;
 

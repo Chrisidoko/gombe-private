@@ -64,7 +64,7 @@ export default function LGAChart() {
         // Sort by count descending so largest bars appear first
         const sorted = json.sort((a: LGAData, b: LGAData) => b.count - a.count);
         setData(sorted);
-      } catch (err) {
+      } catch {
         setError("Could not load LGA data.");
       } finally {
         setLoading(false);

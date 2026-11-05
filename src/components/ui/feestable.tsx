@@ -46,8 +46,8 @@ export default function FeeTable({
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [checkoutLoading, setCheckoutLoading] = useState(false);
-  const [checkingStatus, setCheckingStatus] = useState(false);
-  const [paymentSuccess, setPaymentSuccess] = useState(false);
+  const [checkingStatus] = useState(false);
+  const [paymentSuccess] = useState(false);
 
   // const router = useRouter();
 

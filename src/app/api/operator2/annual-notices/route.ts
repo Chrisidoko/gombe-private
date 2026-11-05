@@ -18,7 +18,8 @@ export async function GET() {
     const lines = await pool.query(
       `SELECT n.batch_id, n.school_id, sc.name AS school_name,
               sc.location_type, sc.premises_category,
-              l.amount, s.name AS subhead_name, h.name AS head_name
+              l.amount, l.standard_amount, l.adjustment_reason, l.adjusted_by,
+              s.name AS subhead_name, h.name AS head_name
        FROM annual_notices n
        JOIN annual_notice_batches b ON b.id = n.batch_id
        JOIN annual_notice_lines l ON l.notice_id = n.id

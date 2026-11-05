@@ -2,16 +2,17 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   ClipboardCheck,
-  ChartNoAxesGantt,
   FileText,
-  Settings2,
   Target,
   LayoutDashboard,
+  Banknote,
 } from "lucide-react";
 import LogoutButton from "@/components/ui/logoutbutton";
+import SidebarCollapseButton from "@/components/SidebarCollapseButton";
+import Image from "next/image";
 
 interface NavigationProps {
   collapsed: boolean;
@@ -24,6 +25,14 @@ const Ops2Navigation: React.FC<NavigationProps> = ({
 }) => {
   const pathname = usePathname();
   const [isMobileOpen, setIsMobileOpen] = useState(false);
+  // Items waiting across every Reviews tab
+  const [pendingReviews, setPendingReviews] = useState(0);
+  useEffect(() => {
+    fetch("/api/operator2/review-counts")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => setPendingReviews(d?.total ?? 0))
+      .catch(() => {});
+  }, [pathname]);
 
   const navItems = [
     {
@@ -32,29 +41,15 @@ const Ops2Navigation: React.FC<NavigationProps> = ({
       icon: <LayoutDashboard size={18} />,
     },
     {
-      href: "/review-bulk",
-      label: "Review Bulk Assessments",
-      icon: <ChartNoAxesGantt size={18} />,
-    },
-    {
-      href: "/review-evaluations",
-      label: "Review Self Assessments",
+      href: "/reviews",
+      label: "Reviews",
       icon: <ClipboardCheck size={18} />,
+      badge: pendingReviews,
     },
     {
-      href: "/review-demand-notices",
-      label: "Review Demand Notices",
-      icon: <Settings2 size={18} />,
-    },
-    {
-      href: "/review-annual-notices",
-      label: "Review Annual Notices",
-      icon: <ClipboardCheck size={18} />,
-    },
-    {
-      href: "/review-tax-items",
-      label: "Review Tax Items",
-      icon: <ClipboardCheck size={18} />,
+      href: "/rates",
+      label: "Rates",
+      icon: <Banknote size={18} />,
     },
     {
       href: "/revenue-targets",
@@ -77,6 +72,10 @@ const Ops2Navigation: React.FC<NavigationProps> = ({
           isMobileOpen ? "translate-x-0" : "-translate-x-full"
         } ${collapsed ? "w-20" : "w-72"} bg-white border-r border-gray-200 shadow-sm`}
       >
+        <SidebarCollapseButton
+          collapsed={collapsed}
+          setCollapsed={setCollapsed}
+        />
         <div className="flex flex-col h-full">
           {/* Logo */}
           <div
@@ -85,8 +84,11 @@ const Ops2Navigation: React.FC<NavigationProps> = ({
             <div
               className={`flex items-center ${collapsed ? "justify-center" : "gap-3"}`}
             >
-              <img
+              <Image
                 src="/gombe_logo.png"
+                width={48}
+                height={48}
+                priority
                 alt="Gombe State logo"
                 className={`flex-shrink-0 transition-all ${collapsed ? "w-10 h-10" : "w-12 h-12"}`}
               />
@@ -108,39 +110,16 @@ const Ops2Navigation: React.FC<NavigationProps> = ({
             <div className="px-4 py-2 border-b border-gray-100">
               <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-green-50 border border-green-200 text-xs font-semibold text-green-700">
                 <FileText size={11} />
-                Reviewer — Director
+                Supervisor — Director
               </span>
             </div>
           )}
-
-          {/* Collapse toggle */}
-          <div className="hidden lg:block px-4 py-3 border-b border-gray-100">
-            <button
-              onClick={() => setCollapsed(!collapsed)}
-              className={`w-full flex items-center gap-2 px-3 py-2 text-sm font-medium text-gray-600 hover:bg-gray-100 rounded-lg transition-all ${collapsed ? "justify-center" : ""}`}
-              title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
-            >
-              <svg
-                className={`w-5 h-5 transition-transform duration-300 ${collapsed ? "rotate-180" : ""}`}
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M11 19l-7-7 7-7m8 14l-7-7 7-7"
-                />
-              </svg>
-              {!collapsed && <span>Collapse</span>}
-            </button>
-          </div>
 
           {/* Nav */}
           <nav className="flex-1 px-4 py-6 space-y-2 overflow-y-auto">
             {navItems.map((item) => {
               const isActive = pathname === item.href;
+              const badge = "badge" in item ? item.badge : 0;
               return (
                 <Link
                   key={item.href}
@@ -161,6 +140,22 @@ const Ops2Navigation: React.FC<NavigationProps> = ({
                   {!collapsed && (
                     <span className="flex-1 font-medium text-sm">
                       {item.label}
+                    </span>
+                  )}
+                  {!collapsed && !!badge && (
+                    <span
+                      className={`flex items-center justify-center min-w-6 h-6 px-1.5 text-xs font-bold rounded-full ${
+                        isActive
+                          ? "bg-white text-[#28a745]"
+                          : "bg-red-500 text-white"
+                      }`}
+                    >
+                      {badge}
+                    </span>
+                  )}
+                  {collapsed && !!badge && (
+                    <span className="absolute -top-1 -right-1 flex items-center justify-center min-w-5 h-5 px-1 text-xs font-bold rounded-full bg-red-500 text-white">
+                      {badge}
                     </span>
                   )}
                   {collapsed && (
@@ -198,7 +193,7 @@ const Ops2Navigation: React.FC<NavigationProps> = ({
                     <p className="text-sm font-semibold text-gray-900 truncate">
                       Operator 2
                     </p>
-                    <p className="text-xs text-gray-600 truncate">Reviewer</p>
+                    <p className="text-xs text-gray-600 truncate">Supervisor</p>
                   </div>
                 </div>
               </div>
@@ -246,9 +241,15 @@ const Ops2Navigation: React.FC<NavigationProps> = ({
             </svg>
           </button>
           <div className="flex items-center gap-2">
-            <img src="/gombe_logo.png" alt="logo" className="w-8 h-8" />
+            <Image
+              src="/gombe_logo.png"
+              alt="logo"
+              width={32}
+              height={32}
+              className="w-8 h-8"
+            />
             <span className="font-bold text-sm text-gray-900">
-              GESMS — Reviewer
+              GO-ESMS — Supervisor
             </span>
           </div>
           <div className="w-10" />
@@ -263,7 +264,7 @@ const Ops2Navigation: React.FC<NavigationProps> = ({
       >
         <div className="flex items-center justify-between px-6 py-4">
           <div className="flex items-center gap-2 text-sm">
-            <span className="text-gray-500">Reviewer</span>
+            <span className="text-gray-500">Supervisor</span>
             <svg
               className="w-4 h-4 text-gray-400"
               fill="none"

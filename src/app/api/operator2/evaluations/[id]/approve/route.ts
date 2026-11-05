@@ -89,7 +89,7 @@ export async function PATCH(
     });
 
     await transporter.sendMail({
-      from: `"GESMS" <${process.env.SMTP_USER}>`,
+      from: `"GO-ESMS" <${process.env.SMTP_USER}>`,
       to: school.email,
       subject: `Invoice for School Assessment (${school.name})`,
       html: `

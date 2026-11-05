@@ -22,13 +22,9 @@ interface ModalProps {
 export default function Modal({
   isOpen,
   onClose,
-  title,
-  subtitle,
-  icon,
   footer,
   children,
   size = "lg",
-  showCloseButton = true,
   closeOnBackdrop = true,
   closeOnEscape = true,
   className = "",

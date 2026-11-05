@@ -9,6 +9,7 @@
 import pool from "@/lib/db";
 import { verifyTransaction } from "@/lib/etransact";
 import { activateLicense } from "@/lib/activateLicense";
+import { periodLabel } from "@/lib/payeShared";
 
 const CERTIFICATE_FEE_ID = 4;
 
@@ -220,6 +221,55 @@ export async function reconcileNoticeLine(
         paymentItem: `${line.subhead_name} ${line.year}`,
         schoolId: line.school_id,
         revenueSubheadId: line.revenue_subhead_id,
+      });
+
+      await client.query("COMMIT");
+    } catch (err) {
+      await client.query("ROLLBACK");
+      throw err;
+    }
+
+    return { isPaid: true };
+  } finally {
+    client.release();
+  }
+}
+
+export async function reconcilePayeReturn(
+  returnId: number,
+): Promise<ReconcileResult> {
+  const client = await pool.connect();
+  try {
+    const { rows } = await client.query(
+      `SELECT id, school_id, period::text, declared_paye, status, reference, credo_reference, revenue_subhead_id
+       FROM paye_returns WHERE id = $1`,
+      [returnId],
+    );
+    const ret = rows[0];
+    if (!ret || ret.status === "paid" || !ret.credo_reference) {
+      return { isPaid: ret?.status === "paid" };
+    }
+
+    const verified = await verifyTransaction(ret.credo_reference);
+    const amountMatches = Number(verified.amount) === Number(ret.declared_paye);
+    if (!verified.isPaid || !amountMatches) return { isPaid: false };
+
+    await client.query("BEGIN");
+    try {
+      await client.query(
+        `UPDATE paye_returns SET status = 'paid', paid_at = NOW()
+         WHERE id = $1 AND status = 'unpaid'`,
+        [returnId],
+      );
+
+      await upsertTransactionskano(client, {
+        reference: ret.reference,
+        amount: ret.declared_paye,
+        paymentMethod: "etransact",
+        gatewayResponse: verified.raw,
+        paymentItem: `PAYE ${periodLabel(ret.period)}`,
+        schoolId: ret.school_id,
+        revenueSubheadId: ret.revenue_subhead_id,
       });
 
       await client.query("COMMIT");

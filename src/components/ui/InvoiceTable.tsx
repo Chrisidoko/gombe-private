@@ -129,36 +129,18 @@ export default function InvoiceTable({
 
   return (
     <div className="overflow-hidden">
-      {/* Header */}
-      <div className={showTitle || totalUnpaid > 0 ? "px-6 pb-6" : ""}>
-        <div
-          className={`flex flex-col sm:flex-row sm:items-center gap-4 ${showTitle ? "sm:justify-between" : "sm:justify-end"}`}
-        >
-          {showTitle && (
-            <div>
-              <h2 className="text-2xl font-bold text-gray-900">Demand Notices</h2>
-              <p className="text-sm text-gray-600 mt-1">
-                Manage and track your Institution&apos;s demand notices
-              </p>
-            </div>
-          )}
-
-          {totalUnpaid > 0 && (
-            <div className="bg-red-50 border border-red-200 rounded-lg px-4 py-2">
-              <p className="text-xs text-red-600 font-medium">
-                Outstanding Balance
-              </p>
-              <p className="text-xl font-bold text-red-700">
-                ₦{totalUnpaid.toLocaleString()}
-              </p>
-            </div>
-          )}
+      {showTitle && (
+        <div className="px-6 pb-6">
+          <h2 className="text-2xl font-bold text-gray-900">Demand Notices</h2>
+          <p className="text-sm text-gray-600 mt-1">
+            Manage and track your Institution&apos;s demand notices
+          </p>
         </div>
-      </div>
+      )}
 
-      {/* Filter Tabs */}
+      {/* Filter Tabs, with the outstanding balance in the same row */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-100">
-        <div className="px-6 pt-4 border-b border-gray-200">
+        <div className="px-6 pt-4 border-b border-gray-200 flex flex-wrap items-end justify-between gap-3">
           <div className="flex gap-2">
             {(["all", "Unpaid", "Paid"] as const).map((status) => (
               <button
@@ -179,6 +161,17 @@ export default function InvoiceTable({
               </button>
             ))}
           </div>
+
+          {totalUnpaid > 0 && (
+            <div className="mb-2 flex items-center gap-2 rounded-lg border border-red-200 bg-red-50 px-3 py-1.5">
+              <span className="text-xs font-medium text-red-600">
+                Outstanding Balance
+              </span>
+              <span className="text-base font-bold text-red-700">
+                ₦{totalUnpaid.toLocaleString()}
+              </span>
+            </div>
+          )}
         </div>
 
         {/* Table */}

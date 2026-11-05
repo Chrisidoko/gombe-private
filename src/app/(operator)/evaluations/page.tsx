@@ -555,13 +555,9 @@ export default function Requests() {
               {windowOpen ? "Window Open" : "Window Closed"}
             </button>
 
-            <div className="bg-blue-50 border border-blue-200 rounded-lg px-4 py-2">
-              <p className="text-sm text-blue-600 font-medium">
-                Pending Reviews
-              </p>
-              <p className="text-2xl font-bold text-blue-900">
-                {assessments.length}
-              </p>
+            <div className="flex items-center gap-2 px-4 py-2.5 rounded-lg border bg-blue-50 border-blue-200 text-sm">
+              <span className="font-medium text-blue-600">Pending Reviews</span>
+              <span className="font-bold text-blue-900">{assessments.length}</span>
             </div>
           </div>
         </div>

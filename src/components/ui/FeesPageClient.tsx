@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { ListChecks, FileDown } from "lucide-react";
+import { Tabs, TabsList, TabsTrigger } from "@/components/Tabs";
+import { PAGE_TAB_TRIGGER } from "@/components/ui/pageTabs";
 import FeeTable from "@/components/ui/feestable";
 import ComplianceDocs from "@/components/ui/ComplianceDocs";
 
@@ -18,32 +19,27 @@ export default function FeesPageClient({ school }: { school: School }) {
   const [activeTab, setActiveTab] = useState<Tab>("fees");
 
   const tabs = [
-    { id: "fees", label: "Payment Schedule", icon: ListChecks, disabled: false },
-    { id: "documents", label: "Compliance Docs", icon: FileDown, disabled: true },
+    { id: "fees", label: "Payment Schedule", disabled: false },
+    { id: "documents", label: "Compliance Docs", disabled: true },
   ];
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       {/* Tab switcher */}
-      <div className="flex items-center gap-1 bg-gray-100 rounded-xl p-1 w-fit">
-        {tabs.map((tab) => (
-          <button
-            key={tab.id}
-            disabled={tab.disabled}
-            onClick={() => !tab.disabled && setActiveTab(tab.id as Tab)}
-            className={`inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold transition-all ${
-              tab.disabled
-                ? "text-gray-300 cursor-not-allowed"
-                : activeTab === tab.id
-                ? "bg-white text-green-700 shadow-sm"
-                : "text-gray-500 hover:text-gray-700"
-            }`}
-          >
-            <tab.icon className="w-4 h-4" />
-            {tab.label}
-          </button>
-        ))}
-      </div>
+      <Tabs value={activeTab} onValueChange={(tab) => setActiveTab(tab as Tab)}>
+        <TabsList className="overflow-x-auto">
+          {tabs.map((tab) => (
+            <TabsTrigger
+              key={tab.id}
+              value={tab.id}
+              disabled={tab.disabled}
+              className={PAGE_TAB_TRIGGER}
+            >
+              {tab.label}
+            </TabsTrigger>
+          ))}
+        </TabsList>
+      </Tabs>
 
       {/* Tab content */}
       {activeTab === "fees" && (

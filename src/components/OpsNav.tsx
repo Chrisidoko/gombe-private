@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Building,
   Blocks,
@@ -12,6 +12,8 @@ import {
   Briefcase,
 } from "lucide-react";
 import LogoutButton from "@/components/ui/logoutbutton";
+import SidebarCollapseButton from "@/components/SidebarCollapseButton";
+import Image from "next/image";
 
 interface NavigationProps {
   collapsed: boolean;
@@ -20,6 +22,15 @@ interface NavigationProps {
 
 const Navigation: React.FC<NavigationProps> = ({ collapsed, setCollapsed }) => {
   const pathname = usePathname();
+  // Schools still waiting on this year's Single Demand Notice
+  const [noticeAlerts, setNoticeAlerts] = useState(0);
+  useEffect(() => {
+    fetch("/api/operator/annual-notices/alerts")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => setNoticeAlerts(d?.count ?? 0))
+      .catch(() => {});
+  }, [pathname]);
+  const badges: Record<string, number> = { "/annual-notices": noticeAlerts };
   const [isMobileOpen, setIsMobileOpen] = useState(false);
 
   const navItems = [
@@ -116,6 +127,7 @@ const Navigation: React.FC<NavigationProps> = ({ collapsed, setCollapsed }) => {
           collapsed ? "w-20" : "w-72"
         } bg-white border-r border-gray-200 shadow-sm`}
       >
+        <SidebarCollapseButton collapsed={collapsed} setCollapsed={setCollapsed} />
         <div className="flex flex-col h-full">
           {/* Logo Header */}
           <div
@@ -128,8 +140,11 @@ const Navigation: React.FC<NavigationProps> = ({ collapsed, setCollapsed }) => {
                 collapsed ? "justify-center" : "gap-3"
               }`}
             >
-              <img
+              <Image
                 src="/gombe_logo.png"
+                width={48}
+                height={48}
+                priority
                 alt="Gombe State logo"
                 className={`flex-shrink-0 transition-all ${
                   collapsed ? "w-10 h-10" : "w-12 h-12"
@@ -158,38 +173,12 @@ const Navigation: React.FC<NavigationProps> = ({ collapsed, setCollapsed }) => {
             </div>
           )}
 
-          {/* Collapse Toggle Button - Desktop Only */}
-          <div className="hidden lg:block px-4 py-3 border-b border-gray-100">
-            <button
-              onClick={() => setCollapsed(!collapsed)}
-              className={`w-full flex items-center gap-2 px-3 py-2 text-sm font-medium text-gray-600 hover:bg-gray-100 rounded-lg transition-all ${
-                collapsed ? "justify-center" : ""
-              }`}
-              title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
-            >
-              <svg
-                className={`w-5 h-5 transition-transform duration-300 ${
-                  collapsed ? "rotate-180" : ""
-                }`}
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M11 19l-7-7 7-7m8 14l-7-7 7-7"
-                />
-              </svg>
-              {!collapsed && <span>Collapse</span>}
-            </button>
-          </div>
 
           {/* Navigation Links */}
           <nav className="flex-1 px-4 py-6 space-y-2 overflow-y-auto">
             {navItems.map((item) => {
               const isActive = pathname === item.href;
+              const badge = badges[item.href] ?? 0;
               return (
                 <Link
                   key={item.href}
@@ -216,24 +205,24 @@ const Navigation: React.FC<NavigationProps> = ({ collapsed, setCollapsed }) => {
                       <span className="flex-1 font-medium text-sm">
                         {item.label}
                       </span>
-                      {/* {item.badge && (
+                      {badge > 0 && (
                         <span
-                          className={`flex items-center justify-center w-6 h-6 text-xs font-bold rounded-full ${
+                          className={`flex items-center justify-center min-w-6 h-6 px-1.5 text-xs font-bold rounded-full ${
                             isActive
                               ? "bg-white text-green-600"
                               : "bg-red-500 text-white"
                           }`}
                         >
-                          {item.badge}
+                          {badge}
                         </span>
-                      )} */}
+                      )}
                     </>
                   )}
-                  {/* {collapsed && item.badge && (
-                    <span className="absolute -top-1 -right-1 flex items-center justify-center w-5 h-5 text-xs font-bold rounded-full bg-red-500 text-white">
-                      {item.badge}
+                  {collapsed && badge > 0 && (
+                    <span className="absolute -top-1 -right-1 flex items-center justify-center min-w-5 h-5 px-1 text-xs font-bold rounded-full bg-red-500 text-white">
+                      {badge}
                     </span>
-                  )} */}
+                  )}
 
                   {/* Tooltip for collapsed state */}
                   {collapsed && (
@@ -324,9 +313,9 @@ const Navigation: React.FC<NavigationProps> = ({ collapsed, setCollapsed }) => {
           </button>
 
           <div className="flex items-center gap-2">
-            <img src="/gombe_logo.png" alt="GESMS logo" className="w-8 h-8" />
+            <Image src="/gombe_logo.png" alt="GO-ESMS logo" width={32} height={32} className="w-8 h-8" />
             <span className="font-bold text-sm text-gray-900">
-              GESMS Portal
+              GO-ESMS Portal
             </span>
           </div>
 

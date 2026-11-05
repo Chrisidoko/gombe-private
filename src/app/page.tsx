@@ -66,7 +66,7 @@ export default function OnboardingPage() {
           Ministry of Education
         </h1>
         <p className="text-sm text-gray-500 max-w-xs leading-relaxed mb-1">
-          Higher Education Portal | GESMS
+          Higher Education Portal | GO-ESMS
         </p>
 
         {/* CTA */}
@@ -97,10 +97,12 @@ export default function OnboardingPage() {
         <div className="absolute inset-0 bg-gradient-to-br from-[#1a5c2e] via-[#166534] to-[#052e16]" />
 
         {/* Static image backdrop */}
-        <img
+        <Image
           src="/slides/slide1.jpeg"
           alt=""
-          className="absolute inset-0 w-full h-full object-cover mix-blend-overlay opacity-80"
+          fill
+          sizes="100vw"
+          className="object-cover mix-blend-overlay opacity-80"
           onError={(e) => {
             (e.target as HTMLImageElement).style.display = "none";
           }}

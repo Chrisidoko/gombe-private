@@ -1,8 +1,10 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { CreditCard, Download, Loader2 } from "lucide-react";
+import Link from "next/link";
+import { CreditCard, Download, Loader2, Upload } from "lucide-react";
 import toast from "react-hot-toast";
+import { PIT_SUBHEAD_CODE } from "@/lib/pitBands";
 
 type Line = {
   id: number;
@@ -14,6 +16,7 @@ type Line = {
   status: "awaiting_declaration" | "unpaid" | "paid" | "waived";
   due_date: string | null;
   charge_type: string;
+  code: string;
   subhead_name: string;
   head_name: string;
   declaration_status: string | null;
@@ -23,6 +26,8 @@ type Line = {
 };
 
 type Modal = { type: "declare" | "object"; line: Line } | null;
+
+const MAX_EVIDENCE_BYTES = 5 * 1024 * 1024;
 
 const naira = (v: string | number) => `₦${Number(v).toLocaleString()}`;
 
@@ -55,9 +60,13 @@ function statusBadge(line: Line) {
 export default function AnnualNoticeCard({
   schoolId,
   showEmpty = false,
+  onShowPaye,
 }: {
   schoolId: string;
   showEmpty?: boolean;
+  // Switches tab when the card is on the Demand Notices page; elsewhere the
+  // PAYE row links there instead
+  onShowPaye?: () => void;
 }) {
   const [lines, setLines] = useState<Line[]>([]);
   const [loading, setLoading] = useState(true);
@@ -190,6 +199,7 @@ export default function AnnualNoticeCard({
       lines.some((l) => l.year === y && l.status === "unpaid"),
   );
 
+  const isPit = modal?.line.code === PIT_SUBHEAD_CODE;
   const canSubmit =
     modal?.type === "declare" ? amount !== "" && !!file : !!note.trim();
 
@@ -329,6 +339,30 @@ export default function AnnualNoticeCard({
         </div>
       ))}
 
+      <div className="flex items-start justify-between gap-4 px-6 py-4 flex-wrap border-t border-gray-100">
+        <div className="min-w-0">
+          <p className="text-sm font-semibold text-gray-800">Pay As You Earn (PAYE)</p>
+          <p className="text-xs text-gray-400 mt-0.5">
+            Filed and paid monthly, by the 10th of the following month
+          </p>
+        </div>
+        {onShowPaye ? (
+          <button
+            onClick={onShowPaye}
+            className="text-xs font-semibold text-green-700 hover:text-green-800"
+          >
+            Go to Monthly PAYE
+          </button>
+        ) : (
+          <Link
+            href="/Invoices?tab=paye"
+            className="text-xs font-semibold text-green-700 hover:text-green-800"
+          >
+            Go to Monthly PAYE
+          </Link>
+        )}
+      </div>
+
       {modal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 space-y-4">
@@ -340,7 +374,9 @@ export default function AnnualNoticeCard({
               </h3>
               <p className="text-xs text-gray-500 mt-1">
                 {modal.type === "declare"
-                  ? `State the full amount for ${modal.line.year}. It is reviewed before it is added to your notice.`
+                  ? isPit
+                    ? "GIRS works out the tax from the Personal Income Tax bands"
+                    : `State the full amount for ${modal.line.year}. It is reviewed before it is added to your notice.`
                   : "State your grounds, as provided by section 90(1) of the Gombe Revenue Law 2021. This item can't be paid while your objection is reviewed."}
               </p>
             </div>
@@ -350,21 +386,52 @@ export default function AnnualNoticeCard({
                 <input
                   type="number"
                   min="0"
-                  placeholder="Amount (₦)"
+                  placeholder={
+                    isPit
+                      ? `Total income earned in ${modal.line.year} (₦)`
+                      : "Amount (₦)"
+                  }
                   value={amount}
                   onChange={(e) => setAmount(e.target.value)}
                   className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
                 />
-                <div>
-                  <label className="text-xs font-medium text-gray-500 block mb-1">
-                    Supporting evidence (PDF, JPG or PNG under 10MB)
+                <div className="rounded-xl border border-gray-200 bg-gray-50 p-4 space-y-3">
+                  <div>
+                    <p className="text-sm font-semibold text-gray-800">
+                      Supporting evidence
+                    </p>
+                    <p className="text-xs text-gray-500 mt-0.5">
+                      {isPit
+                        ? "Your statement of income or accounts. PDF, JPG or PNG, up to 5MB."
+                        : "PDF, JPG or PNG, up to 5MB."}
+                    </p>
+                  </div>
+                  <label className="flex items-center justify-center gap-2 w-full cursor-pointer rounded-xl border-2 border-dashed border-green-300 bg-white px-4 py-3 text-sm font-semibold text-green-700 hover:bg-green-50 transition">
+                    <Upload className="w-4 h-4 shrink-0" />
+                    <span className="truncate">
+                      {file ? file.name : "Click to upload"}
+                    </span>
+                    <input
+                      type="file"
+                      accept=".pdf,.jpg,.jpeg,.png"
+                      className="hidden"
+                      onChange={(e) => {
+                        const picked = e.target.files?.[0] ?? null;
+                        e.target.value = "";
+                        if (picked && picked.size > MAX_EVIDENCE_BYTES) {
+                          toast.error("That file is over 5MB. Choose a smaller one.");
+                          return;
+                        }
+                        setFile(picked);
+                      }}
+                    />
                   </label>
-                  <input
-                    type="file"
-                    accept=".pdf,.jpg,.jpeg,.png"
-                    onChange={(e) => setFile(e.target.files?.[0] ?? null)}
-                    className="w-full text-sm text-gray-600"
-                  />
+                  {file && (
+                    <p className="text-xs text-gray-500">
+                      {(file.size / (1024 * 1024)).toFixed(1)}MB · click above to
+                      choose a different file
+                    </p>
+                  )}
                 </div>
               </>
             )}

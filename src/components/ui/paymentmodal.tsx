@@ -17,8 +17,6 @@ export default function PaymentModal({
   isOpen,
   onClose,
   paymentUrl,
-  title = "Secure Payment",
-  subtitle = "Complete your payment securely",
   closeOnBackdrop = true,
   closeOnEscape = true,
 }: PaymentModalProps) {

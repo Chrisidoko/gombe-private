@@ -115,14 +115,14 @@ export async function POST(req: Request) {
       });
 
       await transporter.sendMail({
-        from: `"GESMS" <${process.env.SMTP_USER}>`,
+        from: `"GO-ESMS" <${process.env.SMTP_USER}>`,
         to: user.email,
-        subject: "Your GESMS Staff Account Has Been Created",
+        subject: "Your GO-ESMS Staff Account Has Been Created",
         html: `
           <div style="font-family: Arial, sans-serif; max-width: 520px; margin: auto; line-height: 1.6;">
             <h2 style="color: #28a745;">Gombe State Private Tertiary Institution Portal</h2>
             <p>Dear <strong>${user.name}</strong>,</p>
-            <p>An administrator has created a <strong>${STAFF_ROLES[institution]}</strong> account for you on GESMS.</p>
+            <p>An administrator has created a <strong>${STAFF_ROLES[institution]}</strong> account for you on GO-ESMS.</p>
             <p>Click below to set your password and sign in:</p>
             <div style="margin: 28px 0;">
               <a href="${setPasswordUrl}"
@@ -137,7 +137,7 @@ export async function POST(req: Request) {
               "Forgot password" on the login page with this email address.
             </p>
             <br/>
-            <p>Best Regards,<br/>GESMS Team</p>
+            <p>Best Regards,<br/>GO-ESMS Team</p>
           </div>
         `,
       });

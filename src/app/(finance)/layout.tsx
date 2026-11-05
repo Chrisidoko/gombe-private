@@ -33,7 +33,7 @@ export default function FinanceLayout({
         <Navigation collapsed={collapsed} setCollapsed={setCollapsed} />
 
         <main
-          className={`flex-1 bg-gray-50 transition-all duration-300 ${
+          className={`flex-1 min-w-0 bg-gray-50 transition-all duration-300 ${
             collapsed ? "ml-0 lg:ml-20" : "ml-0 lg:ml-72"
           }`}
         >

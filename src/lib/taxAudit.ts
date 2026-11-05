@@ -3,8 +3,10 @@
 // Ministry's Compliance Standing fees, and invoices. schoolkano_payments rows
 // only exist once a school opens its fees page, so an approved school that
 // never has would look clear; its standing fees are added from the schedule.
+// Monthly PAYE returns are included, and so are months with no return filed.
 import pool from "@/lib/db";
 import { FEE_DEFINITIONS, resolveTier } from "@/lib/feeDefinitions";
+import { getUnfiledPayeMonths, PAYE_SUBHEAD_CODE, periodLabel } from "@/lib/paye";
 
 // Owed by every approved school from the start. Certificate and Annual Renewal
 // are left out because they depend on later conditions.
@@ -12,7 +14,7 @@ const STANDING_FEE_IDS = [1, 2, 3, 5];
 
 export type Liability = {
   school_id: string;
-  source: "Annual Notice" | "Compliance Standing" | "Invoice";
+  source: "Annual Notice" | "Compliance Standing" | "Invoice" | "PAYE Return";
   head: string;
   subhead: string;
   year: number;
@@ -26,6 +28,9 @@ export type Liability = {
   declaration_source: string | null;
   evidence_url: string | null;
   objection_pending: boolean;
+  // Set when Operator 1 changed a notice line from the standard rate
+  standard_amount: number | null;
+  adjustment_reason: string | null;
 };
 
 const UNCLASSIFIED = "Unclassified";
@@ -40,7 +45,9 @@ export async function getLiabilities(year: number | null) {
             EXISTS (
               SELECT 1 FROM notice_objections o
               WHERE o.line_id = l.id AND o.status = 'pending'
-            ) AS objection_pending
+            ) AS objection_pending,
+            CASE WHEN l.adjustment_reason IS NOT NULL THEN l.standard_amount END AS standard_amount,
+            l.adjustment_reason
      FROM annual_notice_lines l
      JOIN annual_notices n ON n.id = l.notice_id AND n.status = 'issued'
      JOIN revenue_subheads s ON s.id = l.revenue_subhead_id
@@ -54,7 +61,7 @@ export async function getLiabilities(year: number | null) {
             p.amount::numeric,
             CASE WHEN p.status = 'paid' THEN p.amount::numeric ELSE 0 END,
             CASE WHEN p.status = 'paid' THEN 'paid' ELSE 'unpaid' END,
-            NULL::date, p.reference, NULL, NULL, false
+            NULL::date, p.reference, NULL, NULL, false, NULL::numeric, NULL
      FROM schoolkano_payments p
      LEFT JOIN revenue_subheads s ON s.fee_id = p.fee_id
      LEFT JOIN revenue_heads h ON h.id = s.head_id
@@ -66,10 +73,25 @@ export async function getLiabilities(year: number | null) {
             i.amount,
             CASE WHEN LOWER(i.status) = 'paid' THEN i.amount ELSE 0 END,
             CASE WHEN LOWER(i.status) = 'paid' THEN 'paid' ELSE 'unpaid' END,
-            i.due_date, i.invoice_number, NULL, NULL, false
+            i.due_date, i.invoice_number, NULL, NULL, false, NULL::numeric, NULL
      FROM schoolkano_invoices i
      LEFT JOIN revenue_subheads s ON s.id = i.revenue_subhead_id
-     LEFT JOIN revenue_heads h ON h.id = s.head_id`,
+     LEFT JOIN revenue_heads h ON h.id = s.head_id
+
+     UNION ALL
+
+     SELECT r.school_id, 'PAYE Return', h.name,
+            s.name || ' (' || TRIM(to_char(r.period, 'FMMonth YYYY')) || ')',
+            EXTRACT(YEAR FROM r.period)::integer,
+            CASE WHEN r.status IN ('unpaid', 'paid', 'waived') THEN r.declared_paye END,
+            CASE WHEN r.status = 'paid' THEN r.declared_paye ELSE 0 END,
+            CASE WHEN r.status IN ('pending_review', 'recommended') THEN 'awaiting_declaration' ELSE r.status END,
+            COALESCE(r.payment_due_date, r.filing_due_date), r.reference,
+            r.source, NULL, false, NULL::numeric, NULL
+     FROM paye_returns r
+     JOIN revenue_subheads s ON s.id = r.revenue_subhead_id
+     JOIN revenue_heads h ON h.id = s.head_id
+     WHERE r.status <> 'rejected'`,
     [UNCLASSIFIED],
   );
 
@@ -81,6 +103,7 @@ export async function getLiabilities(year: number | null) {
       ...r,
       assessed,
       paid,
+      standard_amount: r.standard_amount === null ? null : Number(r.standard_amount),
       outstanding: r.status === "unpaid" ? (assessed ?? 0) - paid : 0,
       overdue:
         r.status === "unpaid" && !!r.due_date && new Date(r.due_date) < today,
@@ -128,8 +151,40 @@ export async function getLiabilities(year: number | null) {
         declaration_source: null,
         evidence_url: null,
         objection_pending: false,
+        standard_amount: null,
+        adjustment_reason: null,
       });
     }
+  }
+
+  // A month with no return has nothing assessed yet, but the audit should
+  // still show it was missed.
+  const payeSubhead = await pool.query(
+    `SELECT s.name, h.name AS head_name
+     FROM revenue_subheads s JOIN revenue_heads h ON h.id = s.head_id
+     WHERE s.code = $1`,
+    [PAYE_SUBHEAD_CODE],
+  );
+  for (const month of await getUnfiledPayeMonths()) {
+    liabilities.push({
+      school_id: month.school_id,
+      source: "PAYE Return",
+      head: payeSubhead.rows[0]?.head_name ?? UNCLASSIFIED,
+      subhead: `${payeSubhead.rows[0]?.name ?? "PAYE"} (${periodLabel(month.period)}) — not filed`,
+      year: Number(month.period.slice(0, 4)),
+      assessed: null,
+      paid: 0,
+      outstanding: 0,
+      status: "awaiting_declaration",
+      due_date: month.filing_due_date,
+      overdue: false,
+      reference: null,
+      declaration_source: null,
+      evidence_url: null,
+      objection_pending: false,
+      standard_amount: null,
+      adjustment_reason: null,
+    });
   }
 
   return year === null

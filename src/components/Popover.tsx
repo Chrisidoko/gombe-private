@@ -1,4 +1,3 @@
-/* eslint-disable */
 // Tremor Raw Popover [v0.0.0]
 
 import * as PopoverPrimitives from "@radix-ui/react-popover";

@@ -9,6 +9,7 @@ import {
   reconcileFeePayment,
   reconcileInvoicePayment,
   reconcileNoticeLine,
+  reconcilePayeReturn,
 } from "@/lib/reconcileEtransact";
 
 export async function GET(req: Request) {
@@ -27,7 +28,9 @@ export async function GET(req: Request) {
   const destination =
     type === "notice"
       ? "/Invoices?tab=single"
-      : type === "invoice"
+      : type === "paye"
+        ? "/Invoices?tab=paye"
+        : type === "invoice"
         ? "/Invoices?tab=other"
         : "/fees";
   const join = destination.includes("?") ? "&" : "?";
@@ -44,6 +47,8 @@ export async function GET(req: Request) {
       ({ isPaid } = await reconcileInvoicePayment(id));
     } else if (type === "notice") {
       ({ isPaid } = await reconcileNoticeLine(id));
+    } else if (type === "paye") {
+      ({ isPaid } = await reconcilePayeReturn(id));
     }
   } catch (err) {
     console.error("eTransact return reconciliation failed:", err);

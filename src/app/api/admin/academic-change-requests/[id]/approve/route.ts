@@ -98,7 +98,7 @@ export async function POST(
       });
 
       await transporter.sendMail({
-        from: `"GESMS" <${process.env.SMTP_USER}>`,
+        from: `"GO-ESMS" <${process.env.SMTP_USER}>`,
         to: email,
         subject: "Your Academic Profile Update Has Been Approved",
         html: `
@@ -108,7 +108,7 @@ export async function POST(
             <p>Your request to update your institution's academic profile has been reviewed and <strong>approved</strong> by the Ministry.</p>
             <p>Your updated academic information is now live on the verification portal.</p>
             <br />
-            <p>Best Regards,<br>GESMS Assessment Team</p>
+            <p>Best Regards,<br>GO-ESMS Assessment Team</p>
           </div>
         `,
       });

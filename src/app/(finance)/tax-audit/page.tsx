@@ -92,6 +92,8 @@ export default function TaxAuditPage() {
         Status: lineStatus(l),
         "Due Date": l.due_date ? new Date(l.due_date).toLocaleDateString("en-GB") : "",
         Reference: l.reference ?? "",
+        "Standard Amount": l.standard_amount ?? "",
+        "Adjustment Reason": l.adjustment_reason ?? "",
       })),
     );
     const workbook = XLSX.utils.book_new();
@@ -269,6 +271,13 @@ export default function TaxAuditPage() {
                                       {lineStatus(line)}
                                       {line.declaration_source === "operator_estimate" &&
                                         " · Operator estimate"}
+                                      {line.adjustment_reason && (
+                                        <span className="block text-amber-700">
+                                          ⚑ Adjusted from{" "}
+                                          {naira(line.standard_amount ?? 0)}:{" "}
+                                          {line.adjustment_reason}
+                                        </span>
+                                      )}
                                       {line.evidence_url && (
                                         <a
                                           href={line.evidence_url}

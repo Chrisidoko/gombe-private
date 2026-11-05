@@ -36,7 +36,6 @@ const LICENSE_OPTIONS = ["Active", "Expired", "Inactive"];
 
 function StatusBadge({
   value,
-  type,
 }: {
   value: string;
   type: "approval" | "license";

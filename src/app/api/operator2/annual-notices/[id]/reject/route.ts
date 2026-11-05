@@ -1,4 +1,5 @@
-// Operator 2 rejects a batch — Operator 1 can correct and prepare it again.
+// Operator 2 returns a batch to Operator 1 as a draft, with the reason, so it
+// can be corrected and sent again.
 import { NextResponse } from "next/server";
 import pool from "@/lib/db";
 import { getUserFromCookie } from "@/lib/auth";
@@ -19,14 +20,20 @@ export async function PATCH(
   }
 
   const { reason } = await req.json();
+  if (!reason?.trim()) {
+    return NextResponse.json(
+      { error: "Say what needs correcting" },
+      { status: 400 },
+    );
+  }
   const client = await pool.connect();
   try {
     await client.query("BEGIN");
     const batchRes = await client.query(
       `UPDATE annual_notice_batches
-       SET status = 'rejected', reviewed_by = $1, reviewed_at = NOW(), rejection_reason = $2
+       SET status = 'draft', reviewed_by = $1, reviewed_at = NOW(), rejection_reason = $2
        WHERE id = $3 AND status = 'pending_approval'`,
-      [user?.name || "operator2", reason?.trim() || null, batchId],
+      [user?.name || "operator2", reason.trim(), batchId],
     );
     if (batchRes.rowCount === 0) {
       await client.query("ROLLBACK");
@@ -35,10 +42,6 @@ export async function PATCH(
         { status: 404 },
       );
     }
-    await client.query(
-      `UPDATE annual_notices SET status = 'rejected' WHERE batch_id = $1`,
-      [batchId],
-    );
     await client.query("COMMIT");
     return NextResponse.json({ success: true });
   } catch (error) {

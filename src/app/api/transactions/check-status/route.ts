@@ -8,7 +8,7 @@
 // throughout this integration.
 import { NextResponse } from "next/server";
 import pool from "@/lib/db";
-import { reconcileFeePayment, reconcileInvoicePayment, reconcileNoticeLine } from "@/lib/reconcileEtransact";
+import { reconcileFeePayment, reconcileInvoicePayment, reconcileNoticeLine, reconcilePayeReturn } from "@/lib/reconcileEtransact";
 import { requireRole } from "@/lib/apiAuth";
 
 export async function POST(req: Request) {
@@ -50,6 +50,15 @@ export async function POST(req: Request) {
     );
     if (lineRes.rows.length > 0) {
       const { isPaid } = await reconcileNoticeLine(lineRes.rows[0].id);
+      return NextResponse.json({ success: true, isPaid });
+    }
+
+    const payeRes = await pool.query(
+      `SELECT id FROM paye_returns WHERE reference = $1`,
+      [reference],
+    );
+    if (payeRes.rows.length > 0) {
+      const { isPaid } = await reconcilePayeReturn(payeRes.rows[0].id);
       return NextResponse.json({ success: true, isPaid });
     }
 

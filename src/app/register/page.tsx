@@ -296,6 +296,7 @@ export default function PrivateInstitutionsForm() {
       }
 
       // ✅ Remove confirmemail before sending
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
       const { confirmemail, ...sanitizedData } = sectionData;
 
       // ✅ Always include TIN — either from current section or stored value

@@ -14,6 +14,13 @@ import {
   Settings2,
 } from "lucide-react";
 import toast from "react-hot-toast";
+import {
+  HistoryPager,
+  HistoryToolbar,
+  useHistoryPage,
+} from "@/components/ui/HistoryList";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/Tabs";
+import { PAGE_TAB_TRIGGER } from "@/components/ui/pageTabs";
 
 type TierSummary = {
   tier1: { count: number };
@@ -32,7 +39,9 @@ type Assessment = {
   tier_3_fee: number | null;
   total_schools: number;
   status: string;
-  invoice_count: number;
+  payment_days: number | null;
+  // COUNT(*) comes back from Postgres as a string
+  total_invoices: string;
   paid_count: number;
   unpaid_count: number;
 };
@@ -75,26 +84,25 @@ export default function AssessmentPage() {
   // Form state
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
-  const [dueDate, setDueDate] = useState("");
+  const [paymentDays, setPaymentDays] = useState("30");
   const [tier1Fee, setTier1Fee] = useState("");
   const [tier2Fee, setTier2Fee] = useState("");
   const [tier3Fee, setTier3Fee] = useState("");
 
   // UI state
   const [tierSummary, setTierSummary] = useState<TierSummary | null>(null);
-  const [assessments, setAssessments] = useState<Assessment[]>([]);
+  const [view, setView] = useState("new");
+  const history = useHistoryPage<Assessment>("/api/operator/bulk");
+  const assessments = history.items;
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
   const [successCount, setSuccessCount] = useState<number | null>(null);
 
-  // Fetch tier counts + assessment history
+  // Fetch tier counts; the history pages itself
   const fetchData = useCallback(async () => {
     try {
-      const [tiersRes, assessmentsRes] = await Promise.all([
-        fetch("/api/operator/tiers"),
-        fetch("/api/operator/bulk"),
-      ]);
+      const tiersRes = await fetch("/api/operator/tiers");
       if (tiersRes.ok) {
         const t = await tiersRes.json();
         setTierSummary({
@@ -103,9 +111,6 @@ export default function AssessmentPage() {
           tier3: { count: t.tier3.length },
           unassigned: { count: t.unassigned.length },
         });
-      }
-      if (assessmentsRes.ok) {
-        setAssessments(await assessmentsRes.json());
       }
     } catch {
       // silently fail
@@ -130,8 +135,16 @@ export default function AssessmentPage() {
     (tier2Fee && tierSummary ? Number(tier2Fee) * tierSummary.tier2.count : 0) +
     (tier3Fee && tierSummary ? Number(tier3Fee) * tierSummary.tier3.count : 0);
 
+  const daysValid =
+    Number.isInteger(Number(paymentDays)) &&
+    Number(paymentDays) >= 1 &&
+    Number(paymentDays) <= 365;
+
   const isFormReady =
-    !!title && (!!tier1Fee || !!tier2Fee || !!tier3Fee) && previewTotal > 0;
+    !!title &&
+    (!!tier1Fee || !!tier2Fee || !!tier3Fee) &&
+    previewTotal > 0 &&
+    daysValid;
 
   async function handleSubmit() {
     setSubmitting(true);
@@ -145,7 +158,7 @@ export default function AssessmentPage() {
           tier_1_fee: tier1Fee || null,
           tier_2_fee: tier2Fee || null,
           tier_3_fee: tier3Fee || null,
-          due_date: dueDate || null,
+          payment_days: Number(paymentDays),
         }),
       });
 
@@ -158,13 +171,13 @@ export default function AssessmentPage() {
       // Reset form
       setTitle("");
       setDescription("");
-      setDueDate("");
+      setPaymentDays("30");
       setTier1Fee("");
       setTier2Fee("");
       setTier3Fee("");
 
       // Refresh history
-      fetchData();
+      history.reload();
       toast.success(`Assessment submitted — awaiting supervisors approval`);
     } catch (err) {
       toast.error(
@@ -205,383 +218,452 @@ export default function AssessmentPage() {
           </p>
         </div>
 
-        {/* Success banner */}
-        {successCount !== null && (
-          <div className="flex items-center gap-3 bg-amber-50 border border-amber-200 rounded-xl px-5 py-4">
-            <CheckCircle2 className="w-5 h-5 text-amber-600 shrink-0" />
-            <div>
-              <p className="text-sm font-bold text-amber-800">
-                Assessment submitted for review
-              </p>
-              <p className="text-xs text-amber-700 mt-0.5">
-                {successCount} schools queued — supervisors must approve before
-                invoices are sent.
-              </p>
-            </div>
-            <button onClick={() => setSuccessCount(null)} className="ml-auto">
-              <X className="w-4 h-4 text-amber-400" />
-            </button>
-          </div>
-        )}
+        <Tabs value={view} onValueChange={setView}>
+          <TabsList className="overflow-x-auto">
+            <TabsTrigger value="new" className={PAGE_TAB_TRIGGER}>
+              New Assessment
+            </TabsTrigger>
+            <TabsTrigger value="history" className={PAGE_TAB_TRIGGER}>
+              Assessment History
+              {!!history.counts?.pending && (
+                <span className="ml-2 rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-bold text-amber-700">
+                  {history.counts.pending} pending
+                </span>
+              )}
+            </TabsTrigger>
+          </TabsList>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* ── Left — Form ─────────────────────────────────────────────── */}
-          <div className="lg:col-span-2 space-y-5">
-            {/* Assessment details */}
-            <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
-              <div className="bg-[#1a5c2e] px-6 py-4 flex items-center gap-3">
-                <Settings2 className="w-4 h-4 text-white" />
-                <h2 className="text-sm font-bold text-white">
-                  Assessment Details
-                </h2>
-              </div>
-              <div className="px-6 py-5 space-y-4">
+          <TabsContent value="new" className="pt-6 space-y-8">
+            {/* Success banner */}
+            {successCount !== null && (
+              <div className="flex items-center gap-3 bg-amber-50 border border-amber-200 rounded-xl px-5 py-4">
+                <CheckCircle2 className="w-5 h-5 text-amber-600 shrink-0" />
                 <div>
-                  <label className="block text-xs font-bold uppercase tracking-widest text-gray-500 mb-1.5">
-                    Assessment Title <span className="text-red-500">*</span>
-                  </label>
-                  <select
-                    value={title}
-                    onChange={(e) => setTitle(e.target.value)}
-                    className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
-                  >
-                    <option value="">Select Assessment Type</option>
-
-                    {assessmentOptions.map((item) => (
-                      <option key={item} value={item}>
-                        {item}
-                      </option>
-                    ))}
-                  </select>
-                  {/* <input
-                    type="text"
-                    value={title}
-                    onChange={(e) => setTitle(e.target.value)}
-                    placeholder="e.g. 2026 Annual Tax Assessment"
-                    className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
-                  /> */}
+                  <p className="text-sm font-bold text-amber-800">
+                    Assessment submitted for review
+                  </p>
+                  <p className="text-xs text-amber-700 mt-0.5">
+                    {successCount} schools queued — supervisors must approve
+                    before invoices are sent.
+                  </p>
                 </div>
-                <div>
-                  <label className="block text-xs font-bold uppercase tracking-widest text-gray-500 mb-1.5">
-                    Description
-                  </label>
-                  <textarea
-                    rows={3}
-                    value={description}
-                    onChange={(e) => setDescription(e.target.value)}
-                    placeholder="Provide context for this assessment..."
-                    className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-green-500 resize-none"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-bold uppercase tracking-widest text-gray-500 mb-1.5">
-                    Payment Due Date
-                  </label>
-                  <input
-                    type="date"
-                    value={dueDate}
-                    onChange={(e) => setDueDate(e.target.value)}
-                    className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
-                  />
-                </div>
+                <button
+                  onClick={() => setSuccessCount(null)}
+                  className="ml-auto"
+                >
+                  <X className="w-4 h-4 text-amber-400" />
+                </button>
               </div>
-            </div>
+            )}
 
-            {/* Tier fees */}
-            <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
-              <div className="px-6 py-4 border-b border-gray-100 bg-gray-50">
-                <h2 className="text-sm font-bold text-gray-700">
-                  Fee per Category
-                </h2>
-                <p className="text-xs text-gray-400 mt-0.5">
-                  Leave a type blank to exclude it from this assessment
-                </p>
-              </div>
-              <div className="px-6 py-5 space-y-4">
-                {[
-                  { tier: 1 as const, fee: tier1Fee, setFee: setTier1Fee },
-                  { tier: 2 as const, fee: tier2Fee, setFee: setTier2Fee },
-                  { tier: 3 as const, fee: tier3Fee, setFee: setTier3Fee },
-                ].map(({ tier, fee, setFee }) => {
-                  const config = TIER_CONFIG[tier];
-                  const count = tierSummary
-                    ? tier === 1
-                      ? tierSummary.tier1.count
-                      : tier === 2
-                        ? tierSummary.tier2.count
-                        : tierSummary.tier3.count
-                    : 0;
-
-                  return (
-                    <div
-                      key={tier}
-                      className={`rounded-xl border-2 p-4 ${config.color}`}
-                    >
-                      <div className="flex items-center justify-between mb-3">
-                        <div>
-                          <p className="text-sm font-bold text-gray-800">
-                            {config.label}
-                          </p>
-                          <p className="text-xs text-gray-500">{config.desc}</p>
-                        </div>
-                        <span
-                          className={`text-xs font-bold px-2.5 py-1 rounded-full ${config.badge}`}
-                        >
-                          {count} school{count !== 1 ? "s" : ""}
-                        </span>
-                      </div>
-                      <div className="relative">
-                        <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-500 text-sm font-semibold">
-                          ₦
-                        </span>
-                        <input
-                          type="number"
-                          placeholder="0.00"
-                          value={fee}
-                          min="0"
-                          onChange={(e) => {
-                            const value = e.target.value;
-
-                            // Prevent negative values
-                            if (Number(value) >= 0 || value === "") {
-                              setFee(value);
-                            }
-                          }}
-                          onWheel={(e) => e.currentTarget.blur()} // Prevent scroll wheel changing value
-                          className="w-full pl-8 pr-4 py-2.5 bg-white border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-green-500 appearance-none"
-                        />
-                        {/* still check this the arrows still affect the value */}
-
-                        {/* <select
-                          value={fee}
-                          onChange={(e) => setFee(e.target.value)}
-                          className="w-full pl-4 pr-4 py-2.5 bg-white border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
-                        >
-                          <option value="">Select Amount</option>
-
-                          {Array.from({ length: 20 }, (_, i) => {
-                            const amount = (i + 1) * 50000;
-
-                            return (
-                              <option key={amount} value={amount}>
-                                ₦{amount.toLocaleString()}
-                              </option>
-                            );
-                          })}
-                        </select> */}
-                      </div>
-                      {fee && count > 0 && (
-                        <p className="text-xs text-gray-500 mt-1.5">
-                          Subtotal:{" "}
-                          <span className="font-bold text-gray-700">
-                            ₦{(Number(fee) * count).toLocaleString()}
-                          </span>
-                        </p>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          </div>
-
-          {/* ── Right — Preview + Send ───────────────────────────────────── */}
-          <div className="space-y-4">
-            {/* Preview card */}
-            <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden sticky top-6">
-              <div className="px-5 py-4 border-b border-gray-100 bg-gray-50">
-                <div className="flex items-center gap-2">
-                  <Eye className="w-4 h-4 text-gray-500" />
-                  <h3 className="text-sm font-bold text-gray-700">Preview</h3>
-                </div>
-              </div>
-              <div className="px-5 py-4 space-y-3">
-                <div className="flex items-center justify-between text-sm">
-                  <span className="text-gray-500">Institutions</span>
-                  <span className="font-black text-gray-800">
-                    {previewTotal}
-                  </span>
-                </div>
-                <div className="flex items-center justify-between text-sm">
-                  <span className="text-gray-500">Total Invoice Value</span>
-                  <span className="font-black text-green-600">
-                    ₦{previewValue.toLocaleString()}
-                  </span>
-                </div>
-
-                {/* Per-tier breakdown */}
-                {tierSummary && (
-                  <div className="pt-3 border-t border-gray-100 space-y-2">
-                    {[
-                      {
-                        tier: 1 as const,
-                        fee: tier1Fee,
-                        count: tierSummary.tier1.count,
-                      },
-                      {
-                        tier: 2 as const,
-                        fee: tier2Fee,
-                        count: tierSummary.tier2.count,
-                      },
-                      {
-                        tier: 3 as const,
-                        fee: tier3Fee,
-                        count: tierSummary.tier3.count,
-                      },
-                    ].map(({ tier, fee, count }) => (
-                      <div
-                        key={tier}
-                        className="flex items-center justify-between text-xs"
-                      >
-                        <div className="flex items-center gap-2">
-                          <span
-                            className={`w-2 h-2 rounded-full ${
-                              tier === 1
-                                ? "bg-blue-400"
-                                : tier === 2
-                                  ? "bg-green-400"
-                                  : "bg-purple-400"
-                            }`}
-                          />
-                          <span className="text-gray-500">
-                            {TIER_CONFIG[tier].label} ({count})
-                          </span>
-                        </div>
-                        <span
-                          className={`font-semibold ${fee ? "text-gray-700" : "text-gray-300"}`}
-                        >
-                          {fee ? fmt(Number(fee)) : "excluded"}
-                        </span>
-                      </div>
-                    ))}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              {/* ── Left — Form ─────────────────────────────────────────────── */}
+              <div className="lg:col-span-2 space-y-5">
+                {/* Assessment details */}
+                <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
+                  <div className="bg-[#1a5c2e] px-6 py-4 flex items-center gap-3">
+                    <Settings2 className="w-4 h-4 text-white" />
+                    <h2 className="text-sm font-bold text-white">
+                      Assessment Details
+                    </h2>
                   </div>
-                )}
+                  <div className="px-6 py-5 space-y-4">
+                    <div>
+                      <label className="block text-xs font-bold uppercase tracking-widest text-gray-500 mb-1.5">
+                        Assessment Title <span className="text-red-500">*</span>
+                      </label>
+                      <select
+                        value={title}
+                        onChange={(e) => setTitle(e.target.value)}
+                        className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
+                      >
+                        <option value="">Select Assessment Type</option>
 
-                {/* Unassigned warning */}
-                {tierSummary && tierSummary.unassigned.count > 0 && (
-                  <div className="flex items-start gap-2 bg-yellow-50 border border-yellow-100 rounded-xl px-3 py-2.5 mt-2">
-                    <AlertTriangle className="w-3.5 h-3.5 text-yellow-600 shrink-0 mt-0.5" />
-                    <p className="text-[10px] text-yellow-700 leading-relaxed">
-                      {tierSummary.unassigned.count} school
-                      {tierSummary.unassigned.count !== 1 ? "s" : ""} unassigned
-                      — they will not receive an invoice.
+                        {assessmentOptions.map((item) => (
+                          <option key={item} value={item}>
+                            {item}
+                          </option>
+                        ))}
+                      </select>
+                      {/* <input
+                      type="text"
+                      value={title}
+                      onChange={(e) => setTitle(e.target.value)}
+                      placeholder="e.g. 2026 Annual Tax Assessment"
+                      className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
+                    /> */}
+                    </div>
+                    <div>
+                      <label className="block text-xs font-bold uppercase tracking-widest text-gray-500 mb-1.5">
+                        Description
+                      </label>
+                      <textarea
+                        rows={3}
+                        value={description}
+                        onChange={(e) => setDescription(e.target.value)}
+                        placeholder="Provide context for this assessment..."
+                        className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-green-500 resize-none"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-bold uppercase tracking-widest text-gray-500 mb-1.5">
+                        Days to Pay After Approval
+                      </label>
+                      <input
+                        type="number"
+                        min={1}
+                        max={365}
+                        value={paymentDays}
+                        onChange={(e) => setPaymentDays(e.target.value)}
+                        className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
+                      />
+                      <p className="text-xs text-gray-400 mt-1">
+                        Each school&apos;s invoice is due this many days after
+                        your supervisor approves the assessment.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Tier fees */}
+                <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
+                  <div className="px-6 py-4 border-b border-gray-100 bg-gray-50">
+                    <h2 className="text-sm font-bold text-gray-700">
+                      Fee per Category
+                    </h2>
+                    <p className="text-xs text-gray-400 mt-0.5">
+                      Leave a type blank to exclude it from this assessment
                     </p>
                   </div>
-                )}
+                  <div className="px-6 py-5 space-y-4">
+                    {[
+                      { tier: 1 as const, fee: tier1Fee, setFee: setTier1Fee },
+                      { tier: 2 as const, fee: tier2Fee, setFee: setTier2Fee },
+                      { tier: 3 as const, fee: tier3Fee, setFee: setTier3Fee },
+                    ].map(({ tier, fee, setFee }) => {
+                      const config = TIER_CONFIG[tier];
+                      const count = tierSummary
+                        ? tier === 1
+                          ? tierSummary.tier1.count
+                          : tier === 2
+                            ? tierSummary.tier2.count
+                            : tierSummary.tier3.count
+                        : 0;
 
-                {/* Send button */}
-                <button
-                  onClick={() => setShowConfirm(true)}
-                  disabled={!isFormReady}
-                  className="w-full flex items-center justify-center gap-2 bg-[#1a5c2e] hover:bg-[#166534] text-white font-bold py-3 rounded-xl text-sm transition disabled:opacity-40 disabled:cursor-not-allowed mt-2"
-                >
-                  <Send className="w-4 h-4" />
-                  Submit for Review
-                </button>
-                {!isFormReady && (
-                  <p className="text-[10px] text-gray-400 text-center">
-                    Add a title and at least one tier fee to continue
-                  </p>
-                )}
-              </div>
-            </div>
-          </div>
-        </div>
+                      return (
+                        <div
+                          key={tier}
+                          className={`rounded-xl border-2 p-4 ${config.color}`}
+                        >
+                          <div className="flex items-center justify-between mb-3">
+                            <div>
+                              <p className="text-sm font-bold text-gray-800">
+                                {config.label}
+                              </p>
+                              <p className="text-xs text-gray-500">
+                                {config.desc}
+                              </p>
+                            </div>
+                            <span
+                              className={`text-xs font-bold px-2.5 py-1 rounded-full ${config.badge}`}
+                            >
+                              {count} school{count !== 1 ? "s" : ""}
+                            </span>
+                          </div>
+                          <div className="relative">
+                            <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-500 text-sm font-semibold">
+                              ₦
+                            </span>
+                            <input
+                              type="number"
+                              placeholder="0.00"
+                              value={fee}
+                              min="0"
+                              onChange={(e) => {
+                                const value = e.target.value;
 
-        {/* ── Assessment History ─────────────────────────────────────────── */}
-        {assessments.length > 0 && (
-          <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
-            <div className="px-6 py-4 border-b border-gray-100 bg-gray-50 flex items-center justify-between">
-              <h2 className="text-sm font-bold text-gray-700 uppercase tracking-widest">
-                Assessment History
-              </h2>
-              <span className="text-xs text-gray-400">
-                {assessments.length} total
-              </span>
-            </div>
-            <div className="divide-y divide-gray-100">
-              {assessments.map((a) => {
-                const paidPct =
-                  a.invoice_count > 0
-                    ? Math.round((a.paid_count / a.invoice_count) * 100)
-                    : 0;
+                                // Prevent negative values
+                                if (Number(value) >= 0 || value === "") {
+                                  setFee(value);
+                                }
+                              }}
+                              onWheel={(e) => e.currentTarget.blur()} // Prevent scroll wheel changing value
+                              className="w-full pl-8 pr-4 py-2.5 bg-white border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-green-500 appearance-none"
+                            />
+                            {/* still check this the arrows still affect the value */}
 
-                return (
-                  <div
-                    key={a.id}
-                    className="px-6 py-4 hover:bg-gray-50 transition"
-                  >
-                    <div className="flex items-start justify-between gap-4 flex-wrap">
-                      <div className="min-w-0">
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <p className="text-sm font-bold text-gray-800">
-                            {a.title}
-                          </p>
-                          <span
-                            className={`text-[10px] font-bold px-2 py-0.5 rounded-full uppercase border ${
-                              a.status === "approved" || a.status === "sent"
-                                ? "text-green-700 bg-green-100 border-green-200"
-                                : a.status === "rejected"
-                                  ? "text-red-700 bg-red-100 border-red-200"
-                                  : "text-amber-700 bg-amber-100 border-amber-200"
-                            }`}
+                            {/* <select
+                            value={fee}
+                            onChange={(e) => setFee(e.target.value)}
+                            className="w-full pl-4 pr-4 py-2.5 bg-white border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
                           >
-                            {a.status === "pending_approval"
-                              ? "Pending Review"
-                              : a.status}
-                          </span>
-                        </div>
-                        <p className="text-xs text-gray-400 mt-0.5">
-                          {formatDate(a.created_at)} · {a.total_schools} schools
-                        </p>
-                        {a.status === "rejected" &&
-                          (a as Assessment & { rejection_reason?: string })
-                            .rejection_reason && (
-                            <p className="text-xs text-red-500 mt-1">
-                              Rejected:{" "}
-                              {
-                                (
-                                  a as Assessment & {
-                                    rejection_reason?: string;
-                                  }
-                                ).rejection_reason
-                              }
+                            <option value="">Select Amount</option>
+
+                            {Array.from({ length: 20 }, (_, i) => {
+                              const amount = (i + 1) * 50000;
+
+                              return (
+                                <option key={amount} value={amount}>
+                                  ₦{amount.toLocaleString()}
+                                </option>
+                              );
+                            })}
+                          </select> */}
+                          </div>
+                          {fee && count > 0 && (
+                            <p className="text-xs text-gray-500 mt-1.5">
+                              Subtotal:{" "}
+                              <span className="font-bold text-gray-700">
+                                ₦{(Number(fee) * count).toLocaleString()}
+                              </span>
                             </p>
                           )}
-                        <div className="flex items-center gap-3 mt-2 text-xs text-gray-500">
-                          {a.tier_1_fee && <span>T1: {fmt(a.tier_1_fee)}</span>}
-                          {a.tier_2_fee && <span>T2: {fmt(a.tier_2_fee)}</span>}
-                          {a.tier_3_fee && <span>T3: {fmt(a.tier_3_fee)}</span>}
                         </div>
-                      </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
 
-                      {/* Payment progress */}
-                      <div className="min-w-[140px]">
-                        <div className="flex items-center justify-between text-xs mb-1">
-                          <span className="text-gray-400">
-                            {a.paid_count}/{a.invoice_count} paid
-                          </span>
-                          <span className="font-bold text-green-600">
-                            {paidPct}%
-                          </span>
-                        </div>
-                        <div className="w-full bg-gray-100 rounded-full h-1.5">
-                          <div
-                            className="h-1.5 rounded-full bg-green-500"
-                            style={{ width: `${paidPct}%` }}
-                          />
-                        </div>
-                        <p className="text-[10px] text-gray-400 mt-1">
-                          {a.unpaid_count} outstanding
-                        </p>
-                      </div>
+              {/* ── Right — Preview + Send ───────────────────────────────────── */}
+              <div className="space-y-4">
+                {/* Preview card */}
+                <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden sticky top-6">
+                  <div className="px-5 py-4 border-b border-gray-100 bg-gray-50">
+                    <div className="flex items-center gap-2">
+                      <Eye className="w-4 h-4 text-gray-500" />
+                      <h3 className="text-sm font-bold text-gray-700">
+                        Preview
+                      </h3>
                     </div>
                   </div>
-                );
-              })}
+                  <div className="px-5 py-4 space-y-3">
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-gray-500">Institutions</span>
+                      <span className="font-black text-gray-800">
+                        {previewTotal}
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-gray-500">Total Invoice Value</span>
+                      <span className="font-black text-green-600">
+                        ₦{previewValue.toLocaleString()}
+                      </span>
+                    </div>
+
+                    {/* Per-tier breakdown */}
+                    {tierSummary && (
+                      <div className="pt-3 border-t border-gray-100 space-y-2">
+                        {[
+                          {
+                            tier: 1 as const,
+                            fee: tier1Fee,
+                            count: tierSummary.tier1.count,
+                          },
+                          {
+                            tier: 2 as const,
+                            fee: tier2Fee,
+                            count: tierSummary.tier2.count,
+                          },
+                          {
+                            tier: 3 as const,
+                            fee: tier3Fee,
+                            count: tierSummary.tier3.count,
+                          },
+                        ].map(({ tier, fee, count }) => (
+                          <div
+                            key={tier}
+                            className="flex items-center justify-between text-xs"
+                          >
+                            <div className="flex items-center gap-2">
+                              <span
+                                className={`w-2 h-2 rounded-full ${
+                                  tier === 1
+                                    ? "bg-blue-400"
+                                    : tier === 2
+                                      ? "bg-green-400"
+                                      : "bg-purple-400"
+                                }`}
+                              />
+                              <span className="text-gray-500">
+                                {TIER_CONFIG[tier].label} ({count})
+                              </span>
+                            </div>
+                            <span
+                              className={`font-semibold ${fee ? "text-gray-700" : "text-gray-300"}`}
+                            >
+                              {fee ? fmt(Number(fee)) : "excluded"}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    {/* Unassigned warning */}
+                    {tierSummary && tierSummary.unassigned.count > 0 && (
+                      <div className="flex items-start gap-2 bg-yellow-50 border border-yellow-100 rounded-xl px-3 py-2.5 mt-2">
+                        <AlertTriangle className="w-3.5 h-3.5 text-yellow-600 shrink-0 mt-0.5" />
+                        <p className="text-[10px] text-yellow-700 leading-relaxed">
+                          {tierSummary.unassigned.count} school
+                          {tierSummary.unassigned.count !== 1 ? "s" : ""}{" "}
+                          unassigned — they will not receive an invoice.
+                        </p>
+                      </div>
+                    )}
+
+                    {/* Send button */}
+                    <button
+                      onClick={() => setShowConfirm(true)}
+                      disabled={!isFormReady}
+                      className="w-full flex items-center justify-center gap-2 bg-[#1a5c2e] hover:bg-[#166534] text-white font-bold py-3 rounded-xl text-sm transition disabled:opacity-40 disabled:cursor-not-allowed mt-2"
+                    >
+                      <Send className="w-4 h-4" />
+                      Submit for Review
+                    </button>
+                    {!isFormReady && (
+                      <p className="text-[10px] text-gray-400 text-center">
+                        Add a title and at least one tier fee to continue
+                      </p>
+                    )}
+                  </div>
+                </div>
+              </div>
             </div>
-          </div>
-        )}
+          </TabsContent>
+
+          <TabsContent value="history" className="pt-6">
+            {history.isEmpty ? (
+              <div className="bg-white rounded-2xl border border-gray-200 shadow-sm px-6 py-12 text-center text-sm text-gray-400">
+                No assessments yet.
+              </div>
+            ) : (
+              <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
+                <div className="px-6 py-4 border-b border-gray-100 bg-gray-50 flex items-center justify-between">
+                  <h2 className="text-sm font-bold text-gray-700 uppercase tracking-widest">
+                    Assessment History
+                  </h2>
+                  <span className="text-xs text-gray-400">
+                    {history.counts?.all ?? 0} total
+                  </span>
+                </div>
+                <HistoryToolbar
+                  tab={history.tab}
+                  setTab={history.setTab}
+                  counts={history.counts}
+                  search={history.search}
+                  setSearch={history.setSearch}
+                  placeholder="Search title"
+                />
+                {assessments.length === 0 && (
+                  <p className="px-6 py-10 text-center text-sm text-gray-400">
+                    {history.loading ? "Loading..." : "No assessments match."}
+                  </p>
+                )}
+                <div
+                  className={`divide-y divide-gray-100 transition-opacity ${history.loading ? "opacity-50" : ""}`}
+                >
+                  {assessments.map((a) => {
+                    const paidPct =
+                      Number(a.total_invoices) > 0
+                        ? Math.round(
+                            (Number(a.paid_count) / Number(a.total_invoices)) *
+                              100,
+                          )
+                        : 0;
+
+                    return (
+                      <div
+                        key={a.id}
+                        className="px-6 py-4 hover:bg-gray-50 transition"
+                      >
+                        <div className="flex items-start justify-between gap-4 flex-wrap">
+                          <div className="min-w-0">
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <p className="text-sm font-bold text-gray-800">
+                                {a.title}
+                              </p>
+                              <span
+                                className={`text-[10px] font-bold px-2 py-0.5 rounded-full uppercase border ${
+                                  a.status === "approved" || a.status === "sent"
+                                    ? "text-green-700 bg-green-100 border-green-200"
+                                    : a.status === "rejected"
+                                      ? "text-red-700 bg-red-100 border-red-200"
+                                      : "text-amber-700 bg-amber-100 border-amber-200"
+                                }`}
+                              >
+                                {a.status === "pending_approval"
+                                  ? "Pending Review"
+                                  : a.status}
+                              </span>
+                            </div>
+                            <p className="text-xs text-gray-400 mt-0.5">
+                              {formatDate(a.created_at)} · {a.total_schools}{" "}
+                              schools
+                              {a.payment_days &&
+                                ` · ${a.payment_days} days to pay`}
+                            </p>
+                            {a.status === "rejected" &&
+                              (a as Assessment & { rejection_reason?: string })
+                                .rejection_reason && (
+                                <p className="text-xs text-red-500 mt-1">
+                                  Rejected:{" "}
+                                  {
+                                    (
+                                      a as Assessment & {
+                                        rejection_reason?: string;
+                                      }
+                                    ).rejection_reason
+                                  }
+                                </p>
+                              )}
+                            <div className="flex items-center gap-3 mt-2 text-xs text-gray-500">
+                              {a.tier_1_fee && (
+                                <span>T1: {fmt(a.tier_1_fee)}</span>
+                              )}
+                              {a.tier_2_fee && (
+                                <span>T2: {fmt(a.tier_2_fee)}</span>
+                              )}
+                              {a.tier_3_fee && (
+                                <span>T3: {fmt(a.tier_3_fee)}</span>
+                              )}
+                            </div>
+                          </div>
+
+                          {/* Payment progress */}
+                          <div className="min-w-[140px]">
+                            <div className="flex items-center justify-between text-xs mb-1">
+                              <span className="text-gray-400">
+                                {a.paid_count}/{a.total_invoices} paid
+                              </span>
+                              <span className="font-bold text-green-600">
+                                {paidPct}%
+                              </span>
+                            </div>
+                            <div className="w-full bg-gray-100 rounded-full h-1.5">
+                              <div
+                                className="h-1.5 rounded-full bg-green-500"
+                                style={{ width: `${paidPct}%` }}
+                              />
+                            </div>
+                            <p className="text-[10px] text-gray-400 mt-1">
+                              {a.unpaid_count} outstanding
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+                <HistoryPager
+                  page={history.page}
+                  pageSize={history.pageSize}
+                  total={history.total}
+                  setPage={history.setPage}
+                />
+              </div>
+            )}
+          </TabsContent>
+        </Tabs>
       </div>
 
       {/* ── Confirmation Modal ─────────────────────────────────────────────── */}
@@ -625,14 +707,12 @@ export default function AssessmentPage() {
                   ₦{previewValue.toLocaleString()}
                 </span>
               </div>
-              {dueDate && (
-                <div className="flex justify-between text-sm">
-                  <span className="text-gray-500">Due Date</span>
-                  <span className="font-semibold text-gray-800">
-                    {formatDate(dueDate)}
-                  </span>
-                </div>
-              )}
+              <div className="flex justify-between text-sm">
+                <span className="text-gray-500">Days to Pay</span>
+                <span className="font-semibold text-gray-800">
+                  {paymentDays} days after approval
+                </span>
+              </div>
             </div>
 
             <p className="text-xs text-gray-400 mb-5 leading-relaxed">

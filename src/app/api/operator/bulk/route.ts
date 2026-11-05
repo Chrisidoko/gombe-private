@@ -3,26 +3,46 @@ import { NextResponse } from "next/server";
 import pool from "@/lib/db";
 import { getUserFromCookie } from "@/lib/auth";
 import { requireRole } from "@/lib/apiAuth";
+import { COUNTS_SQL, HISTORY_PAGE_SIZE, readHistoryParams } from "@/lib/historyPage";
 
-// ── GET — fetch all schoolkano_bulk_assessments with invoice counts ───────────────────────────
-export async function GET() {
+const DEFAULT_PAYMENT_DAYS = 30;
+
+// ── GET — one page of bulk assessments with invoice counts ────────────────────
+// See lib/historyPage.ts for the status, page and q params.
+export async function GET(req: Request) {
   const denied = await requireRole("CBS_Operator");
   if (denied) return denied;
 
+  const { page, offset, search, statuses, tab } = readHistoryParams(req);
+
   try {
-    const result = await pool.query(`
-      SELECT
+    const counts = await pool.query(
+      `SELECT ${COUNTS_SQL} FROM schoolkano_bulk_assessments
+       WHERE ($1 = '' OR title ILIKE $1)`,
+      [search],
+    );
+    const result = await pool.query(
+      `SELECT
         a.*,
         COUNT(i.id)                                     AS total_invoices,
         COUNT(i.id) FILTER (WHERE i.status = 'Paid')   AS paid_count,
         COUNT(i.id) FILTER (WHERE i.status = 'Unpaid') AS unpaid_count
       FROM schoolkano_bulk_assessments a
       LEFT JOIN schoolkano_invoices i ON i.bulk_assessment_id = a.id
+      WHERE ($1 = '' OR a.title ILIKE $1) AND ($2::text[] IS NULL OR a.status = ANY($2))
       GROUP BY a.id
       ORDER BY a.created_at DESC
-    `);
+      LIMIT $3 OFFSET $4`,
+      [search, statuses, HISTORY_PAGE_SIZE, offset],
+    );
 
-    return NextResponse.json(result.rows);
+    return NextResponse.json({
+      items: result.rows,
+      counts: counts.rows[0],
+      total: counts.rows[0][tab],
+      page,
+      pageSize: HISTORY_PAGE_SIZE,
+    });
   } catch (error) {
     console.error("Assessments fetch failed:", error);
     return NextResponse.json(
@@ -47,11 +67,20 @@ export async function POST(req: Request) {
       tier_1_fee,
       tier_2_fee,
       tier_3_fee,
-      due_date,
+      payment_days,
     } = await req.json();
 
     if (!title) {
       return NextResponse.json({ error: "Title is required" }, { status: 400 });
+    }
+
+    // Days schools get to pay, counted from Operator 2's approval
+    const paymentDays = Number(payment_days ?? DEFAULT_PAYMENT_DAYS);
+    if (!Number.isInteger(paymentDays) || paymentDays < 1 || paymentDays > 365) {
+      return NextResponse.json(
+        { error: "Days to pay must be a whole number from 1 to 365" },
+        { status: 400 },
+      );
     }
 
     if (!tier_1_fee && !tier_2_fee && !tier_3_fee) {
@@ -94,8 +123,8 @@ export async function POST(req: Request) {
     const assessmentResult = await client.query(
       `INSERT INTO schoolkano_bulk_assessments
          (title, description, tier_1_fee, tier_2_fee, tier_3_fee,
-          total_schools, created_by, status)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, 'pending_approval')
+          total_schools, created_by, status, payment_days)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, 'pending_approval', $8)
        RETURNING id`,
       [
         title,
@@ -105,6 +134,7 @@ export async function POST(req: Request) {
         tier_3_fee || null,
         schools.length,
         user.name || "operator",
+        paymentDays,
       ],
     );
 

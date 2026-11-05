@@ -60,8 +60,11 @@ export default function Transactions() {
   // );
   // const [drawerOpen, setDrawerOpen] = useState(false);
 
+  // Re-fetch whenever the filters change. fetchTransactions is recreated on
+  // every render, so listing it would re-fetch in a loop.
   useEffect(() => {
     fetchTransactions();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [filters]);
 
   const fetchTransactions = async () => {

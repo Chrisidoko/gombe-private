@@ -24,6 +24,8 @@ export async function generateUniquePaymentReference(): Promise<string> {
        UNION ALL
        SELECT 1 FROM annual_notice_lines WHERE reference = $1
        UNION ALL
+       SELECT 1 FROM paye_returns WHERE reference = $1
+       UNION ALL
        SELECT 1 FROM transactionskano WHERE reference = $1
        LIMIT 1`,
       [candidate],

@@ -11,6 +11,7 @@ import {
   reconcileFeePayment,
   reconcileInvoicePayment,
   reconcileNoticeLine,
+  reconcilePayeReturn,
 } from "@/lib/reconcileEtransact";
 
 export const runtime = "nodejs"; // needs node crypto + pg
@@ -150,6 +151,21 @@ export async function POST(req: NextRequest) {
       const { isPaid } = await reconcileNoticeLine(lineRes.rows[0].id);
       console.log(
         `[etransact-webhook] ${ts()} RECONCILED type=notice id=${lineRes.rows[0].id} isPaid=${isPaid} transRef=${transRef}`,
+      );
+      return NextResponse.json({ received: true, isPaid }, { status: 200 });
+    }
+
+    const payeRes = await pool.query(
+      `SELECT id FROM paye_returns
+       WHERE credo_reference = $1 OR reference = $2
+       LIMIT 1`,
+      [transRef ?? null, businessRef ?? null],
+    );
+
+    if (payeRes.rows[0]) {
+      const { isPaid } = await reconcilePayeReturn(payeRes.rows[0].id);
+      console.log(
+        `[etransact-webhook] ${ts()} RECONCILED type=paye id=${payeRes.rows[0].id} isPaid=${isPaid} transRef=${transRef}`,
       );
       return NextResponse.json({ received: true, isPaid }, { status: 200 });
     }

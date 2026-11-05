@@ -4,6 +4,7 @@
 import { NextResponse } from "next/server";
 import pool from "@/lib/db";
 import { getUserFromCookie } from "@/lib/auth";
+import { COUNTS_SQL, HISTORY_PAGE_SIZE, readHistoryParams } from "@/lib/historyPage";
 
 export async function POST(req: Request) {
   const user = await getUserFromCookie();
@@ -78,17 +79,35 @@ export async function POST(req: Request) {
 }
 
 // GET — Op1 can see their own submitted notices and their statuses
-export async function GET() {
+// One page at a time; see lib/historyPage.ts for the status, page and q params.
+export async function GET(req: Request) {
   const user = await getUserFromCookie();
   if (!user || user.institution !== "CBS_Operator") {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
+  const { page, offset, search, statuses, tab } = readHistoryParams(req);
+  const matches = `($1 = '' OR title ILIKE $1 OR school_name ILIKE $1)`;
+
   try {
-    const { rows } = await pool.query(
-      `SELECT * FROM pending_demand_notices ORDER BY created_at DESC`,
+    const counts = await pool.query(
+      `SELECT ${COUNTS_SQL} FROM pending_demand_notices WHERE ${matches}`,
+      [search],
     );
-    return NextResponse.json(rows);
+    const { rows } = await pool.query(
+      `SELECT * FROM pending_demand_notices
+       WHERE ${matches} AND ($2::text[] IS NULL OR status = ANY($2))
+       ORDER BY created_at DESC
+       LIMIT $3 OFFSET $4`,
+      [search, statuses, HISTORY_PAGE_SIZE, offset],
+    );
+    return NextResponse.json({
+      items: rows,
+      counts: counts.rows[0],
+      total: counts.rows[0][tab],
+      page,
+      pageSize: HISTORY_PAGE_SIZE,
+    });
   } catch (error) {
     console.error("Demand notices fetch failed:", error);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });

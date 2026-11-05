@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo, useRef } from "react";
 import {
   Loader2,
   CheckCircle,
@@ -9,6 +9,7 @@ import {
   Clock,
   AlertTriangle,
   Send,
+  RotateCcw,
 } from "lucide-react";
 import toast from "react-hot-toast";
 import { School } from "@/lib/types";
@@ -87,6 +88,41 @@ type FormData = {
   license_claim: string;
 };
 
+// The Academic fields. Once a school is approved these only change through a
+// Ministry re-approval, never through Save Profile.
+const ACADEMIC_KEYS = [
+  "modeOfOperation",
+  "avgFee",
+  "totalRevenue",
+  "academicSession",
+  "sessionStart",
+  "sessionEnd",
+  "programmes",
+  "courses",
+  "totalStudents",
+  "enrollmentSnapshotDate",
+  "graduatedCount",
+] as const;
+type AcademicFields = Pick<FormData, (typeof ACADEMIC_KEYS)[number]>;
+
+function academicFromSchool(school: School): AcademicFields {
+  return {
+    modeOfOperation: school.mode_of_operation ?? [],
+    avgFee: school.avg_fee ?? "",
+    totalRevenue: school.total_revenue ?? "",
+    academicSession: school.academic_session ?? "2025/2026",
+    sessionStart: school.session_start ?? "",
+    sessionEnd: school.session_end ?? "",
+    programmes: school.programmes ?? [],
+    courses: (school.courses ?? []).map((c) =>
+      typeof c === "string" ? { name: c, accredited: true } : c,
+    ),
+    totalStudents: school.total_students?.toString() ?? "",
+    enrollmentSnapshotDate: school.enrollment_snapshot_date ?? "",
+    graduatedCount: school.graduated_count?.toString() ?? "",
+  };
+}
+
 const lgas = [
   "Akko",
   "Balanga",
@@ -121,20 +157,7 @@ export default function SchoolProfileForm({
     lastTaxFiling: schoolData.last_tax_filing ?? "",
     category: schoolData.category ?? "",
     website: schoolData.website ?? "",
-    modeOfOperation: schoolData.mode_of_operation ?? [],
-    avgFee: schoolData.avg_fee ?? "",
-    totalRevenue: schoolData.total_revenue ?? "",
-    academicSession: schoolData.academic_session ?? "2025/2026",
-    // weeksPerSemester: "",
-    sessionStart: schoolData.session_start ?? "",
-    sessionEnd: schoolData.session_end ?? "",
-    programmes: schoolData.programmes ?? [],
-    courses: (schoolData.courses ?? []).map((c) =>
-      typeof c === "string" ? { name: c, accredited: true } : c,
-    ),
-    totalStudents: schoolData.total_students?.toString() ?? "",
-    enrollmentSnapshotDate: schoolData.enrollment_snapshot_date ?? "",
-    graduatedCount: schoolData.graduated_count?.toString() ?? "",
+    ...academicFromSchool(schoolData),
     vcName: schoolData.vc_name ?? "",
     gsmNo: schoolData.gsm_no ?? "",
     yearEstablished: schoolData.year_established?.toString() ?? "",
@@ -163,6 +186,35 @@ export default function SchoolProfileForm({
     useState<AcademicChangeRequest | null>(null);
   const [academicSubmitLoading, setAcademicSubmitLoading] = useState(false);
   const [withdrawLoading, setWithdrawLoading] = useState(false);
+  const [showAcademicPrompt, setShowAcademicPrompt] = useState(false);
+
+  // Academic edits on an approved school that haven't been sent for
+  // re-approval. Save Profile doesn't save these, so the user is warned.
+  const approvedAcademic = useMemo(
+    () => academicFromSchool(schoolData),
+    [schoolData],
+  );
+  const academicDirty =
+    isApproved &&
+    !pendingRequest &&
+    ACADEMIC_KEYS.some(
+      (k) =>
+        JSON.stringify(formData[k]) !== JSON.stringify(approvedAcademic[k]),
+    );
+
+  // Set just before the page reloads itself after saving
+  const reloading = useRef(false);
+  useEffect(() => {
+    if (!academicDirty) return;
+    const warn = (e: BeforeUnloadEvent) => {
+      if (!reloading.current) e.preventDefault();
+    };
+    window.addEventListener("beforeunload", warn);
+    return () => window.removeEventListener("beforeunload", warn);
+  }, [academicDirty]);
+
+  const discardAcademicChanges = () =>
+    setFormData((prev) => ({ ...prev, ...approvedAcademic }));
 
   // When the school is approved, check for any pending academic change request
   useEffect(() => {
@@ -212,9 +264,11 @@ export default function SchoolProfileForm({
   };
 
   // Submit academic section changes for re-approval
+  // Saves the rest of the profile too, so nothing edited elsewhere is lost
   const handleAcademicSubmit = async () => {
     setAcademicSubmitLoading(true);
     try {
+      await saveProfile();
       const requested_changes: AcademicSnapshot = {
         mode_of_operation: formData.modeOfOperation,
         avg_fee: formData.avgFee,
@@ -236,7 +290,10 @@ export default function SchoolProfileForm({
       const data = await res.json();
       if (!res.ok) throw new Error(data.message || "Failed to submit");
       setPendingRequest(data.request);
-      toast.success("Academic changes submitted for ministry review.");
+      setShowAcademicPrompt(false);
+      toast.success(
+        "Profile saved and academic changes submitted for ministry review.",
+      );
     } catch (error) {
       toast.error(
         error instanceof Error ? error.message : "Failed to submit changes",
@@ -256,22 +313,7 @@ export default function SchoolProfileForm({
       if (!res.ok) throw new Error("Failed to withdraw");
       setPendingRequest(null);
       // Reset academic fields back to the currently approved values
-      setFormData((prev) => ({
-        ...prev,
-        modeOfOperation: schoolData.mode_of_operation ?? [],
-        avgFee: schoolData.avg_fee ?? "",
-        totalRevenue: schoolData.total_revenue ?? "",
-        academicSession: schoolData.academic_session ?? "2025/2026",
-        sessionStart: schoolData.session_start ?? "",
-        sessionEnd: schoolData.session_end ?? "",
-        programmes: schoolData.programmes ?? [],
-        courses: (schoolData.courses ?? []).map((c) =>
-          typeof c === "string" ? { name: c, accredited: true } : c,
-        ),
-        totalStudents: schoolData.total_students?.toString() ?? "",
-        enrollmentSnapshotDate: schoolData.enrollment_snapshot_date ?? "",
-        graduatedCount: schoolData.graduated_count?.toString() ?? "",
-      }));
+      discardAcademicChanges();
       toast.success("Change request withdrawn.");
     } catch {
       toast.error("Failed to withdraw request.");
@@ -280,53 +322,59 @@ export default function SchoolProfileForm({
     }
   };
 
-  const handleSubmit = async () => {
+  // Posts the profile. When approved, only the non-academic fields are sent;
+  // academic changes go through re-approval (the API ignores them anyway).
+  const saveProfile = async () => {
+    const payload = isApproved
+      ? {
+          proprietorName: formData.proprietorName,
+          proprietorNin: formData.proprietorNin,
+          propertyType: formData.propertyType,
+          contact_person: formData.contact_person,
+          contact_person_phone: formData.contact_person_phone,
+          contact_person_designation: formData.contact_person_designation,
+          ownershipType: formData.ownershipType,
+          address: formData.address,
+          lga: formData.lga,
+          locationType: formData.locationType,
+          tin: formData.tin,
+          lastTaxFiling: formData.lastTaxFiling,
+          category: formData.category,
+          website: formData.website,
+          license_claim: formData.license_claim,
+          vcName: formData.vcName,
+          gsmNo: formData.gsmNo,
+          yearEstablished: formData.yearEstablished,
+          labStatus: formData.labStatus,
+          libraryStatus: formData.libraryStatus,
+          boardMembers: formData.boardMembers,
+          academicStaff: formData.academicStaff,
+          nonAcademicStaff: formData.nonAcademicStaff,
+        }
+      : formData;
+
+    const res = await fetch("/api/schools/profile", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      throw new Error(data.message || "Failed to update profile");
+    }
+  };
+
+  const handleSubmit = async ({ discardAcademic = false } = {}) => {
+    if (academicDirty && !discardAcademic) {
+      setShowAcademicPrompt(true);
+      return;
+    }
     setLoading(true);
 
     try {
-      // When approved, only send non-academic fields — academic changes go through re-approval
-      const payload = isApproved
-        ? {
-            proprietorName: formData.proprietorName,
-            proprietorNin: formData.proprietorNin,
-            propertyType: formData.propertyType,
-            contact_person: formData.contact_person,
-            contact_person_phone: formData.contact_person_phone,
-            contact_person_designation: formData.contact_person_designation,
-            ownershipType: formData.ownershipType,
-            address: formData.address,
-            lga: formData.lga,
-            locationType: formData.locationType,
-            tin: formData.tin,
-            lastTaxFiling: formData.lastTaxFiling,
-            category: formData.category,
-            website: formData.website,
-            license_claim: formData.license_claim,
-            vcName: formData.vcName,
-            gsmNo: formData.gsmNo,
-            yearEstablished: formData.yearEstablished,
-            labStatus: formData.labStatus,
-            libraryStatus: formData.libraryStatus,
-            boardMembers: formData.boardMembers,
-            academicStaff: formData.academicStaff,
-            nonAcademicStaff: formData.nonAcademicStaff,
-          }
-        : formData;
-
-      const res = await fetch("/api/schools/profile", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
-
-      const data = await res.json();
-
-      if (!res.ok) {
-        throw new Error(data.message || "Failed to update profile");
-      }
-
+      await saveProfile();
       toast.success("Profile updated successfully!");
-
+      reloading.current = true;
       window.location.reload();
     } catch (error) {
       console.error("Error:", error);
@@ -446,7 +494,7 @@ export default function SchoolProfileForm({
                 className="flex flex-col items-center gap-1 group flex-1 min-w-0"
               >
                 <div
-                  className={`w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold transition-all ${
+                  className={`relative w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold transition-all ${
                     activeSection === step.id
                       ? "bg-green-600 text-white shadow-md"
                       : stepComplete[step.id]
@@ -458,6 +506,12 @@ export default function SchoolProfileForm({
                     <CheckCircle className="w-4 h-4" />
                   ) : (
                     <span>{index + 1}</span>
+                  )}
+                  {step.id === "academic" && academicDirty && (
+                    <span
+                      className="absolute -top-0.5 -right-0.5 h-3 w-3 rounded-full bg-amber-500 ring-2 ring-white"
+                      title="Changes not yet submitted for re-approval"
+                    />
                   )}
                 </div>
                 <span
@@ -1082,11 +1136,13 @@ export default function SchoolProfileForm({
                         }`}
                       >
                         {course.name}
-                        <span className={`text-xs font-semibold px-1.5 py-0.5 rounded-full ${
-                          course.accredited
-                            ? "bg-green-200 text-green-800"
-                            : "bg-red-200 text-red-800"
-                        }`}>
+                        <span
+                          className={`text-xs font-semibold px-1.5 py-0.5 rounded-full ${
+                            course.accredited
+                              ? "bg-green-200 text-green-800"
+                              : "bg-red-200 text-red-800"
+                          }`}
+                        >
                           {course.accredited ? "Accredited" : "Not Accredited"}
                         </span>
                         {!(isApproved && !!pendingRequest) && (
@@ -1163,44 +1219,20 @@ export default function SchoolProfileForm({
                       </button>
                     </div>
                     <p className="text-xs text-gray-400 mt-1.5">
-                      Type a course name then click the green or red button to set its accreditation status.
+                      Type a course name then click the green or red button to
+                      set its accreditation status.
                     </p>
                   </>
                 )}
               </div>
 
-              {/* Re-approval action buttons */}
-              {isApproved && (
-                <div className="flex justify-end pt-2 border-t border-gray-100">
-                  {pendingRequest ? (
-                    <button
-                      type="button"
-                      onClick={handleWithdraw}
-                      disabled={withdrawLoading}
-                      className="px-4 py-2 text-sm border border-red-300 text-red-600 rounded-lg hover:bg-red-50 transition-colors disabled:opacity-50 flex items-center gap-2"
-                    >
-                      {withdrawLoading ? (
-                        <Loader2 className="w-4 h-4 animate-spin" />
-                      ) : (
-                        <X className="w-4 h-4" />
-                      )}
-                      Withdraw Request
-                    </button>
-                  ) : (
-                    <button
-                      type="button"
-                      onClick={handleAcademicSubmit}
-                      disabled={academicSubmitLoading}
-                      className="px-4 py-2 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 flex items-center gap-2"
-                    >
-                      {academicSubmitLoading ? (
-                        <Loader2 className="w-4 h-4 animate-spin" />
-                      ) : (
-                        <Send className="w-4 h-4" />
-                      )}
-                      Submit for Re-approval
-                    </button>
-                  )}
+              {academicDirty && (
+                <div className="flex items-center gap-2 bg-amber-50 border border-amber-200 rounded-lg px-4 py-2.5">
+                  <AlertTriangle className="w-4 h-4 text-amber-500 shrink-0" />
+                  <p className="text-xs text-amber-700 font-medium">
+                    You have academic changes not yet submitted. They are only
+                    saved when you click Submit for Re-approval.
+                  </p>
                 </div>
               )}
             </div>
@@ -1323,9 +1355,7 @@ export default function SchoolProfileForm({
                         onChange={() => handleChange("license_claim", option)}
                         className="w-4 h-4 text-purple-600"
                       />
-                      <span className="font-medium text-gray-900">
-                        {label}
-                      </span>
+                      <span className="font-medium text-gray-900">{label}</span>
                     </label>
                   ))}
                 </div>
@@ -1667,44 +1697,155 @@ export default function SchoolProfileForm({
           )}
         </div>
 
-        {/* Step navigation */}
-        <div className="flex items-center justify-between">
-          <button
-            type="button"
-            onClick={prevStep}
-            disabled={currentStepIndex <= 0}
-            className="px-5 py-2.5 border-2 text-sm border-gray-300 text-gray-700 font-semibold rounded-lg hover:bg-gray-50 transition-all flex items-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed"
-          >
-            ← Previous
-          </button>
-          <button
-            type="button"
-            onClick={handleSubmit}
-            disabled={loading}
-            className="px-8 py-2.5 text-sm bg-gradient-to-r from-green-600 to-emerald-600 text-white font-semibold rounded-lg hover:from-green-700 hover:to-emerald-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
-          >
-            {loading ? (
-              <>
-                <Loader2 className="w-4 h-4 animate-spin" />
-                Saving...
-              </>
-            ) : (
-              <>
-                <Save className="w-4 h-4" />
-                Save Profile
-              </>
+        {/* Step navigation on the left, the step's save action on its own at
+            the right. On phones the action sits on top, full width. */}
+        <div className="flex flex-col-reverse gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-center gap-2">
+            {currentStepIndex > 0 && (
+              <button
+                type="button"
+                onClick={prevStep}
+                className="flex-1 sm:flex-none px-5 py-2.5 border-2 text-sm border-gray-300 text-gray-700 font-semibold rounded-lg hover:bg-gray-50 transition-all flex items-center justify-center gap-2"
+              >
+                ← Previous
+              </button>
             )}
-          </button>
-          <button
-            type="button"
-            onClick={nextStep}
-            disabled={currentStepIndex >= STEPS.length - 1}
-            className="px-5 py-2.5 border-2 text-sm border-gray-300 text-gray-700 font-semibold rounded-lg hover:bg-gray-50 transition-all flex items-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed"
-          >
-            Next →
-          </button>
+            {currentStepIndex < STEPS.length - 1 && (
+              <button
+                type="button"
+                onClick={nextStep}
+                className="flex-1 sm:flex-none px-5 py-2.5 border-2 text-sm border-gray-300 text-gray-700 font-semibold rounded-lg hover:bg-gray-50 transition-all flex items-center justify-center gap-2"
+              >
+                Next →
+              </button>
+            )}
+          </div>
+          {isApproved && activeSection === "academic" ? (
+            pendingRequest ? (
+              <button
+                type="button"
+                onClick={handleWithdraw}
+                disabled={withdrawLoading}
+                className="justify-center px-6 py-2.5 text-sm border-2 border-red-300 text-red-600 font-semibold rounded-lg hover:bg-red-50 transition-colors disabled:opacity-50 flex items-center gap-2"
+              >
+                {withdrawLoading ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <X className="w-4 h-4" />
+                )}
+                Withdraw Request
+              </button>
+            ) : (
+              <div className="flex flex-col-reverse sm:flex-row sm:items-center gap-2">
+                {academicDirty && (
+                  <button
+                    type="button"
+                    onClick={discardAcademicChanges}
+                    className="justify-center px-4 py-2.5 text-sm border-2 border-gray-300 text-gray-700 font-semibold rounded-lg hover:bg-gray-50 transition-all flex items-center gap-2"
+                  >
+                    <RotateCcw className="w-4 h-4" />
+                    Discard changes
+                  </button>
+                )}
+                <button
+                  type="button"
+                  onClick={handleAcademicSubmit}
+                  disabled={!academicDirty || academicSubmitLoading}
+                  title={
+                    academicDirty
+                      ? undefined
+                      : "Change something in this section first"
+                  }
+                  className="justify-center px-6 py-2.5 text-sm bg-gradient-to-r from-green-600 to-emerald-600 text-white font-semibold rounded-lg hover:from-green-700 hover:to-emerald-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                >
+                  {academicSubmitLoading ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <Send className="w-4 h-4" />
+                  )}
+                  Submit for Re-approval
+                </button>
+              </div>
+            )
+          ) : (
+            <button
+              type="button"
+              onClick={() => handleSubmit()}
+              disabled={loading}
+              className="justify-center px-8 py-2.5 text-sm bg-gradient-to-r from-green-600 to-emerald-600 text-white font-semibold rounded-lg hover:from-green-700 hover:to-emerald-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+            >
+              {loading ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  Saving...
+                </>
+              ) : (
+                <>
+                  <Save className="w-4 h-4" />
+                  Save Profile
+                </>
+              )}
+            </button>
+          )}
         </div>
       </form>
+
+      {showAcademicPrompt && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 space-y-4">
+            <div className="flex items-start gap-3">
+              <AlertTriangle className="w-5 h-5 text-amber-500 shrink-0 mt-0.5" />
+              <div>
+                <h3 className="text-base font-bold text-gray-900">
+                  Academic changes not submitted
+                </h3>
+                <p className="text-sm text-gray-500 mt-1">
+                  Your Academic changes need Ministry re-approval and won&apos;t
+                  be saved with the rest of your profile.
+                </p>
+              </div>
+            </div>
+            <div className="space-y-2">
+              <button
+                type="button"
+                onClick={handleAcademicSubmit}
+                disabled={academicSubmitLoading}
+                className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl bg-green-600 hover:bg-green-700 text-white text-sm font-bold disabled:opacity-50"
+              >
+                {academicSubmitLoading ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <Send className="w-4 h-4" />
+                )}
+                Save profile and submit academic changes
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setShowAcademicPrompt(false);
+                  discardAcademicChanges();
+                  handleSubmit({ discardAcademic: true });
+                }}
+                disabled={academicSubmitLoading}
+                className="w-full py-2.5 rounded-xl border border-gray-200 text-sm font-medium text-gray-700 hover:bg-gray-50"
+              >
+                Discard academic changes and save
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setShowAcademicPrompt(false);
+                  setActiveSection("academic");
+                }}
+                disabled={academicSubmitLoading}
+                className="w-full py-2.5 text-sm font-medium text-gray-500 hover:text-gray-700"
+              >
+                Keep editing
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

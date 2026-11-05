@@ -47,6 +47,8 @@ export default function VerifyForm() {
       setLicense(licenseParam);
       handleVerifyWithValue(licenseParam); // trigger immediately
     }
+    // Only on first load, from the link that opened the page
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Extracted so it can be called with a direct value (not relying on state)

@@ -13,6 +13,10 @@ cloudinary.config({
 });
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024;
+// Tax declaration evidence has a lower cap than other documents
+const MAX_SIZE_BY_TYPE: Record<string, number> = {
+  tax_declaration: 5 * 1024 * 1024,
+};
 const ALLOWED_TYPES = ["application/pdf", "image/jpeg", "image/png"];
 
 export async function POST(req: Request) {
@@ -30,9 +34,13 @@ export async function POST(req: Request) {
       );
     }
 
-    if (!ALLOWED_TYPES.includes(file.type) || file.size > MAX_FILE_SIZE) {
+    const maxSize = MAX_SIZE_BY_TYPE[type] ?? MAX_FILE_SIZE;
+    if (!ALLOWED_TYPES.includes(file.type) || file.size > maxSize) {
       return NextResponse.json(
-        { success: false, message: "Upload a PDF, JPG or PNG under 10MB." },
+        {
+          success: false,
+          message: `Upload a PDF, JPG or PNG under ${maxSize / (1024 * 1024)}MB.`,
+        },
         { status: 400 }
       );
     }

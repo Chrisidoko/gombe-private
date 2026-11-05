@@ -13,13 +13,10 @@ import {
 import { cx, focusRing } from "@/lib/utils";
 import React from "react";
 
-import { useRouter } from "next/navigation";
-
 function DropdownUserProfile() {
-  const [mounted, setMounted] = React.useState(false);
-  const [email, setEmail] = React.useState("");
-  const [initials, setInitials] = React.useState("U");
-  const router = useRouter();
+  const [mounted] = React.useState(false);
+  const [email] = React.useState("");
+  const [initials] = React.useState("U");
 
   //   React.useEffect(() => {
   //     setMounted(true);

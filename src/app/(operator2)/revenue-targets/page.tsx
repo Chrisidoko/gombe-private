@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
-import { Loader2, Save, Target, CheckCircle2 } from "lucide-react";
+import { CheckCircle2, Loader2, RotateCcw, Save } from "lucide-react";
 import toast from "react-hot-toast";
 
 type TargetRow = {
@@ -15,13 +15,16 @@ type TargetRow = {
   updated_at: string;
 };
 
-type QuarterForm = {
+// The whole year is edited at once; saved* hold what the server has, so a row
+// knows whether it has unsaved changes.
+type QuarterRow = {
   quarter: number;
   label: string;
   period: string;
   target: string;
   notes: string;
-  saved: boolean;
+  savedTarget: string;
+  savedNotes: string;
 };
 
 const QUARTER_META: Record<number, { label: string; period: string }> = {
@@ -31,24 +34,61 @@ const QUARTER_META: Record<number, { label: string; period: string }> = {
   4: { label: "Q4", period: "Oct – Dec" },
 };
 
-function emptyForm(): QuarterForm[] {
+const naira = (n: number) => `₦${n.toLocaleString()}`;
+
+function emptyRows(): QuarterRow[] {
   return [1, 2, 3, 4].map((q) => ({
     quarter: q,
     label: QUARTER_META[q].label,
     period: QUARTER_META[q].period,
     target: "",
     notes: "",
-    saved: false,
+    savedTarget: "",
+    savedNotes: "",
   }));
 }
+
+const isDirty = (r: QuarterRow) =>
+  r.target !== r.savedTarget || r.notes.trim() !== r.savedNotes;
+
+function rowProblem(r: QuarterRow) {
+  if (!isDirty(r)) return null;
+  if (r.target === "")
+    return r.savedTarget
+      ? "A saved target can't be emptied"
+      : "Enter an amount";
+  const n = Number(r.target);
+  if (Number.isNaN(n) || n < 0) return "Enter a valid amount";
+  return null;
+}
+
+function Status({ row }: { row: QuarterRow }) {
+  if (isDirty(row))
+    return (
+      <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-amber-600">
+        <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
+        Unsaved
+      </span>
+    );
+  if (row.savedTarget)
+    return (
+      <span className="inline-flex items-center gap-1 text-xs font-semibold text-green-600">
+        <CheckCircle2 className="w-3.5 h-3.5" />
+        Saved
+      </span>
+    );
+  return <span className="text-xs font-semibold text-gray-400">Not set</span>;
+}
+
+const inputClass =
+  "w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500";
 
 export default function RevenueTargetsPage() {
   const currentYear = new Date().getFullYear();
   const [year, setYear] = useState(currentYear);
-  const [forms, setForms] = useState<QuarterForm[]>(emptyForm());
-  const [selectedQuarter, setSelectedQuarter] = useState(1);
+  const [rows, setRows] = useState<QuarterRow[]>(emptyRows());
   const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState<number | null>(null);
+  const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
 
   const fetchTargets = useCallback(async (y: number) => {
@@ -59,17 +99,19 @@ export default function RevenueTargetsPage() {
       if (!res.ok) throw new Error("Failed to fetch");
       const json: { targets: TargetRow[] } = await res.json();
 
-      setForms(
-        emptyForm().map((f) => {
-          const existing = json.targets.find((t) => t.quarter === f.quarter);
-          return existing
-            ? {
-                ...f,
-                target: String(Number(existing.target)),
-                notes: existing.notes || "",
-                saved: true,
-              }
-            : f;
+      setRows(
+        emptyRows().map((r) => {
+          const existing = json.targets.find((t) => t.quarter === r.quarter);
+          if (!existing) return r;
+          const target = String(Number(existing.target));
+          const notes = existing.notes || "";
+          return {
+            ...r,
+            target,
+            notes,
+            savedTarget: target,
+            savedNotes: notes,
+          };
         }),
       );
     } catch {
@@ -83,62 +125,70 @@ export default function RevenueTargetsPage() {
     fetchTargets(year);
   }, [year, fetchTargets]);
 
-  function updateForm(
-    quarter: number,
-    field: "target" | "notes",
-    value: string,
-  ) {
-    setForms((prev) =>
-      prev.map((f) =>
-        f.quarter === quarter ? { ...f, [field]: value, saved: false } : f,
-      ),
+  function update(quarter: number, field: "target" | "notes", value: string) {
+    setRows((prev) =>
+      prev.map((r) => (r.quarter === quarter ? { ...r, [field]: value } : r)),
     );
   }
 
-  async function handleSave(quarter: number) {
-    const form = forms.find((f) => f.quarter === quarter);
-    if (!form) return;
+  function discard() {
+    setRows((prev) =>
+      prev.map((r) => ({ ...r, target: r.savedTarget, notes: r.savedNotes })),
+    );
+  }
 
-    const targetNum = Number(form.target);
-    if (!form.target || Number.isNaN(targetNum) || targetNum < 0) {
-      toast.error("Enter a valid target amount");
-      return;
-    }
+  const changed = rows.filter(isDirty);
+  const problems = rows.filter((r) => rowProblem(r));
 
-    setSaving(quarter);
+  async function saveChanges() {
+    setSaving(true);
+    let savedCount = 0;
     try {
-      const res = await fetch("/api/operator2/revenue-targets", {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          year,
-          quarter,
-          target: targetNum,
-          notes: form.notes.trim() || null,
-        }),
-      });
-
-      if (!res.ok) throw new Error("Save failed");
-
-      setForms((prev) =>
-        prev.map((f) => (f.quarter === quarter ? { ...f, saved: true } : f)),
+      // One request per changed quarter, through the existing endpoint
+      for (const r of changed) {
+        const res = await fetch("/api/operator2/revenue-targets", {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            year,
+            quarter: r.quarter,
+            target: Number(r.target),
+            notes: r.notes.trim() || null,
+          }),
+        });
+        if (!res.ok) throw new Error(`${r.label} could not be saved`);
+        savedCount++;
+        setRows((prev) =>
+          prev.map((p) =>
+            p.quarter === r.quarter
+              ? {
+                  ...p,
+                  notes: r.notes.trim(),
+                  savedTarget: r.target,
+                  savedNotes: r.notes.trim(),
+                }
+              : p,
+          ),
+        );
+      }
+      toast.success(
+        `${year} target${savedCount !== 1 ? "s" : ""} saved for ${changed.map((r) => r.label).join(", ")}`,
       );
-      toast.success(`${QUARTER_META[quarter].label} ${year} target saved`);
-    } catch {
-      toast.error("Failed to save target");
+    } catch (err) {
+      toast.error(
+        `${err instanceof Error ? err.message : "Save failed"}${savedCount ? `. ${savedCount} saved before it.` : ""}`,
+      );
     } finally {
-      setSaving(null);
+      setSaving(false);
     }
   }
 
-  const annualTotal = forms.reduce((sum, f) => {
-    const n = Number(f.target);
+  const annualTotal = rows.reduce((sum, r) => {
+    const n = Number(r.target);
     return sum + (Number.isNaN(n) ? 0 : n);
   }, 0);
-
+  const emptyQuarters = rows.filter((r) => r.target === "").map((r) => r.label);
   const yearOptions = Array.from({ length: 5 }, (_, i) => currentYear - 1 + i);
-  const activeForm =
-    forms.find((f) => f.quarter === selectedQuarter) ?? forms[0];
 
   return (
     <div className="min-h-screen bg-gray-50 px-4 py-2">
@@ -158,7 +208,13 @@ export default function RevenueTargetsPage() {
           <select
             value={year}
             onChange={(e) => setYear(Number(e.target.value))}
-            className="px-4 py-2 text-sm font-semibold border border-gray-200 rounded-xl bg-white focus:outline-none focus:ring-2 focus:ring-green-500"
+            disabled={changed.length > 0 || saving}
+            title={
+              changed.length > 0
+                ? "Save or discard your changes first"
+                : undefined
+            }
+            className="px-4 py-2 text-sm font-semibold border border-gray-200 rounded-xl bg-white focus:outline-none focus:ring-2 focus:ring-green-500 disabled:opacity-50"
           >
             {yearOptions.map((y) => (
               <option key={y} value={y}>
@@ -177,127 +233,133 @@ export default function RevenueTargetsPage() {
             <p className="text-sm text-red-400">{error}</p>
           </div>
         ) : (
-          <>
-            {/* Annual total */}
-            <div className="bg-white rounded-2xl border border-gray-200 shadow-xs px-6 py-5 flex items-center gap-4">
-              <div className="w-10 h-10 rounded-xl bg-green-50 border border-green-100 flex items-center justify-center shrink-0">
-                <Target className="w-5 h-5 text-[#28a745]" />
-              </div>
+          <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
+            <div className="bg-green-600 px-6 py-5 flex items-center justify-between gap-4 flex-wrap">
               <div>
-                <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400">
-                  Expected Annual Revenue — {year}
+                <h2 className="text-base font-bold text-white">
+                  {year} Targets
+                </h2>
+                <p className="text-xs text-green-100 mt-0.5">
+                  Edit any quarter, then save your changes together.
                 </p>
-                <p className="text-xl font-black text-gray-800">
-                  ₦{annualTotal.toLocaleString()}
+              </div>
+              <div className="sm:text-right">
+                <p className="text-xs text-green-100 uppercase tracking-widest">
+                  For the year
+                </p>
+                <p className="text-xl font-black text-white">
+                  {naira(annualTotal)}
                 </p>
               </div>
             </div>
 
-            {/* Quarter clicker */}
-            <div className="flex items-center gap-1 bg-gray-100 rounded-xl p-1 overflow-x-auto">
-              {forms.map((f) => (
-                <button
-                  key={f.quarter}
-                  onClick={() => setSelectedQuarter(f.quarter)}
-                  className={`flex-1 min-w-[100px] px-3 py-2.5 rounded-lg transition ${
-                    selectedQuarter === f.quarter
-                      ? "bg-white shadow-sm"
-                      : "hover:bg-white/60"
-                  }`}
-                >
-                  <div className="flex items-center justify-center gap-1.5">
-                    <span
-                      className={`text-sm font-black ${
-                        selectedQuarter === f.quarter
-                          ? "text-[#28a745]"
-                          : "text-gray-600"
-                      }`}
-                    >
-                      {f.label}
-                    </span>
-                    {f.saved && (
-                      <CheckCircle2 className="w-3.5 h-3.5 text-green-500" />
-                    )}
-                  </div>
-                  <p
-                    className={`text-[10px] mt-0.5 ${
-                      selectedQuarter === f.quarter
-                        ? "text-gray-500"
-                        : "text-gray-400"
+            {/* Column headings, from tablet width */}
+            <div className="hidden sm:grid grid-cols-[150px_180px_1fr_90px] gap-4 px-6 py-2.5 border-b border-gray-100 text-[11px] font-bold uppercase tracking-widest text-gray-400">
+              <span>Quarter</span>
+              <span>Target (₦)</span>
+              <span>Notes</span>
+              <span className="text-right">Status</span>
+            </div>
+
+            <div className="divide-y divide-gray-100">
+              {rows.map((r) => {
+                const problem = rowProblem(r);
+                return (
+                  <div
+                    key={r.quarter}
+                    className={`px-6 py-4 sm:py-3 grid grid-cols-1 sm:grid-cols-[150px_180px_1fr_90px] gap-3 sm:gap-4 sm:items-center ${
+                      isDirty(r) ? "bg-amber-50/40" : ""
                     }`}
                   >
-                    {f.period}
-                  </p>
-                </button>
-              ))}
+                    <div className="flex items-center justify-between sm:block">
+                      <div>
+                        <p className="text-sm font-black text-gray-800">
+                          {r.label}
+                        </p>
+                        <p className="text-xs text-gray-400">{r.period}</p>
+                      </div>
+                      <span className="sm:hidden">
+                        <Status row={r} />
+                      </span>
+                    </div>
+                    <div>
+                      <label className="sm:hidden text-[11px] font-bold uppercase tracking-widest text-gray-400 mb-1 block">
+                        Target (₦)
+                      </label>
+                      <input
+                        type="number"
+                        min={0}
+                        placeholder="0"
+                        value={r.target}
+                        onChange={(e) =>
+                          update(r.quarter, "target", e.target.value)
+                        }
+                        className={inputClass}
+                      />
+                      {problem && (
+                        <p className="text-[11px] text-red-500 mt-1">
+                          {problem}
+                        </p>
+                      )}
+                    </div>
+                    <div>
+                      <label className="sm:hidden text-[11px] font-bold uppercase tracking-widest text-gray-400 mb-1 block">
+                        Notes (optional)
+                      </label>
+                      <input
+                        type="text"
+                        placeholder="e.g. basis for this target"
+                        value={r.notes}
+                        onChange={(e) =>
+                          update(r.quarter, "notes", e.target.value)
+                        }
+                        className={inputClass}
+                      />
+                    </div>
+                    <div className="hidden sm:block text-right">
+                      <Status row={r} />
+                    </div>
+                  </div>
+                );
+              })}
             </div>
 
-            {/* Selected quarter's form */}
-            {activeForm && (
-              <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
-                <div className="flex items-center justify-between px-5 py-4 bg-gray-50 border-b border-gray-100">
-                  <div>
-                    <p className="text-sm font-black text-gray-800">
-                      {activeForm.label} {year}
-                    </p>
-                    <p className="text-xs text-gray-400">{activeForm.period}</p>
-                  </div>
-                  {activeForm.saved && (
-                    <span className="inline-flex items-center gap-1 text-xs font-semibold text-green-600">
-                      <CheckCircle2 className="w-3.5 h-3.5" />
-                      Saved
-                    </span>
-                  )}
-                </div>
-
-                <div className="p-5 space-y-3">
-                  <div>
-                    <label className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-1 block">
-                      Target Amount (₦)
-                    </label>
-                    <input
-                      type="number"
-                      min={0}
-                      placeholder="0.00"
-                      value={activeForm.target}
-                      onChange={(e) =>
-                        updateForm(activeForm.quarter, "target", e.target.value)
-                      }
-                      className="w-full px-4 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-1 block">
-                      Notes (optional)
-                    </label>
-                    <input
-                      type="text"
-                      placeholder="e.g. basis for this target"
-                      value={activeForm.notes}
-                      onChange={(e) =>
-                        updateForm(activeForm.quarter, "notes", e.target.value)
-                      }
-                      className="w-full px-4 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500"
-                    />
-                  </div>
-
+            <div className="px-6 py-4 border-t border-gray-100 bg-gray-50 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+              <p className="text-xs text-gray-500">
+                {emptyQuarters.length === 0
+                  ? "All four quarters set."
+                  : `${emptyQuarters.join(", ")} still empty.`}
+                {changed.length > 0 &&
+                  ` ${changed.length} quarter${changed.length !== 1 ? "s" : ""} with unsaved changes.`}
+              </p>
+              <div className="flex flex-col-reverse sm:flex-row gap-2">
+                {changed.length > 0 && (
                   <button
-                    onClick={() => handleSave(activeForm.quarter)}
-                    disabled={saving === activeForm.quarter}
-                    className="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-bold rounded-xl bg-[#28a745] text-white hover:bg-[#218838] transition disabled:opacity-50 disabled:cursor-not-allowed"
+                    onClick={discard}
+                    disabled={saving}
+                    className="inline-flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-semibold rounded-xl border border-gray-200 text-gray-600 bg-white hover:bg-gray-50 disabled:opacity-50"
                   >
-                    {saving === activeForm.quarter ? (
-                      <Loader2 className="w-4 h-4 animate-spin" />
-                    ) : (
-                      <Save className="w-4 h-4" />
-                    )}
-                    {saving === activeForm.quarter ? "Saving" : "Save Target"}
+                    <RotateCcw className="w-4 h-4" />
+                    Discard changes
                   </button>
-                </div>
+                )}
+                <button
+                  onClick={saveChanges}
+                  disabled={
+                    changed.length === 0 || problems.length > 0 || saving
+                  }
+                  className="inline-flex items-center justify-center gap-2 px-5 py-2.5 text-sm font-bold rounded-xl bg-[#28a745] text-white hover:bg-[#218838] transition disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {saving ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <Save className="w-4 h-4" />
+                  )}
+                  {saving ? "Saving" : "Save changes"}
+                </button>
               </div>
-            )}
-          </>
+            </div>
+          </div>
         )}
       </div>
     </div>

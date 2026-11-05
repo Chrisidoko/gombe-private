@@ -85,14 +85,16 @@ export async function PATCH(
            (school_id, invoice_number, title, amount, status,
             issue_date, due_date, bulk_assessment_id, tier, is_creating_bill,
             revenue_subhead_id)
-         VALUES ($1, $2, $3, $4, 'Unpaid', NOW(), $5, $6, $7, false,
+         VALUES ($1, $2, $3, $4, 'Unpaid', NOW(), CURRENT_DATE + $5::integer, $6, $7, false,
             (SELECT id FROM revenue_subheads WHERE code = 'EDU_ASSESSMENT'))`,
         [
           school.school_id,
           invoiceNumber,
           asmt.title,
           fee,
-          asmt.due_date || null,
+          // Days to pay start from this approval; older assessments without
+          // one leave the invoice without a due date, as before
+          asmt.payment_days ?? null,
           assessmentId,
           school.tier,
         ],

@@ -47,8 +47,30 @@ async function hasPremisesRegistration(client: PoolClient, schoolId: string) {
   return rows.length > 0;
 }
 
-// Runs inside the caller's transaction. Schools that already have a live
-// notice for the year are skipped. Returns null if none needed one.
+// Approved schools without a live notice for the year. A school needs its
+// location and premises category (set by Admin at approval) to be billed.
+export async function getReadiness(year: number) {
+  const { rows } = await pool.query(
+    `SELECT s.school_id, s.name, s.location_type, s.premises_category
+     FROM schoolskano s
+     WHERE s.approval_status = 'approved'
+       AND NOT EXISTS (
+         SELECT 1 FROM annual_notices n
+         WHERE n.school_id = s.school_id AND n.year = $1 AND n.status <> 'rejected'
+       )
+     ORDER BY s.name`,
+    [year],
+  );
+  return {
+    ready: rows.filter((s) => s.location_type && s.premises_category),
+    missingDetails: rows.filter((s) => !s.location_type || !s.premises_category),
+  };
+}
+
+// Runs inside the caller's transaction. The batch starts as a draft that
+// Operator 1 checks and adjusts before sending it to Operator 2. Schools that
+// already have a live notice for the year are skipped. Returns null if none
+// needed one.
 export async function createNoticeBatch(
   client: PoolClient,
   {
@@ -59,7 +81,7 @@ export async function createNoticeBatch(
   }: {
     year: number;
     schools: EligibleSchool[];
-    source: "operator" | "school_approval";
+    source: "operator";
     createdBy: string;
   },
 ) {
@@ -83,8 +105,8 @@ export async function createNoticeBatch(
   };
 
   const batchRes = await client.query(
-    `INSERT INTO annual_notice_batches (year, source, created_by)
-     VALUES ($1, $2, $3) RETURNING id`,
+    `INSERT INTO annual_notice_batches (year, source, created_by, status)
+     VALUES ($1, $2, $3, 'draft') RETURNING id`,
     [year, source, createdBy],
   );
   const batchId: number = batchRes.rows[0].id;
@@ -111,15 +133,13 @@ export async function createNoticeBatch(
         continue;
       }
       const declared = subhead.charge_type === "declared";
+      const amount = declared ? null : rateFor(subhead, school);
+      // A rate of 0 means the item isn't charged this year
+      if (amount !== null && Number(amount) === 0) continue;
       await client.query(
-        `INSERT INTO annual_notice_lines (notice_id, revenue_subhead_id, amount, status)
-         VALUES ($1, $2, $3, $4)`,
-        [
-          noticeId,
-          subhead.id,
-          declared ? null : rateFor(subhead, school),
-          declared ? "awaiting_declaration" : "unpaid",
-        ],
+        `INSERT INTO annual_notice_lines (notice_id, revenue_subhead_id, amount, standard_amount, status)
+         VALUES ($1, $2, $3, $3, $4)`,
+        [noticeId, subhead.id, amount, declared ? "awaiting_declaration" : "unpaid"],
       );
     }
   }
@@ -142,6 +162,14 @@ export async function issueNoticeBatch(client: PoolClient, batchId: number) {
      WHERE batch_id = $1 AND status = 'pending_approval'
      RETURNING id, school_id, year, notice_number, due_date`,
     [batchId, PAYMENT_WINDOW_DAYS],
+  );
+  // Items set to 0 for a school don't apply to it: nothing due
+  await client.query(
+    `UPDATE annual_notice_lines l
+     SET status = 'waived'
+     FROM annual_notices n
+     WHERE n.id = l.notice_id AND n.batch_id = $1 AND l.status = 'unpaid' AND l.amount = 0`,
+    [batchId],
   );
   await client.query(
     `UPDATE annual_notice_lines l
@@ -189,23 +217,6 @@ export async function getSchoolNotices(schoolId: string) {
   return rows;
 }
 
-export async function getNoticeBalance(schoolId: string) {
-  const { rows } = await pool.query(
-    `SELECT COALESCE(SUM(l.amount) FILTER (WHERE l.status = 'unpaid'), 0) AS outstanding,
-            COUNT(*) FILTER (WHERE l.status = 'awaiting_declaration') AS awaiting,
-            MIN(l.due_date) FILTER (WHERE l.status = 'unpaid') AS next_due
-     FROM annual_notices n
-     JOIN annual_notice_lines l ON l.notice_id = n.id
-     WHERE n.school_id = $1 AND n.status = 'issued'`,
-    [schoolId],
-  );
-  return {
-    outstanding: Number(rows[0].outstanding),
-    awaiting: Number(rows[0].awaiting),
-    nextDue: rows[0].next_due as Date | null,
-  };
-}
-
 function createTransporter() {
   return nodemailer.createTransport({
     host: "paypro-solutions.com",
@@ -233,7 +244,7 @@ export async function notifySchool(
       [schoolId],
     );
     await createTransporter().sendMail({
-      from: `"GESMS" <${process.env.SMTP_USER}>`,
+      from: `"GO-ESMS" <${process.env.SMTP_USER}>`,
       to: rows[0].email,
       subject: `${subject} — ${rows[0].name}`,
       html: `
@@ -284,7 +295,7 @@ export async function sendNoticeEmails(
       const arrears = Number(school.arrears_total);
 
       await transporter.sendMail({
-        from: `"GESMS" <${process.env.SMTP_USER}>`,
+        from: `"GO-ESMS" <${process.env.SMTP_USER}>`,
         to: school.email,
         subject: `${notice.year} Single Demand Notice — ${school.name}`,
         html: `

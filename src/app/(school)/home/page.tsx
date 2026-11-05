@@ -1,41 +1,26 @@
 import {
-  Building,
-  // Calendar,
-  // MapPin,
-  // FileText,
   AlertCircle,
+  ArrowRight,
   CheckCircle,
   Clock,
+  ShieldCheck,
 } from "lucide-react";
 import { getUserFromCookie, authHeaders } from "@/lib/auth";
 import Link from "next/link";
 import { formatDate } from "@/lib/formatDate";
 import ComplyCard from "@/components/ui/complyCard";
-import { getNoticeBalance } from "@/lib/annualNotices";
-import { getDisplayedExpiry } from "@/lib/certificate";
-// import dynamic from "next/dynamic";
+import { getActionItems } from "@/lib/compliance";
+import { getCertificateState, getDisplayedExpiry } from "@/lib/certificate";
 
-// const CompleteProfile = dynamic(() => import("@/components/profilecomplete"), {
-//   ssr: true, // or false, depending on your needs
-//   loading: () => <div>Loading...</div>, // optional loading state
-// });
-
-
-function getDaysUntilExpiry(expiryDate: string) {
-  const today = new Date();
-  const expiry = new Date(expiryDate);
-  const diffTime = expiry.getTime() - today.getTime();
-  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-  return diffDays;
-}
+const naira = (n: number) => `₦${n.toLocaleString()}`;
 
 export default async function SchoolOverviewDashboard() {
   const user = await getUserFromCookie();
 
   if (!user) {
     return (
-      <div className="text-red-500 font-semibold mt-10 text-center">
-        Unauthorized — please log in again.
+      <div className="text-red-600 font-semibold">
+        Error: Missing school ID.
       </div>
     );
   }
@@ -55,152 +40,66 @@ export default async function SchoolOverviewDashboard() {
   }
 
   const school = await res.json();
+  const actions = await getActionItems(user.institution || "");
 
-  const noticeBalance = await getNoticeBalance(user.institution || "");
-
+  const isApproved = school?.approval_status === "approved";
+  const profileComplete = school?.form_status === "complete";
+  const certificate = getCertificateState(school);
   const expiryDate = getDisplayedExpiry(school);
-  const daysUntilExpiry = expiryDate
-    ? getDaysUntilExpiry(String(expiryDate))
-    : null;
-
-  const isExpiringSoon = daysUntilExpiry !== null && daysUntilExpiry <= 30;
-  const isExpired = daysUntilExpiry !== null && daysUntilExpiry < 0;
 
   return (
     <div className="space-y-6">
-      {/* Welcome Header */}
-      <div className="bg-gradient-to-r from-green-50 to-orange-50 rounded-xl p-6 border border-green-100">
-        <div className="flex items-start justify-between">
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">
-              Welcome back, <span className="text-green-600">{user?.name}</span>
-            </h1>
-            <p className="text-gray-600 mt-1">
-              Here&lsquo;s your institution&lsquo;s overview and compliance
-              status
-            </p>
-
-            <div className="flex flex-wrap gap-4 mt-4">
-              <div className="flex items-center gap-2 text-sm">
-                <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-              </div>
-              <div className="flex items-center gap-2 text-sm">
-                <svg
-                  className="w-4 h-4 text-gray-500"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
-                  />
-                </svg>
-                <span className="text-sm font-semibold text-gray-600">
-                  {user?.email}
-                </span>
-              </div>
-            </div>
-          </div>
-
-          {school?.form_status !== "complete" && (
+      {/* Header */}
+      <div className="bg-white rounded-xl border border-gray-200 px-6 py-4 flex items-center justify-between gap-4 flex-wrap">
+        <div className="min-w-0">
+          <p className="text-xs text-gray-500">Welcome back, {user?.name}</p>
+          <h1 className="text-xl font-bold text-gray-900 truncate">
+            {school?.name}
+          </h1>
+          <p className="text-xs text-gray-500 mt-0.5">
+            TIN {school?.tin || "—"}
+            {school?.lga ? ` · ${school.lga}` : ""}
+          </p>
+        </div>
+        <div className="flex items-center gap-2 flex-wrap">
+          <span
+            className={`inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-full border ${
+              isApproved
+                ? "bg-green-50 border-green-200 text-green-700"
+                : "bg-amber-50 border-amber-200 text-amber-700"
+            }`}
+          >
+            {isApproved ? (
+              <CheckCircle className="w-3.5 h-3.5" />
+            ) : (
+              <Clock className="w-3.5 h-3.5" />
+            )}
+            {isApproved ? "Approved" : "Awaiting approval"}
+          </span>
+          {profileComplete ? (
+            <span className="inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-full border bg-green-50 border-green-200 text-green-700">
+              <CheckCircle className="w-3.5 h-3.5" />
+              Profile complete
+            </span>
+          ) : (
             <Link
               href="/profile"
-              className="bg-yellow-50 border border-yellow-200 rounded-lg px-4 py-2 flex items-center gap-2 cursor-pointer"
+              className="inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-full border bg-yellow-50 border-yellow-200 text-yellow-800 hover:bg-yellow-100"
             >
-              <AlertCircle className="w-5 h-5 text-yellow-600" />
-              <span className="text-sm font-medium text-yellow-800">
-                Profile Incomplete
-              </span>
+              <AlertCircle className="w-3.5 h-3.5" />
+              Profile incomplete
             </Link>
           )}
         </div>
       </div>
 
-      {(noticeBalance.outstanding > 0 || noticeBalance.awaiting > 0) && (
-        <Link
-          href="/Invoices"
-          className="flex items-center justify-between gap-4 flex-wrap bg-red-50 border border-red-200 rounded-xl px-6 py-4"
-        >
-          <div>
-            <p className="text-sm font-bold text-red-800">
-              Single Demand Notice
-            </p>
-            <p className="text-xs text-red-700 mt-0.5">
-              {noticeBalance.awaiting > 0 &&
-                `${noticeBalance.awaiting} tax declaration${noticeBalance.awaiting !== 1 ? "s" : ""} needed. `}
-              {noticeBalance.nextDue &&
-                `Next payment due ${formatDate(String(noticeBalance.nextDue))}.`}
-            </p>
-          </div>
-          <p className="text-xl font-black text-red-700">
-            ₦{noticeBalance.outstanding.toLocaleString()}
-          </p>
-        </Link>
-      )}
-
-      {/* School Information Card */}
-      <div className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
-        <div className="bg-green-600 px-6 py-4">
-          <div className="flex items-center gap-3">
-            <div className="w-12 h-12 bg-white/20 backdrop-blur-sm rounded-lg flex items-center justify-center">
-              <Building className="w-7 h-7 text-white" />
-            </div>
-            <div className="flex-1">
-              <h2 className="text-xl font-bold text-white">{school?.name}</h2>
-              <p className="text-blue-100 text-sm">TIN: {school?.tin}</p>
-            </div>
-          </div>
-        </div>
-        {/* 
-        <div className="p-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            <div className="space-y-2">
-              <div className="flex items-center gap-2 text-gray-500 text-sm">
-                <MapPin className="w-4 h-4" />
-                <span className="font-medium">Address</span>
-              </div>
-              <p className="text-gray-900 text-sm font-medium">
-                {school?.address}
-              </p>
-            </div>
-
-            <div className="space-y-2">
-              <div className="flex items-center gap-2 text-gray-500 text-sm">
-                <MapPin className="w-4 h-4" />
-                <span className="font-medium">State</span>
-              </div>
-              <p className="text-gray-900 font-medium">{school?.state}</p>
-            </div>
-
-            <div className="space-y-2">
-              <div className="flex items-center gap-2 text-gray-500 text-sm">
-                <MapPin className="w-4 h-4" />
-                <span className="font-medium">LGA</span>
-              </div>
-              <p className="text-gray-900 font-medium">{school?.lga}</p>
-            </div>
-
-            <div className="space-y-2">
-              <div className="flex items-center gap-2 text-gray-500 text-sm">
-                <Building className="w-4 h-4" />
-                <span className="font-medium">Ownership</span>
-              </div>
-              <p className="text-gray-900 font-medium">{school?.ownership}</p>
-            </div>
-          </div>
-        </div> */}
-      </div>
-
-      {/* Compliance & License Section */}
+      {/* Compliance score and certificate */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Compliance Score */}
-        <ComplyCard school_id={school.school_id} />
+        <div className="lg:col-span-2">
+          <ComplyCard school_id={school.school_id} wide showNextStep />
+        </div>
 
-        {/* License Information */}
-        <div className="lg:col-span-2 bg-gradient-to-br from-green-600 via-emerald-600 to-teal-600 rounded-xl shadow-lg overflow-hidden relative">
+        <div className="bg-gradient-to-br from-green-600 via-emerald-600 to-teal-600 rounded-xl shadow-lg overflow-hidden relative">
           <div
             className="absolute inset-0 opacity-10"
             style={{
@@ -209,102 +108,126 @@ export default async function SchoolOverviewDashboard() {
               backgroundPosition: "center",
             }}
           ></div>
-
-          <div className="relative p-6">
-            <div className="flex items-center justify-between mb-6">
-              <h3 className="text-xl font-bold text-white">
-                Certificate Information
+          <div className="relative p-6 h-full flex flex-col">
+            <div className="flex items-center justify-between gap-3 mb-6">
+              <h3 className="text-lg font-bold text-white flex items-center gap-2">
+                <ShieldCheck className="w-5 h-5" />
+                Certificate
               </h3>
-              {isExpired ? (
-                <span className="bg-red-500 text-white px-3 py-1 rounded-full text-xs font-bold flex items-center gap-1">
-                  <AlertCircle className="w-4 h-4" />
+              {certificate === "valid" ? (
+                <span className="bg-white text-green-600 px-3 py-1 rounded-full text-xs font-bold">
+                  ACTIVE
+                </span>
+              ) : certificate === "expired" ? (
+                <span className="bg-red-500 text-white px-3 py-1 rounded-full text-xs font-bold">
                   EXPIRED
                 </span>
-              ) : isExpiringSoon ? (
-                <span className="bg-yellow-400 text-gray-900 px-3 py-1 rounded-full text-xs font-bold flex items-center gap-1">
-                  <Clock className="w-4 h-4" />
-                  EXPIRING SOON
-                </span>
               ) : (
-                <span className="bg-white text-green-600 px-3 py-1 rounded-full text-xs font-bold flex items-center gap-1">
-                  <CheckCircle className="w-4 h-4" />
-                  ACTIVE
+                <span className="bg-white/20 text-white px-3 py-1 rounded-full text-xs font-bold">
+                  NOT ISSUED
                 </span>
               )}
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="bg-white/10 backdrop-blur-sm rounded-lg p-4 border border-white/20">
-                <p className="text-yellow-300 text-xs font-semibold uppercase mb-2">
-                  Certificate Number
-                </p>
-                <p className="text-white text-lg font-bold">
-                  {school?.license_number}
-                </p>
-              </div>
-
-              <div className="bg-white/10 backdrop-blur-sm rounded-lg p-4 border border-white/20">
-                <p className="text-yellow-300 text-xs font-semibold uppercase mb-2">
-                  Issue Date
-                </p>
-                <p className="text-white text-lg font-bold">
-                  {school?.last_license_renewal
-                    ? formatDate(school.last_license_renewal)
-                    : "N/A"}
-                </p>
-              </div>
-
-              <div className="bg-white/10 backdrop-blur-sm rounded-lg p-4 border border-white/20">
-                <p className="text-yellow-300 text-xs font-semibold uppercase mb-2">
-                  Expiry Date
-                </p>
-                <p className="text-white text-lg font-bold">
-                  {expiryDate ? formatDate(String(expiryDate)) : "Does not expire"}
-                </p>
-              </div>
-
-              <div className="bg-white/10 backdrop-blur-sm rounded-lg p-4 border border-white/20">
-                <p className="text-yellow-300 text-xs font-semibold uppercase mb-2">
-                  Days Remaining
-                </p>
-                <p
-                  className={`text-lg font-bold ${
-                    isExpired
-                      ? "text-red-300"
-                      : isExpiringSoon
-                        ? "text-yellow-300"
-                        : "text-white"
-                  }`}
-                >
-                  {daysUntilExpiry !== null
-                    ? isExpired
-                      ? `Expired ${Math.abs(daysUntilExpiry)} days ago`
-                      : `${daysUntilExpiry} days`
-                    : "N/A"}
-                </p>
-              </div>
-            </div>
-
-            {isExpiringSoon && !isExpired && (
-              <div className="mt-6 bg-yellow-400/20 border border-yellow-400/50 rounded-lg p-4">
-                <p className="text-yellow-100 text-sm">
-                  <strong>Action Required:</strong> Your certificate will expire
-                  in {daysUntilExpiry} days. Please renew to maintain
-                  compliance.
-                </p>
-              </div>
-            )}
-
-            {isExpired && (
-              <div className="mt-6 bg-red-500/20 border border-red-400/50 rounded-lg p-4">
-                <p className="text-red-100 text-sm">
-                  <strong>Urgent:</strong> Your certificate has expired.
-                  Immediate renewal is required to avoid penalties.
-                </p>
+            {certificate === "none" ? (
+              <p className="text-sm text-green-50">
+                {isApproved
+                  ? "Your certificate is issued once the Certificate fee is paid."
+                  : "Your certificate is issued after your institution is approved."}
+              </p>
+            ) : (
+              <div className="space-y-3">
+                <div className="bg-white/10 backdrop-blur-sm rounded-lg px-4 py-3 border border-white/20">
+                  <p className="text-yellow-300 text-[11px] font-semibold uppercase">
+                    Certificate Number
+                  </p>
+                  <p className="text-white text-lg font-bold">
+                    {school?.license_number || "—"}
+                  </p>
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="bg-white/10 backdrop-blur-sm rounded-lg px-4 py-3 border border-white/20">
+                    <p className="text-yellow-300 text-[11px] font-semibold uppercase">
+                      Issued
+                    </p>
+                    <p className="text-white text-sm font-bold">
+                      {school?.last_license_renewal
+                        ? formatDate(school.last_license_renewal)
+                        : "N/A"}
+                    </p>
+                  </div>
+                  <div className="bg-white/10 backdrop-blur-sm rounded-lg px-4 py-3 border border-white/20">
+                    <p className="text-yellow-300 text-[11px] font-semibold uppercase">
+                      Expires
+                    </p>
+                    <p className="text-white text-sm font-bold">
+                      {expiryDate
+                        ? formatDate(String(expiryDate))
+                        : "Does not expire"}
+                    </p>
+                  </div>
+                </div>
               </div>
             )}
           </div>
         </div>
+      </div>
+
+      {/* Everything outstanding, most urgent first */}
+      <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+        <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between gap-3">
+          <h3 className="text-lg font-semibold text-gray-900">Action Needed</h3>
+          {actions.length > 0 && (
+            <span className="text-xs font-semibold text-gray-500">
+              {actions.length} item{actions.length !== 1 ? "s" : ""}
+            </span>
+          )}
+        </div>
+        {actions.length === 0 ? (
+          <div className="px-6 py-10 text-center">
+            <CheckCircle className="w-8 h-8 text-green-500 mx-auto" />
+            <p className="mt-2 text-sm font-semibold text-gray-700">
+              You&apos;re all caught up
+            </p>
+            <p className="text-xs text-gray-400 mt-0.5">
+              Nothing to pay or file right now.
+            </p>
+          </div>
+        ) : (
+          <div className="divide-y divide-gray-100">
+            {actions.map((item, i) => (
+              <Link
+                key={`${item.source}-${item.label}-${i}`}
+                href={item.href}
+                className="flex items-center justify-between gap-4 px-6 py-3.5 hover:bg-gray-50 transition-colors"
+              >
+                <div className="min-w-0">
+                  <p className="text-sm font-semibold text-gray-800 sm:truncate">
+                    {item.label}
+                  </p>
+                  <p className="text-xs text-gray-400">
+                    {item.source}
+                    {item.dueDate &&
+                      ` · ${item.overdue ? "was due" : "due"} ${formatDate(item.dueDate)}`}
+                  </p>
+                </div>
+                <div className="flex items-center gap-3 shrink-0">
+                  {item.overdue && (
+                    <span className="text-[10px] font-bold uppercase tracking-wide px-2 py-0.5 rounded-full bg-red-50 text-red-600">
+                      Overdue
+                    </span>
+                  )}
+                  {item.amount !== null && (
+                    <span className="text-sm font-bold text-gray-800">
+                      {naira(item.amount)}
+                    </span>
+                  )}
+                  <ArrowRight className="w-4 h-4 text-gray-300" />
+                </div>
+              </Link>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );

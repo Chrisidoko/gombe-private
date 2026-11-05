@@ -503,7 +503,6 @@ const SingleDatePicker = ({
 
   const initialDate = React.useMemo(() => {
     return date;
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open]);
 
   React.useEffect(() => {
@@ -520,7 +519,6 @@ const SingleDatePicker = ({
     if (!open) {
       setMonth(date);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open]);
 
   const onCancel = () => {
@@ -739,7 +737,6 @@ const RangeDatePicker = ({
 
   const initialRange = React.useMemo(() => {
     return range;
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open]);
 
   React.useEffect(() => {
@@ -756,7 +753,6 @@ const RangeDatePicker = ({
     if (!open) {
       setMonth(range?.from);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open]);
 
   const onRangeChange = (range: DateRange | undefined) => {

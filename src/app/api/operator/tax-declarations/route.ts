@@ -10,7 +10,7 @@ export async function GET() {
 
   try {
     const declarations = await pool.query(
-      `SELECT d.id, d.amount, d.evidence_url, d.note, d.created_at,
+      `SELECT d.id, d.amount, d.declared_income, d.evidence_url, d.note, d.created_at,
               n.year, sc.name AS school_name, s.name AS subhead_name
        FROM tax_declarations d
        JOIN annual_notice_lines l ON l.id = d.line_id
@@ -22,7 +22,7 @@ export async function GET() {
     );
     const overdue = await pool.query(
       `SELECT l.id AS line_id, n.year, n.due_date, sc.name AS school_name,
-              s.name AS subhead_name
+              s.name AS subhead_name, s.code
        FROM annual_notice_lines l
        JOIN annual_notices n ON n.id = l.notice_id
        JOIN revenue_subheads s ON s.id = l.revenue_subhead_id
