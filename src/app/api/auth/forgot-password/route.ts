@@ -6,7 +6,10 @@ import crypto from "crypto";
 
 export async function POST(req: Request) {
   try {
-    const { email } = await req.json();
+    const body = await req.json();
+    // Ignore stray spaces and capitals, e.g. from phone autofill
+    const email =
+      typeof body.email === "string" ? body.email.trim().toLowerCase() : "";
 
     if (!email) {
       return NextResponse.json({ error: "Email is required" }, { status: 400 });
@@ -14,7 +17,7 @@ export async function POST(req: Request) {
 
     // Check if user exists
     const userRes = await pool.query(
-      `SELECT id, name, email FROM userskano WHERE email = $1`,
+      `SELECT id, name, email FROM userskano WHERE lower(email) = $1`,
       [email],
     );
 
