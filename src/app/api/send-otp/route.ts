@@ -80,9 +80,9 @@ export async function POST(req: Request) {
       html: htmlContent,
     });
 
+    // The code itself stays out of the response, or the email check is moot
     return NextResponse.json({
       message: `OTP sent successfully to ${school.name}`,
-      otp,
     });
   } catch (error) {
     const message =

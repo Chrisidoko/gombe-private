@@ -5,7 +5,11 @@ import pool from "@/lib/db";
 
 export async function POST(req: Request) {
   try {
-    const { email, password } = await req.json();
+    const body = await req.json();
+    // Ignore stray spaces and capitals, e.g. from phone autofill
+    const email =
+      typeof body.email === "string" ? body.email.trim().toLowerCase() : "";
+    const password = body.password;
 
     if (!email || !password) {
       return NextResponse.json(
@@ -17,7 +21,7 @@ export async function POST(req: Request) {
     // 1️⃣ Check if user exists
     const userResult = await pool.query(
       `SELECT id, name, email, institution, password_hash, status 
-       FROM userskano WHERE email = $1`,
+       FROM userskano WHERE lower(email) = $1`,
       [email],
     );
 

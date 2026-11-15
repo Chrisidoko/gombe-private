@@ -7,15 +7,37 @@ import { requireSchoolAccess } from "@/lib/apiAuth";
 
 export async function POST(req: Request) {
   try {
-    const { school_id, email } = await req.json();
+    const body = await req.json();
+    const school_id: string | undefined = body.school_id;
+    const email =
+      typeof body.email === "string" ? body.email.trim().toLowerCase() : "";
 
-    const denied = await requireSchoolAccess(school_id);
+    // Only the school itself, not staff, sets up its login
+    const denied = await requireSchoolAccess(school_id, []);
     if (denied) return denied;
 
     if (!school_id) {
       return NextResponse.json(
         { error: "School ID is required" },
         { status: 400 },
+      );
+    }
+    if (!email.includes("@")) {
+      return NextResponse.json(
+        { error: "Please enter a valid email address." },
+        { status: 400 },
+      );
+    }
+
+    // Each login needs its own email, so say so before sending a code
+    const takenBy = await pool.query(
+      `SELECT 1 FROM userskano WHERE lower(email) = $1 AND institution <> $2`,
+      [email, school_id],
+    );
+    if (takenBy.rows.length > 0) {
+      return NextResponse.json(
+        { error: "This email is already used by another account." },
+        { status: 409 },
       );
     }
 
@@ -35,7 +57,7 @@ export async function POST(req: Request) {
       `
       DELETE FROM otps
       WHERE expires_at < NOW()
-      OR id = $1
+      OR school_id = $1
     `,
       [school.id],
     );
@@ -84,9 +106,9 @@ export async function POST(req: Request) {
       html: htmlContent,
     });
 
+    // The code itself stays out of the response, or the email check is moot
     return NextResponse.json({
       message: `OTP sent successfully to ${school.name}`,
-      otp,
     });
   } catch (error) {
     const message =
