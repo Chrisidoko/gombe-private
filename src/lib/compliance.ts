@@ -1,8 +1,9 @@
 // lib/compliance.ts
 // A school's compliance score and the list of things it still has to act on.
 //
-// Before approval the score is the four onboarding steps. After approval it
-// covers what the school owes now:
+// Until the school is approved and holds a certificate the score is the four
+// onboarding steps. Admin can approve a profile before any fee is paid, so
+// approval alone isn't enough. After that it covers what the school owes now:
 //   Annual Renewal of Registration   25  (paid, or not yet due)
 //   Single Demand Notice             40  (share of the assessed amount paid)
 //   Monthly PAYE returns             25  (share of due months in good standing)
@@ -173,7 +174,10 @@ export async function getComplianceStatus(
   const onboardingScore = onboarding.reduce((t, s) => t + s.earned, 0);
   const onboardingComplete = onboarding.every((s) => s.completed);
 
-  if (school.approval_status !== "approved") {
+  // Onboarded means approved and holding a certificate. A new school can only
+  // buy it after Registration and approval; a school whose existing licence
+  // Admin confirmed already holds one and skips the onboarding fees.
+  if (school.approval_status !== "approved" || !certificate) {
     return {
       phase: "onboarding",
       complianceScore: onboardingScore,
@@ -285,42 +289,48 @@ export async function getActionItems(schoolId: string): Promise<ActionItem[]> {
   const feeName = (id: number) =>
     FEE_DEFINITIONS.find((f) => f.id === id)?.name ?? "Fee";
 
-  if (school.approval_status !== "approved") {
-    // Only the next onboarding step; later ones unlock in turn
-    const next = [APPLICATION_FORM_FEE_ID, GUIDELINE_FEE_ID, REGISTRATION_FEE_ID].find(
-      (id) => !fees.paid(id),
-    );
-    if (next) {
-      items.push({
-        label: feeName(next),
-        source: "Fees",
-        amount: feeAmount(next),
-        dueDate: null,
-        overdue: false,
-        href: "/fees",
-      });
-    }
-  } else {
-    if (fees.renewalDue) {
-      items.push({
-        label: feeName(RENEWAL_FEE_ID),
-        source: "Fees",
-        amount: feeAmount(RENEWAL_FEE_ID),
-        dueDate: dateText(fees.renewalDueOn),
-        overdue: true,
-        href: "/fees",
-      });
-    }
-    if (fees.monitoringDue) {
-      items.push({
-        label: feeName(MONITORING_FEE_ID),
-        source: "Fees",
-        amount: feeAmount(MONITORING_FEE_ID),
-        dueDate: null,
-        overdue: false,
-        href: "/fees",
-      });
-    }
+  // Until onboarded (approved and holding a certificate, as in the score),
+  // only the next onboarding step; later ones unlock in turn. The
+  // Certificate also waits for approval.
+  const certificateDone =
+    fees.paid(CERTIFICATE_FEE_ID) || school.license_status === "Active";
+  const onboarded = school.approval_status === "approved" && certificateDone;
+  const next = onboarded
+    ? undefined
+    : ([APPLICATION_FORM_FEE_ID, GUIDELINE_FEE_ID, REGISTRATION_FEE_ID].find(
+        (id) => !fees.paid(id),
+      ) ??
+      (school.approval_status === "approved" ? CERTIFICATE_FEE_ID : undefined));
+  if (next) {
+    items.push({
+      label: feeName(next),
+      source: "Fees",
+      amount: feeAmount(next),
+      dueDate: null,
+      overdue: false,
+      href: "/fees",
+    });
+  }
+  // Both recur from the Registration payment, so they only show once it's paid
+  if (fees.renewalDue) {
+    items.push({
+      label: feeName(RENEWAL_FEE_ID),
+      source: "Fees",
+      amount: feeAmount(RENEWAL_FEE_ID),
+      dueDate: dateText(fees.renewalDueOn),
+      overdue: true,
+      href: "/fees",
+    });
+  }
+  if (fees.monitoringDue) {
+    items.push({
+      label: feeName(MONITORING_FEE_ID),
+      source: "Fees",
+      amount: feeAmount(MONITORING_FEE_ID),
+      dueDate: null,
+      overdue: false,
+      href: "/fees",
+    });
   }
 
   for (const line of await getNoticeLines(schoolId)) {
