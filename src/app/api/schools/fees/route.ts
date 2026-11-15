@@ -69,20 +69,23 @@ export async function GET(req: Request) {
 
     const denied = await requireSchoolAccess(school_id);
     if (denied) return denied;
-    const showCertificate = searchParams.get("show_certificate") === "true";
 
     // Determine fee tier from the school's category
     // Read from the database, not the request, so a school can't be offered
     // the Certificate fee again after its certificate is issued
     let category: string | null = null;
     let licenseStatus: string | null = null;
+    // The Certificate fee unlocks only once the Ministry has approved the
+    // school (paying it activates the certificate); read from the database too
+    let showCertificate = false;
     if (school_id) {
       const schoolRes = await pool.query(
-        `SELECT category, license_status FROM schoolskano WHERE school_id = $1`,
+        `SELECT category, license_status, approval_status FROM schoolskano WHERE school_id = $1`,
         [school_id],
       );
       category = schoolRes.rows[0]?.category ?? null;
       licenseStatus = schoolRes.rows[0]?.license_status ?? null;
+      showCertificate = schoolRes.rows[0]?.approval_status === "approved";
     }
     const tier = resolveTier(category);
 

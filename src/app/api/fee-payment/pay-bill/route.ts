@@ -52,6 +52,36 @@ export async function POST(req: Request) {
       );
     }
 
+    // Paying the Certificate fee activates the certificate, so it's only open
+    // once Registration is paid and the Ministry has approved the school, and
+    // not while one is active
+    if (fee.fee_id === 4) {
+      const schoolRes = await client.query(
+        `SELECT s.approval_status, s.license_status,
+                EXISTS (SELECT 1 FROM schoolkano_payments r
+                        WHERE r.school_id = s.school_id AND r.fee_id = 3
+                          AND r.status = 'paid') AS registration_paid
+         FROM schoolskano s WHERE s.school_id = $1`,
+        [school_id],
+      );
+      const school = schoolRes.rows[0];
+      if (school?.approval_status !== "approved" || !school.registration_paid) {
+        return NextResponse.json(
+          {
+            error:
+              "The Certificate fee opens once Registration is paid and the Ministry approves your institution.",
+          },
+          { status: 403 },
+        );
+      }
+      if (school.license_status === "Active") {
+        return NextResponse.json(
+          { error: "Your certificate is already active." },
+          { status: 400 },
+        );
+      }
+    }
+
     if (!fee.reference) {
       return NextResponse.json(
         { error: "Bill reference not found. Please contact support." },
